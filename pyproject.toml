@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tutordraw"
+version = "0.1.0a1"
+description = "Author step-by-step visual tutorials using DrawCV drawings."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["pydrawcv==0.10.0.post1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "build>=1", "setuptools>=77", "wheel"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
