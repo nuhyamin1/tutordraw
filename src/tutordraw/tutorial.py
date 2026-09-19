@@ -1,21 +1,29 @@
 """Tutorial authoring and static rendering."""
 
+from pathlib import Path
+
 from drawcv import Canvas, Drawable, OpenCVRenderer, Scene
 
 from .adapters.drawcv import copy_scene, index_scene, overlay_layer
 from .errors import ValidationError
 from .layout import label_artwork
 from .model import Label, Step, Target
+from .attention import apply_attention, highlight_artwork
+from .export import export_steps
+from .themes import Theme
 
 
 class Tutorial:
     """Attach teaching labels to an existing DrawCV scene without editing it."""
 
-    def __init__(self, scene: Scene, *, title: str = ""):
+    def __init__(self, scene: Scene, *, title: str = "", theme: Theme | None = None):
         if not isinstance(scene, Scene):
             raise ValidationError("scene must be a DrawCV Scene")
         if not isinstance(title, str):
             raise ValidationError("title must be a string")
+        if theme is not None and not isinstance(theme, Theme):
+            raise ValidationError("theme must be a Theme")
+        self.theme = theme or Theme()
         self.scene = scene
         self.title = title
         self._targets: dict[str, Target] = {}
@@ -62,9 +70,18 @@ class Tutorial:
                 raise ValidationError(f"Missing target {target.name or target.id!r}: {target.drawable_id}")
         working = copy_scene(self.scene)
         objects = index_scene(working)
+        step = self._steps[index]
+        apply_attention(working, step)
         layer = overlay_layer(working)
-        for label in self._steps[index].labels:
-            _, artwork = label_artwork(label, objects[label.target.drawable_id], working.width, working.height)
+        for highlight in step.highlights:
+            working.add(highlight_artwork(highlight, objects[highlight.target.drawable_id]), layer=layer)
+        for label in (*step.labels, *step.callouts):
+            _, artwork = label_artwork(label, objects[label.target.drawable_id], working.width, working.height, self.theme)
             for obj in artwork:
                 working.add(obj, layer=layer)
         return OpenCVRenderer().render(working, alpha=alpha)
+
+    def export_steps(self, directory: str | Path, *, overwrite: bool = False,
+                     alpha: bool = False) -> list[Path]:
+        """Write numbered PNGs; fail on existing destinations unless explicitly allowed."""
+        return export_steps(self, directory, overwrite=overwrite, alpha=alpha)

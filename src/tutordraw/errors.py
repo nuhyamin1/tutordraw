@@ -15,3 +15,14 @@ class SceneCopyError(TutorDrawError):
 
 class LayoutWarning(UserWarning):
     """An annotation extends beyond the output canvas."""
+
+
+class ExportError(TutorDrawError):
+    """An export failed after preflight; completed_paths contains successful files."""
+
+    def __init__(self, step_index, path, completed_paths):
+        self.step_index = step_index
+        self.path = path
+        self.completed_paths = tuple(completed_paths)
+        super().__init__(f"Export failed at step {step_index + 1} ({path}); "
+                         f"{len(self.completed_paths)} files completed")

@@ -6,7 +6,7 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 ## Status
 
-**M1 implemented — local development alpha `0.1.0a1`.** This repository is installable, but TutorDraw has not been published to PyPI. The distribution name `tutordraw` remains provisional and has not been reserved.
+**M2 implemented — local development alpha `0.1.0a2`.** This repository is installable, but TutorDraw has not been published to PyPI. The distribution name `tutordraw` remains provisional and has not been reserved.
 
 Implemented:
 
@@ -16,9 +16,12 @@ Implemented:
 - Keep labels attached when targets move, including through group transforms.
 - Define independent steps and render them to DrawCV canvases and PNG images.
 - Preserve source content and undo history, including on rendering failure.
-- Validate references/options and warn about off-canvas labels.
+- Add step-local wrapped callouts, rectangular highlights, and group-aware dimming.
+- Customize shared typography, spacing, and colors through an immutable theme.
+- Export ordered PNGs with collision checks and partial-failure reporting.
+- Validate references/options and warn about off-canvas annotations.
 
-Callouts, highlights, dimming, themes, batch export, and video remain planned.
+Video, interactive playback, rich typography, and automatic collision avoidance remain planned.
 
 ## Install from this repository
 
@@ -50,25 +53,30 @@ scene.add(shape)
 
 tutorial = Tutorial(scene, title="Inside a cell")
 nucleus = tutorial.target(shape, name="nucleus")
-label = nucleus.label("Nucleus", anchor="right", leader=True)
+label = nucleus.label("Nucleus", anchor="top", leader=True)
 
-tutorial.step("Meet the nucleus").show(label)
+intro = tutorial.step("Meet the nucleus").show(label)
+intro.highlight(nucleus)
+intro.explain(nucleus, "The nucleus contains the cell's DNA.", max_width=220)
 tutorial.step("Review the drawing")
 
 tutorial.render_step(0).save("output/nucleus.png")
 tutorial.render_step(1).save("output/plain.png")
+# Batch export refuses existing files unless overwrite=True is explicit.
+tutorial.export_steps("output/readme", overwrite=True)
 ```
 
 Each step starts from the current source scene. The second step has no labels because it does not explicitly show any. Rendering order does not affect results. Tutorial and step titles are metadata; add DrawCV text if you want visible titles.
 
-Run [the cell example](examples/cell_tutorial.py) for a composed diagram. It writes `output/cell-step-01.png` and `output/cell-step-02.png`. Rerunning replaces those example images through DrawCV's `Canvas.save` behavior.
+Run [the cell example](examples/cell_tutorial.py) for a composed diagram. It writes `output/cell/step-001.png` through `step-003.png`. Rerunning explicitly overwrites these example images. [The nested-group example](examples/group_focus.py) illustrates focusing a child while dimming its siblings.
 
 ## Current limits
 
-- Labels support **single-line printable ASCII** with DrawCV's built-in Hershey font. Other scripts and rich typography are not implemented yet.
+- Labels support **single-line printable ASCII**; callouts additionally support newlines and measured word wrapping. Other scripts and rich typography are not implemented yet.
 - Anchors use transformed axis-aligned `get_bounds()` results, including supported shape strokes but excluding post-processing effect extents.
-- Labels stay upright and spacing uses canvas pixels. Wrapping, automatic collision avoidance, and routed leaders are deferred.
-- Off-canvas labels issue `LayoutWarning` and may be clipped.
+- Labels stay upright and spacing uses canvas pixels. Automatic collision avoidance and routed leaders are deferred.
+- Off-canvas annotations issue `LayoutWarning` and may be clipped. Callout widths measure the text area; padding adds to the panel width.
+- Dimming multiplies artwork opacity, not the background. Complex masks, blend modes, and occlusion are not pixel-level spotlight isolation. Hidden or zero-opacity attention targets are rejected; clipping and masks are not used to infer visibility.
 - Scenes must round-trip through DrawCV serialization; unsupported copying raises `SceneCopyError`. Arbitrary custom drawables/assets are not guaranteed supported.
 - Rendering uses authored scene state without sampling a timeline. Concurrent source edits during rendering are unsupported.
 - Missing registered targets fail rendering, even if their label is not shown in that step. Hidden artwork does not suppress an explicitly shown label.
@@ -83,4 +91,4 @@ Run [the cell example](examples/cell_tutorial.py) for a composed diagram. It wri
 - [Decisions](docs/DECISIONS.md): choices and remaining questions.
 - [Agent instructions](AGENTS.md): repository conventions.
 
-To continue with another AI model, ask it to read `AGENTS.md` and `docs/HANDOFF.md` first. The next milestone is callouts, highlights, dimming, and a complete three-step tutorial. DrawCV remains a separate project.
+To continue with another AI model, ask it to read `AGENTS.md` and `docs/HANDOFF.md` first. The next milestone is release preparation: compatibility, documentation, CI, and final package metadata. DrawCV remains a separate project.

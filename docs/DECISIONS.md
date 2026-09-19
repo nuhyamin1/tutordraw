@@ -57,3 +57,15 @@ metadata or claim a package name is available without checking.
   preserved IDs/types. Advanced asset compatibility still needs tests.
 - `render_step` returns a Canvas; saving uses DrawCV's `save` method. Batch export
   and overwrite safeguards remain M2.
+
+
+## M2 implementation decisions — 2026-09-20
+
+- Add immutable RGB-tuple themes with validated spacing, font scale, and stroke widths.
+- Reuse measured Hershey text, splitting long words when needed; do not depend on rich typography extras yet.
+- `Step.explain` returns a step-owned `Callout`; `highlight` and `dim_others` return the step for chaining.
+- Repeated highlights replace the same target's outline; repeated dimming calls replace the focus set.
+- Preserve focus ancestors and subtrees; dim each maximal unrelated branch once.
+- Structural visibility checks use object/ancestor/layer flags and opacity, not pixel-level masks or occlusion.
+- Export through temporary PNGs. Refuse collisions by default, including concurrent creations, and report completed files on later failure. Overwrite is explicit and replaces a file only after encoding succeeds.
+- Version advances to local alpha 0.1.0a2; publication and naming remain unresolved.

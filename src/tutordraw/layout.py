@@ -5,8 +5,9 @@ import warnings
 
 from drawcv import BoundingBox, Color, Drawable, FillStyle, Line, Point, Rectangle, StrokeStyle, Text
 
-from .errors import LayoutWarning
-from .model import Label
+from .errors import LayoutWarning, ValidationError
+from .model import Callout, Label
+from .themes import Theme
 
 
 @dataclass(frozen=True)
@@ -16,8 +17,37 @@ class LabelLayout:
     leader_end: Point
 
 
-def label_artwork(label: Label, target: Drawable, width: int, height: int
+def wrap_text(text: str, font_scale: float, max_width: float) -> list[str]:
+    """Wrap using the renderer's measurements, splitting oversized words."""
+    def fits(value: str) -> bool:
+        return Text(text=value, font_scale=font_scale).get_bounds().width <= max_width
+
+    lines: list[str] = []
+    for paragraph in text.split("\n"):
+        current = ""
+        for word in paragraph.split():
+            candidate = f"{current} {word}" if current else word
+            if fits(candidate):
+                current = candidate
+                continue
+            if current:
+                lines.append(current)
+                current = ""
+            for char in word:
+                if not fits(char):
+                    raise ValidationError(f"Callout max_width is too small for character {char!r}")
+                if current and not fits(current + char):
+                    lines.append(current)
+                    current = ""
+                current += char
+        lines.append(current)
+    return lines
+
+
+def label_artwork(label: Label, target: Drawable, width: int, height: int,
+                  theme: Theme | None = None
                   ) -> tuple[LabelLayout, list[Drawable]]:
+    theme = theme or Theme()
     # get_bounds includes the transformed stroke but not post-processing effects.
     bounds = target.get_bounds()
     cx, cy = bounds.center.x, bounds.center.y
@@ -27,10 +57,15 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int
         "center": Point(cx, cy),
     }
     anchor = anchors[label.anchor]
-    text = Text(text=label.text, font_scale=label.font_scale, thickness=1,
-                color=Color(28, 43, 65))
-    measured = text.get_bounds()
-    w, h = measured.width + 2 * label.padding, measured.height + 2 * label.padding
+    lines = wrap_text(label.text, label.font_scale, label.max_width) if isinstance(label, Callout) else [label.text]
+    texts = [Text(text=line, font_scale=label.font_scale, thickness=1,
+                  color=Color(*theme.text_color)) for line in lines]
+    measures = [text.get_bounds() for text in texts]
+    line_height = max(1, Text(text="Ag", font_scale=label.font_scale).get_bounds().height,
+                      *(m.height for m in measures))
+    spacing = label.line_spacing if isinstance(label, Callout) else 1
+    w = max(1, *(m.width for m in measures)) + 2 * label.padding
+    h = line_height * (1 + (len(lines) - 1) * spacing) + 2 * label.padding
     x, y = anchor.x + label.gap, anchor.y - h / 2
     if label.anchor == "left":
         x = anchor.x - label.gap - w
@@ -48,10 +83,14 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int
         warnings.warn(f"Label {label.text!r} extends outside the canvas", LayoutWarning, stacklevel=3)
     artwork: list[Drawable] = []
     if label.leader and ratio > 1:
-        artwork.append(Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(75, 104, 140), width=2)))
+        artwork.append(Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0))
     artwork.append(Rectangle(position=Point(x, y), width=w, height=h,
-                             fill=FillStyle(color=Color.white()),
-                             stroke=StrokeStyle(color=Color(194, 207, 223), width=1)))
-    text.position = Point(x + label.padding - measured.x, y + label.padding - measured.y)
-    artwork.append(text)
+                             fill=FillStyle(color=Color(*theme.panel_color)),
+                             stroke=StrokeStyle(color=Color(*theme.border_color), width=theme.border_width), z_index=1))
+    for i, (text, measured) in enumerate(zip(texts, measures)):
+        text.position = Point(x + label.padding - measured.x,
+                              y + label.padding + i * line_height * spacing - measured.y)
+        text.z_index = 2
+        if lines[i]:
+            artwork.append(text)
     return LabelLayout(anchor, panel, end), artwork

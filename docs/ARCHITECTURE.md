@@ -1,8 +1,8 @@
 # Architecture and planned extensions
 
-Status: M1 foundation implemented: targets, labels, independent steps, scene
-copying, bounds layout, and `render_step`. Callouts, attention effects, themes,
-batch export, and timing below remain proposals. See `API.md` for the actual API.
+Status: M2 implemented: targets, labels, wrapped callouts, independent steps,
+scene copying, highlights, group-aware dimming, themes, and ordered PNG export.
+Timing and persistence remain proposals. See `API.md` for the implemented API.
 
 ## Responsibility boundary
 
@@ -124,7 +124,7 @@ and supported assets. Do not assume cloning individual objects preserves IDs or
 scene relationships. If the round trip cannot represent an object type, raise a
 clear unsupported-copy error until a tested copy strategy exists.
 
-Proposed output methods:
+Implemented output methods:
 
 - `render_step(index)` returns a DrawCV `Canvas`; step indices are zero-based.
 - `export_steps(directory)` writes `step-001.png`, `step-002.png`, etc., and
@@ -177,8 +177,8 @@ Local files inspected on 2026-09-20:
 M1 subsequently tested the published 0.10.0.post1 wheel on Windows/Python 3.12,
 including basic Hershey text, nested group anchors, and scene copying via
 `Scene.from_dict(deepcopy(scene.to_dict()))`. The dependency is pinned to that
-release. Wrapping, advanced assets, rich typography, and broader compatibility
-remain unverified.
+release. M2 adds measured Hershey wrapping and tests nested-group dimming. Advanced
+assets, rich typography, and broader compatibility remain unverified.
 
 ## Persistence and extensibility
 
@@ -187,3 +187,21 @@ a later versioned lesson schema can store tutorial definitions alongside a
 DrawCV scene. Do not put arbitrary callbacks into the core model as the only way
 to describe a step. Do not promise compatibility for a schema that does not yet
 exist.
+
+## M2 implementation details
+
+`Theme` is immutable. Numeric annotation defaults and highlight options are resolved
+when authored; panel/text/leader colors use the tutorial theme at render time.
+Callouts are step-owned; their `max_width` limits text, excluding padding. Oversized
+words split at characters. Newlines preserve paragraph breaks; spaces normalize.
+
+Focus preserves selected subtrees and their ancestors. Maximal unrelated branches
+receive the opacity multiplier exactly once. Hidden/zero-opacity layers and
+ancestors are considered when validating attention; masks and occlusion are not.
+Generated highlights, leaders, panels, and text render in that order above artwork.
+
+PNG export checks all names first. Each frame encodes into a temporary file. New
+files use exclusive creation (including protection against collisions after the
+preflight); overwrite uses replacement only after encoding succeeds. A failed new
+write removes its partial file. Successful earlier files remain and are reported
+in `ExportError.completed_paths`. This is not an all-or-nothing batch transaction.

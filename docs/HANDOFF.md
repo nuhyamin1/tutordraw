@@ -1,87 +1,83 @@
 # AI handoff — start here
 
-Last updated: **2026-09-20**, after M1 implementation.
+Last updated: **2026-09-20**, after M2 implementation.
 
-## Owner intent
+## Owner intent and current scope
 
-Build TutorDraw, a Python library for tutorials using drawings, on top of `pydrawcv` (import `drawcv`). Add teaching annotations and lesson steps. Do not modify DrawCV. Maintain documentation so another AI model can resume without the chat. The owner authorized implementation after the documentation phase.
+Build TutorDraw, a Python library for tutorials using drawings, on `pydrawcv` (import `drawcv`). Keep DrawCV unchanged. Maintain documentation for continuing with another AI model. The owner authorized continuing after M1 and requested its commit message first; it was supplied in chat. No Git commit or PyPI publication was requested/performed.
 
 ## Current implementation
 
-M1 is implemented as local alpha `0.1.0a1`. No PyPI release has occurred.
+**M0–M2 complete, local alpha `0.1.0a2`.**
 
-- `pyproject.toml`: src layout, Python >=3.12, tested published dependency pinned to `pydrawcv==0.10.0.post1`, dev extra.
-- `src/tutordraw/tutorial.py`: target registration, independent steps, rendering.
-- `src/tutordraw/model.py`: immutable targets/labels and validated authoring.
-- `src/tutordraw/layout.py`: bounds anchors, text panels, straight leaders, off-canvas warnings. ASCII Hershey labels only.
-- `src/tutordraw/adapters/drawcv.py`: recursive ID validation, serialization copying, generated overlay layer.
-- `src/tutordraw/errors.py` and `__init__.py`: public exports and errors.
-- `examples/cell_tutorial.py`: labeled and unlabeled PNG examples.
-- `tests/test_tutorial.py`: 30 passing test cases.
-- `docs/API.md`: implemented API; README contains runnable setup/example code.
+- `tutorial.py`: registration, independent steps, rendering, ordered PNG export.
+- `model.py`: Target, Label, step-owned Callout, Highlight, and Step authoring.
+- `themes.py` and `validation.py`: immutable presentation defaults and validation.
+- `layout.py`: measured ASCII Hershey wrapping, bounds anchors, panels, leader geometry, off-canvas warnings.
+- `attention.py`: structural visibility checks, outline highlights, group-aware dimming.
+- `export.py`: preflight collision checks, temporary encoding, exclusive creation or explicit replacement, partial-failure reporting.
+- `adapters/drawcv.py`: recursive ID validation, source-safe serialization copying, overlay layer.
+- `examples/cell_tutorial.py`: complete three-step cell lesson, writes `output/cell/step-001.png` through `step-003.png`.
+- `examples/group_focus.py`: nested-group emphasis, writes `output/group-focus.png`.
+- `tests/test_tutorial.py` and `tests/test_presentation.py`: **54 passing cases**.
+- `pyproject.toml`: Python >=3.12, pinned published `pydrawcv==0.10.0.post1`, development extra.
 
-No callouts, highlights, dimming, themes, batch export, playback, or persistence yet. Architecture sections for them remain proposals.
+Read README and `docs/API.md` for executable usage. Do not assume the earlier M1-only API guide is current. Video, playback, persistence, rich fonts, automatic collision avoidance, and interactive lessons remain unimplemented.
 
 ## Environment
 
-- Workspace: `C:/Projects/TutorDraw`, PowerShell on Windows.
-- DrawCV checkout: `C:/Projects/DrawCV`, inspected only; no files changed there.
-- Neither `python` on PATH nor `py -3.12` worked. The bundled runtime created `.venv`:
-  `C:/Users/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe`.
-- Use `.venv/Scripts/python.exe` for commands. Do not hardcode the bundled path into package source.
-- Dependencies downloaded with authorized network access after sandbox socket blocking. The initial pip failure was not a missing release.
-- DrawCV import verified from `.venv/Lib/site-packages/drawcv`, not the checkout.
-- No Git repository/branch was present when work began; no commits were made.
+Workspace: `C:/Projects/TutorDraw`, Windows PowerShell. Use `.venv/Scripts/python.exe`; the global `python` and `py -3.12` launchers were unavailable during M1. The virtual environment was created using the app's bundled Python 3.12. Do not hardcode runtime or checkout paths into the package.
 
-## Verification
+DrawCV checkout `C:/Projects/DrawCV` was inspected but not modified. Runtime imports use the published wheel in `.venv/Lib/site-packages`, not that checkout. No `.git` directory was present during M2; no commits were created.
 
-Successful commands from the workspace root:
+Network package installation during M1 required tool escalation after sandbox sockets were blocked. This was not a missing package release. M2 uses the existing environment. `.venv`, `dist`, build artifacts, caches, and `output` are ignored by `.gitignore`.
+
+## Verified in M2
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe examples/cell_tutorial.py
-.\.venv\Scripts\python.exe -m build --no-isolation
+.\.venv\Scripts\python.exe examples/group_focus.py
 ```
 
-**30 tests passed.** Tests cover PNG decoding, repeated/out-of-order renders, source content/history preservation, render/copy failures, moved and nested transformed targets, leader endpoints, ownership, invalid options, missing/duplicate IDs, overlay name collisions, and alpha.
+**54 tests passed.** M1 contracts remain covered. Added tests exercise paragraph/long-word wrapping, panel bounds, following moved objects, highlighted/dimmed pixels, no emphasis leakage, nested-group opacity without double dimming, multiple focus targets, hidden ancestors/layers, theme overrides, invalid operations, export order/collisions/races, partial failures, and cleanup after failed writes.
 
-Visually inspected `output/cell-step-01.png`: legible title/label, correct nucleus attachment, no clipping. The example also writes `output/cell-step-02.png` without annotations. Outputs and `.venv` are ignored; regenerate on another machine.
+Visually inspected all three cell images and the nested-group example. Text is readable and panels fit; nucleus emphasis occurs only in the focus step; review restores full artwork. The group example shows an undimmed selected child and equally dimmed unrelated branches with clear annotations.
 
-Wheel and source distribution build successfully. The wheel was copied to
-`C:/Users/user/AppData/Local/Temp/tutordraw-m1-wheel-check`, installed into a clean
-virtual environment there with its published dependencies, and rendered
-`wheel-smoke.png` from that directory with Python's `-I` isolated mode. Both
-TutorDraw and DrawCV imported from that environment's `site-packages`, independent
-of either checkout. A direct escalated install from the workspace wheel initially
-hit a read-permission error; copying it to the temporary directory resolved it.
-The clean-environment check used `Scripts/python.exe -m pip install
-tutordraw-0.1.0a1-py3-none-any.whl`, followed by an isolated one-target PNG render.
+Built `dist/tutordraw-0.1.0a2.tar.gz` and `dist/tutordraw-0.1.0a2-py3-none-any.whl`
+with `.venv/Scripts/python.exe -m build --no-isolation`. Copied the wheel to the
+isolated M1 verification environment at
+`C:/Users/user/AppData/Local/Temp/tutordraw-m1-wheel-check` and installed it using
+that environment's Python with `-m pip install --no-deps --force-reinstall`.
+Published dependencies were already installed there. An isolated `python -I -c`
+smoke check imported version 0.1.0a2 from its `site-packages`, then rendered and
+exported two steps with callouts, highlights, and dimming to `m2-wheel-output`.
+It did not import source code from either project checkout.
 
-README Python example executed successfully and all relative documentation links
-resolved. `MANIFEST.in` includes docs and examples in the source distribution.
-Cross-platform runs, advanced DrawCV assets, rich fonts, PyPI name availability,
-and broader version ranges are unverified. License and owner metadata remain unresolved.
+Executed the README Python example and checked all relative Markdown links.
+Both passed. Cross-platform runs, advanced DrawCV assets, non-ASCII typography,
+PyPI name availability, and broader dependency ranges remain unverified.
+License/author metadata are unresolved.
 
-## Integration findings
+## Design details to preserve
 
-- Published DrawCV 0.10.0.post1 supports the M1 APIs.
-- `Scene.get` includes group children, but TutorDraw traverses actual contents to catch duplicate IDs and avoid relying on an externally stale ID map.
-- `Scene.from_dict(deepcopy(scene.to_dict()))` preserves tested IDs, geometry, styles, and group transforms, without sharing mutable state.
-- `Text.get_bounds` provides basic Hershey measurement without typography extras.
-- Anchors use `get_bounds()`, excluding post-processing effect extents.
-- Missing registered targets fail all renders; hidden artwork does not suppress explicitly shown labels. These M1 semantics are documented.
+- Render from current source state through `Scene.from_dict(deepcopy(scene.to_dict()))`; validate copied IDs/types. No mutation/undo on the live scene.
+- Each step owns its callouts/highlights/focus and explicitly shows reusable labels.
+- `explain` returns a Callout; `highlight`, `dim_others`, and `show` return Step.
+- Theme numeric defaults resolve while authoring; panel/text/leader styling resolves at render time. Themes use immutable RGB tuples.
+- Callout widths exclude padding. Long words split; impossible character widths fail clearly. ASCII plus newline support only.
+- Dimming preserves selected subtrees and their ancestors. Multiply each maximal unrelated branch once. Source opacity still applies.
+- Hidden flags and zero opacity are considered, including ancestors/layers; masks/occlusion are not. Missing registered targets still fail all rendering.
+- PNG export is not a batch transaction: completed files remain and are listed in ExportError. New files use exclusive creation; overwrite replaces only successfully encoded output.
 
-## Next task: M2
+## Next task: M3 release preparation
 
-Read `AGENTS.md`, `README.md`, `docs/API.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`. Implement wrapped callouts, rectangular highlights, and group-aware dimming. Add shared themes and collision-safe ordered PNG export. Complete the three-step lesson from `docs/PRODUCT.md`.
-
-Preserve independent steps and source safety. Avoid multiplying dimming twice through group hierarchies or dimming a focused child through its parent. Test text wrapping before promising other scripts. Do not publish without an explicit owner request.
+Read AGENTS.md, README, API, architecture, roadmap, and decisions. Improve release readiness: review public API/docs, add appropriate CI, verify supported platforms/dependency versions, and package metadata. Final naming, license, and author metadata need owner input before release; do useful independent checks first. Do not upload to PyPI without explicit authorization.
 
 ## Ready-to-copy continuation prompt
 
-> Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md, then the README, API guide, architecture, and roadmap. M1 is implemented with 30 passing tests. Use .venv/Scripts/python.exe on this machine. Implement M2: wrapped callouts, highlights, group-aware dimming, themes, ordered PNG export, and the three-step cell lesson. Depend on published pydrawcv; do not modify C:/Projects/DrawCV. Preserve source scenes and independent rendering. Verify and visually inspect the results. Update documentation and handoff with actual status. Do not publish to PyPI.
+> Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md, then README, API, architecture, and roadmap. M2 is complete as local alpha 0.1.0a2 with 54 passing tests. Use .venv/Scripts/python.exe. Work on M3 release preparation: API/documentation review, CI, package verification, and compatibility. Keep DrawCV unchanged; use published pydrawcv. Preserve source-safe independent steps and tested export guarantees. Update documentation and handoff with actual results. Resolve owner-controlled naming/license/author choices before release. Do not publish to PyPI without explicit authorization.
 
-## Maintain this handoff
+## Handoff maintenance
 
-Replace stale state after each session. Record implemented files, commands/outcomes, unverified checks, decisions, known issues, next bounded task, and workspace prerequisites. Do not restart M1 based on older documentation-only chat context.
+Replace stale status after future work. Record exact commands/outcomes, unverified checks, decisions, issues, next task, and local prerequisites. Do not restart M1/M2 from older chat context.

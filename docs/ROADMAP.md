@@ -1,6 +1,6 @@
 # Development roadmap
 
-M0 and M1 are complete. Checkboxes represent verified
+M0, M1, and M2 are complete. Checkboxes represent verified
 work, not intent. Milestones are ordered; no release date is promised.
 
 ## M0 — Project definition
@@ -30,21 +30,21 @@ straight leader line, one independent step, and one rendered PNG.
 **Exit condition:** in a clean environment, documented commands install the
 project and produce a legible annotated image without modifying the source scene.
 
-## M2 — Complete static tutorial workflow (next)
+## M2 — Complete static tutorial workflow (complete)
 
-- [ ] Add wrapped callouts, padded outline highlights, and opacity dimming.
-- [ ] Support DrawCV groups and nested-target attachment/dimming.
-- [ ] Add multiple independent steps and ordered PNG export.
-- [ ] Add shared theme defaults and explicit layout overrides.
-- [ ] Produce the three-step cell lesson from `PRODUCT.md`.
-- [ ] Test rendering steps out of order, no emphasis leakage, transformed anchors,
+- [x] Add wrapped callouts, padded outline highlights, and opacity dimming.
+- [x] Support DrawCV groups and nested-target attachment/dimming.
+- [x] Add multiple independent steps and ordered PNG export.
+- [x] Add shared theme defaults and explicit layout overrides.
+- [x] Produce the three-step cell lesson from `PRODUCT.md`.
+- [x] Test rendering steps out of order, no emphasis leakage, transformed anchors,
   conflicting names, foreign targets, invalid indices, and output collisions.
-- [ ] Inspect text, panel clipping, pointer attachment, and group dimming visually.
+- [x] Inspect text, panel clipping, pointer attachment, and group dimming visually.
 
 **Exit condition:** the full acceptance lesson renders correctly; rerendering
 after an object move updates annotation placement; order does not affect results.
 
-## M3 — First-release preparation
+## M3 — First-release preparation (next)
 
 - [ ] Finalize the package name, version, owner metadata, and license with the owner.
 - [ ] Verify a `pydrawcv` dependency range using released artifacts.

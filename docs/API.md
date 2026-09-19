@@ -1,55 +1,102 @@
-# Implemented API — 0.1.0a1
+# Implemented API — 0.1.0a2
 
-This guide covers M1 only. Public symbols import from `tutordraw`.
+Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
 ## Tutorial
 
-`Tutorial(scene, *, title="")` holds a reference to a DrawCV `Scene`, read afresh at render time. Titles are metadata, not automatically rendered text.
+`Tutorial(scene, *, title="", theme=None)` holds a DrawCV Scene reference and a Theme (defaults to `Theme()`). The scene is read at each render. Titles are metadata, not automatically drawn text.
 
-`tutorial.target(drawable, *, name=None) -> Target` registers a scene member, including a nested group child. Registering the same object again returns its existing target. Explicit names must be nonempty and unique; a conflicting name raises `ValidationError`.
+`tutorial.target(drawable, *, name=None) -> Target` registers an existing object/group, including nested children. Re-registration returns the same target. Explicit names must be nonempty and unique; conflicting names raise `ValidationError`.
 
-`tutorial.step(title) -> Step` appends an independent step. Titles must be nonempty strings; duplicate step titles are allowed. `tutorial.steps` returns a tuple in creation order.
+`tutorial.step(title) -> Step` appends an independent step. Nonempty titles are required; duplicate titles are allowed. `tutorial.steps` returns a tuple.
 
-`tutorial.render_step(index, *, alpha=False) -> drawcv.Canvas` renders a zero-based step through a copied scene. Negative indices and booleans are rejected. Set `alpha=True` for BGRA output with a transparent source background. Save through `canvas.save(path)`.
+`tutorial.render_step(index, *, alpha=False) -> drawcv.Canvas` renders a zero-based step through a copied scene. Negative indices and booleans are rejected. Use `alpha=True` for BGRA output; source background transparency is respected. `canvas.save(path)` uses DrawCV's save behavior and can overwrite existing files.
 
-Batch export is not implemented. `Canvas.save` can overwrite existing files. The collision-safe export proposal in the architecture applies to a future TutorDraw exporter.
-
-## Target and Label
-
-Create targets through `Tutorial.target` and labels through `Target.label`, rather than directly constructing them. Targets expose immutable `id`, `drawable_id`, and `name` fields.
+## Labels
 
 ```python
 label = target.label(
     "Nucleus", anchor="right", leader=True,
-    gap=32, offset=(0, 0), font_scale=0.7, padding=10,
+    gap=None, offset=(0, 0), font_scale=None, padding=None,
 )
+step.show(label)
 ```
 
-The returned `Label` is immutable and initially absent from all steps.
+Labels are immutable reusable definitions, absent until explicitly shown. Target fields `id`, `drawable_id`, and `name` are immutable.
 
 | Option | Behavior |
 | --- | --- |
 | `text` | Nonempty, single-line printable ASCII |
 | `anchor` | `left`, `right`, `top`, `bottom`, or `center` of world-space bounds |
-| `leader` | Whether to draw a straight leader |
-| `gap` | Nonnegative pixels from anchor to near panel edge |
-| `offset` | Additional `(x, y)` pixel offset, allowing either sign |
-| `font_scale` | Hershey scale, greater than zero and at most 10 |
-| `padding` | Nonnegative pixels around measured text bounds |
+| `leader` | Boolean, enables a straight leader |
+| `gap` | Nonnegative pixel distance from anchor to panel edge; theme default 32 |
+| `offset` | Additional `(x, y)` pixels, either sign |
+| `font_scale` | Hershey scale, >0 and <=10; theme default 0.7 |
+| `padding` | Nonnegative pixels around text; theme default 10 |
 
-The `center` anchor places the label to the right of the target center. Labels remain upright. Leaders end at the panel boundary along a ray from panel center toward the target. If the target lies inside the panel, the leader is omitted. Colors are fixed in M1; themes come later.
+`None` uses the theme default at authoring time. Center-anchored labels are placed to the right of the target center. Text remains upright. Leaders terminate on panel edges; if the target lies within the panel, its leader is omitted. Spacing uses canvas pixels and does not inherit object scaling.
 
-## Step
+`step.show(*labels) -> Step` accepts registered labels from the same tutorial, ignores duplicates, and leaves the step unchanged if any argument is invalid. `step.labels` is a tuple. Steps never inherit presentation state from each other.
 
-`step.show(*labels) -> Step` adds registered labels from the same tutorial and returns the step for chaining. Showing a label twice does not duplicate it. Invalid additions leave the step unchanged. `step.labels` returns a tuple.
+## Callouts
 
-Steps never inherit another step's visible labels. Explicitly show a label in every step that needs it.
+```python
+callout = step.explain(
+    target, "The nucleus contains DNA.\nThis information guides cell activity.",
+    anchor="right", max_width=260, gap=40,
+)
+```
+
+`step.explain` accepts all label layout options plus `max_width=None` and `line_spacing=None`. It returns a `Callout` and automatically shows it only in this step. Callouts cannot be passed to `show` in another step; call `explain` there instead. `step.callouts` returns a tuple.
+
+`max_width` limits the **text area**, excluding panel padding. Default: theme `callout_width=260`. Words wrap using DrawCV measurements. Oversized words split at characters; a width too narrow for one character raises `ValidationError` when rendered. Explicit newlines preserve paragraph breaks, including blank lines; other spaces normalize. Text remains printable ASCII plus newlines. Line spacing is at least 1, default 1.35 times measured line height.
+
+## Highlights and dimming
+
+```python
+step.highlight(target, padding=8, color=(226, 146, 33), width=3)
+step.dim_others(target, another_target, opacity=0.25)
+```
+
+`highlight(target, *, padding=None, color=None, width=None) -> Step` creates a rectangular outline around transformed axis-aligned bounds. None uses theme defaults. Width must be positive; padding nonnegative; color is an RGB tuple. Repeating this call for the same target replaces its settings. `step.highlights` exposes a tuple of definitions.
+
+`dim_others(*targets, opacity=None) -> Step` preserves one or more targets and multiplies unrelated artwork opacity by a factor in [0,1]. The theme default is 0.25. Repeating it replaces the focus set. A selected group preserves its subtree; a selected child preserves its ancestors while unrelated branches dim exactly once. Existing ancestor opacity still applies. Annotations are never dimmed.
+
+Highlight/focus requests for targets under hidden or zero-opacity objects/layers fail at render time. Empty/all-hidden groups are rejected. Masks, clipping, blend modes, and occlusion are not visibility tests. Dimming is opacity reduction, not pixel-level spotlight isolation. Background color is unchanged. Titles drawn into the source are artwork too; register and focus them if they should stay undimmed.
+
+## Theme
+
+`Theme(...)` is an immutable set of validated defaults:
+
+| Field | Default |
+| --- | --- |
+| `text_color` | `(28, 43, 65)` |
+| `panel_color` | `(255, 255, 255)` |
+| `border_color` | `(194, 207, 223)` |
+| `leader_color` | `(75, 104, 140)` |
+| `highlight_color` | `(226, 146, 33)` |
+| `font_scale`, `padding`, `gap` | `0.7`, `10`, `32` |
+| `leader_width`, `border_width`, `highlight_width` | `2`, `1`, `3` |
+| `highlight_padding` | `8` |
+| `callout_width`, `line_spacing` | `260`, `1.35` |
+| `dim_opacity` | `0.25` |
+
+Colors are immutable RGB tuples, channels 0–255. Numeric annotation defaults and highlight settings resolve at creation time. Panel/text/leader colors and border/leader widths come from the tutorial's current theme at render time. Supply a theme when constructing the tutorial for consistent styling.
+
+## Ordered PNG export
+
+`tutorial.export_steps(directory, *, overwrite=False, alpha=False) -> list[Path]` writes `step-001.png`, `step-002.png`, etc. Returned paths follow step order. Empty tutorials raise `ValidationError`. Titles never become filesystem paths.
+
+Every filename is checked before export; collisions raise `FileExistsError` unless overwrite is explicit. Symlinks and non-file destinations are rejected even with overwrite. Concurrent file creation after preflight also cannot overwrite a file when overwrite is false.
+
+Frames encode in temporary files. Explicit overwrite replaces an existing file only after successful encoding; a failed newly-created file is removed. This is not a transaction across the batch: successful earlier files remain if a later step fails. A new file may be visible during its copy. Permission/directory failures during preflight can propagate as filesystem exceptions.
 
 ## Errors and warnings
 
 - `TutorDrawError`: base exception.
-- `ValidationError`: invalid options, foreign references, missing targets, duplicate IDs, or invalid step indices. Also a `ValueError`.
-- `SceneCopyError`: failure copying through DrawCV's document API; the original exception is chained.
-- `LayoutWarning`: an annotation extends outside the canvas; rendering proceeds.
+- `ValidationError`: invalid options/references/indices, hidden attention targets, or layout that cannot fit a character. Also a ValueError.
+- `SceneCopyError`: failure copying through DrawCV's document API, with chained cause.
+- `ExportError`: failure after export starts. Inspect zero-based `step_index`, `path`, `completed_paths` (tuple), and `__cause__`.
+- `LayoutWarning`: an annotation extends outside the canvas. Rendering proceeds and may clip it.
 
-DrawCV render/save errors propagate. Source content and history remain unchanged if rendering fails.
+Direct render/save errors from DrawCV propagate; batch export wraps per-step failures in ExportError. Rendering preserves source content and history even on failure. Automatic label collision avoidance, rich fonts, timeline sampling, and concurrent source editing are not supported.
