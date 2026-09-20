@@ -1,130 +1,131 @@
 # AI handoff — start here
 
-Last updated: **2026-09-20**, persistence and AI authoring development.
+Last updated: **2026-09-20**, bounded timing milestone for Antigravity continuation.
 
 ## Current state
 
-**Published version: 0.1.0a3. Development checkout: 0.1.0a4, not published.**
+**Published: 0.1.0a3. Development checkout: 0.1.0a5, NOT published.**
 
-After discussing AI use without a dedicated app, the owner agreed to continue
-with the suggested development. This session prioritized complete lesson save/load
-and an AI authoring workflow before timed lessons. No new publication, Git commit,
-or push was performed. The previous publication authorization applied only to a3.
+The owner requested continued development with about 14% usage remaining and an
+explicit handoff for Antigravity. This session completed the timing foundation of
+M4. Video encoding, transitions, captions, and progressive reveals remain pending.
+No Git commit, push, or publication was performed. The working tree was clean at
+session start; current changes are this milestone. Inspect Git before committing.
 
-Owner metadata: `tutordraw`, MIT, Nuh Yamin. Origin:
-https://github.com/nuhyamin1/tutordraw.git, branch master. DrawCV remains unchanged;
-the runtime dependency is still the published `pydrawcv==0.10.0.post1` wheel.
+Owner: Nuh Yamin; package tutordraw; MIT. Origin:
+https://github.com/nuhyamin1/tutordraw.git, branch master.
+Runtime remains published `pydrawcv==0.10.0.post1`. DrawCV checkout is unchanged.
 
-## New functionality in a4
+## Completed functionality
 
-- `Tutorial.to_dict/from_dict/to_json/from_json/save_json/load_json` serialize a
-  full lesson: DrawCV scene, theme, targets, every label (even unshown), ordered
-  steps, callouts, highlights, and focus/dimming state.
-- Format `tutordraw.lesson`, schema integer 1. Stable drawable/target/label/callout/
-  step IDs survive round trips. Shared labels remain shared after reload.
-- `tutorial.targets`, `tutorial.labels`, `tutorial.get_target(name)`, and
-  `target.drawable` expose useful entry points for resumed editing.
-- Step has a stable read-only `id`. Annotation definitions remain immutable;
-  revise their text in a detached document and validate with `from_dict`.
-- Unknown TutorDraw fields, unsupported versions, duplicate IDs/keys, dangling
-  references, invalid options, nonfinite JSON numbers, and invalid UTF-8 produce
-  `LessonFormatError` (a ValidationError). Filesystem errors propagate.
-- Saving refuses existing paths by default, validates before touching a file,
-  and replaces existing content only after writing a complete temporary document.
-  New files use exclusive creation; failed partial files are removed.
-- Packaged `lesson-v1.schema.json` supports structural validation; loading also
-  checks identity/reference semantics and the embedded DrawCV document.
-- `examples/save_and_revise.py` saves a cell lesson, reopens it, moves the nucleus,
-  revises an explanation, and saves a new lesson plus before/after PNGs.
-- `docs/PERSISTENCE.md` documents the format. `docs/AI_AUTHORING.md` gives practical
-  creation/revision prompts for any coding assistant; there is no AI-service SDK.
+- M1/M2: labels, leader lines, wrapped callouts, highlights, group-aware dimming,
+  themes, independent static steps, safe scene copies, collision-aware PNG export.
+- M3: packaging, manual release tools, installed-wheel CI; a3 published previously.
+- a4: complete JSON lesson persistence, stable IDs, target lookup, source drawable
+  access, schema v1, AI editing guide, save/revise example. Included in a5.
+- a5: `Tutorial.step(title, duration=3.0, pause=0.0)`; read-only Step duration/pause;
+  `step.set_timing(duration=..., pause=0.0)` atomically replaces both values.
+- `tutorial.duration`, `step_at_time(time)`, `render_at_time(time, alpha=False)`,
+  and lazy `render_frames(fps=30, alpha=False)`.
+- Pause holds the current full image. Intervals are [start,end); exact internal
+  boundaries select the next step, exact final endpoint selects the last step.
+  Frame count is ceil(total*fps), timestamps k/fps, with no extra endpoint frame.
+- Schema v2 requires step duration/pause. v1 loads with 3/0 defaults; saving always
+  emits v2. Both JSON Schemas are packaged. a4 readers reject v2 as expected.
 
-## Files added/changed
+See [TIMING.md](TIMING.md) and [PERSISTENCE.md](PERSISTENCE.md) for exact contracts.
+No DrawCV animation sampling: timed rendering selects independent static steps.
 
-New runtime: `src/tutordraw/serialization.py`, `lesson-v1.schema.json`.
-Updated runtime: tutorial/model/errors/public exports and a4 version metadata.
-New tests: `tests/test_persistence.py`. `jsonschema` is a development dependency
-only; runtime loading uses standard-library JSON and existing validators.
-New docs/example: persistence, AI authoring, save_and_revise.
-Updated checks: installed-package runner now verifies six PNGs and a loaded
-revision; artifact check requires schema/example/docs in distribution files.
-README, API, architecture, compatibility, roadmap, decisions, and changelog reflect
-the distinction between published a3 and development-only a4.
+## Code map and changed files
 
-## Verification in this session
+- `src/tutordraw/timing.py`: cumulative boundaries, seeking, streaming frames.
+- `model.py`: Step timing validation/properties; `tutorial.py`: public entry points.
+- `serialization.py`: v2 writer and strict v1/v2 loader; `lesson-v2.schema.json` new.
+- `tests/test_timing.py`: 33 timing cases; existing persistence test updated for v2.
+- `examples/timed_lesson.py`: 10-second cell lesson, pause/cut PNGs, 20 frames at 2fps.
+- `tools/check_installed.py`: now four examples/eight PNGs and static/timed reload.
+- `tools/check_release.py`: requires both schemas and timing docs/example.
+- Version in pyproject and __init__ is a5; package data includes both schemas.
+- README, API, persistence, architecture, decisions, roadmap, compatibility,
+  AI authoring and changelog updated. New detailed guide: docs/TIMING.md.
 
-Use `.venv/Scripts/python.exe` in place of python on this Windows machine.
+## Verification completed this session
 
-- `python -m pytest -q`: **112 passed** against editable source.
-- `python examples/save_and_revise.py`: original/revised JSON plus previews under
-  `output/persistence`. Visually inspected before/after: label, highlight and
-  callout follow the moved nucleus; updated text fits; original stays unchanged.
-- `python tools/check_docs.py`: 15 documents and the README example pass.
-- `python -m build --no-isolation --outdir output/development`: wheel and sdist built.
+Use `.venv/Scripts/python.exe` instead of python on this Windows machine.
+
+- `python -m pytest -q --tb=short`: **145 passed** against editable source.
+- `python examples/timed_lesson.py`: 10 seconds, 20 frames; outputs in output/timing.
+  Visually inspected during-pause.png and next-step.png: labels/callouts fit;
+  the cut switches from cell overview to nucleus emphasis and dimming correctly.
+- `python tools/check_docs.py`: 16 documents and one README Python example pass.
+- `python -m build --no-isolation --outdir output/development`: a5 wheel/sdist built.
 - `python tools/check_release.py --dist-dir output/development --require-metadata`:
-  strict Twine, metadata and packaged-file checks pass.
-- Installed the a4 wheel locally with `pip install --no-deps --force-reinstall`,
-  then `python -I -m pytest -q`: **112 passed against the installed wheel**.
-- `python -I tools/check_installed.py`: all three examples run outside the checkout;
-  six PNGs decode and the revised lesson reloads correctly.
-- `python -m pip check`: no broken requirements; `git diff --check` passes.
-- Restored the editable development install with
-  `python -m pip install --no-deps --no-build-isolation -e .`.
+  strict Twine, metadata, schema and source-file checks pass.
+- Installed a5 wheel with `pip install --no-deps --force-reinstall`, then
+  `python -I -m pytest -q --tb=short`: **145 passed against installed wheel**.
+- `python -I tools/check_installed.py`: four examples run outside checkout;
+  eight PNGs decode and static/timed lessons reload correctly.
+- Restored editable install: `python -m pip install --no-deps --no-build-isolation -e .`.
+- `python -m pip check`: no broken requirements. `git diff --check`: no errors.
 
-New tests cover pixel-identical round trips, source/history preservation, detached
-metadata, IDs/shared labels, nested groups and embedded raster images, resumed
-editing, schema validation, malformed input/reference failures, unsupported scene
-versions, UTF-8/BOM, collision races, invalid-save preservation, and failed-write
-cleanup. No additional OS/Python version was tested in this session.
+Tests include boundaries, out-of-order rendering, source/history preservation,
+invalid options, atomic retiming, independent frame buffers, overflow, v1 migration,
+v2 round trips and existing persistence/export behavior. Local evidence is Windows
+and Python 3.12 only. Hosted nine-job OS/Python CI remains unverified.
 
-The a4 artifacts are in `output/development`, separate from the published a3
-files in `output/release`. Build log: `output/build-a4.log`. Do not upload a4
-without a new explicit owner request.
+Artifacts: output/development/tutordraw-0.1.0a5-*; log output/build-a5.log.
+Older a4 artifacts may coexist; select filenames explicitly. Final documentation
+updates are included by rebuilding the same unpublished a5 artifacts. Runtime code
+was unchanged after installed-wheel verification. Nothing was uploaded.
 
-## Published a3 evidence (preserved)
+## Next concrete task: video export adapter
 
-https://pypi.org/project/tutordraw/0.1.0a3/
+Implement a small `Tutorial.export_video(...)` API as the next M4 slice, preserving
+all current timing/static/persistence contracts. This API is PROPOSED, not present.
 
-PyPI accepted wheel and source archive, and a fresh public-index installation ran
-both original examples successfully. Recorded SHA256 hashes, rechecked unchanged
-in this session:
+1. Read AGENTS.md, TIMING.md, API.md, and existing export.py before editing.
+2. Inspect installed DrawCV `animation/video_renderer.py`. Its VideoRenderer expects
+   a Scene and calls Scene.render_at_time, so it cannot directly accept TutorDraw's
+   frame iterator. Choose a narrow adapter around supported APIs; avoid pretending
+   a tutorial is a DrawCV Scene or modifying DrawCV. A dedicated OpenCV writer
+   adapter consuming TutorDraw canvases is an option if documented and tested.
+3. Validate fps, codec/container, frame dimensions and empty lessons. Handle codecs
+   unavailable on the host. Release writers on all failure paths. Reject symlinks
+   and collisions by default, with explicit overwrite and temporary-file cleanup,
+   preserving existing files if rendering/encoding fails (see export.py).
+4. Test failures with a fake writer, plus a locally available real codec. Decode
+   output to verify dimensions, frame count, and images around a step boundary.
+   Do not claim codec availability across platforms without CI evidence.
+5. Add a runnable example and document exact limitations. Preserve JSON v1 loading
+   and v2 timing. Update this handoff with actual commands/results.
 
-- Wheel: `0026efa9b7ff6eda5dcc47d623d299eaf8a9da617c29bbc3ab6961aade8d9ea5`
-- Sdist: `115ae72b49c5cf55e4c45222ac658b96182f5452b90652a51173c935d4e00577`
+Performance is deliberately simple: each frame clones/renders the scene. No cache,
+transition effects, source animation sampling, audio or UI. Editing lesson/source
+while consuming an iterator is unsupported. Keep broader M4 tasks unchecked.
 
-Do not rebuild and replace or re-upload a3. Credentials must never be printed or
-saved in source/docs. Further releases need explicit authorization.
+## Release and environment notes
 
-## Remaining limits and next work
+Published a3 is immutable: https://pypi.org/project/tutordraw/0.1.0a3/.
+Prior recorded public SHA256 hashes (not rechecked in this timing session):
+- Wheel: 0026efa9b7ff6eda5dcc47d623d299eaf8a9da617c29bbc3ab6961aade8d9ea5
+- Sdist: 115ae72b49c5cf55e4c45222ac658b96182f5452b90652a51173c935d4e00577
 
-- Hosted CI remains unverified; nine OS/Python combinations are configured.
-- ASCII annotations only; no rich scripts, automatic overlap layout, or video yet.
-- Format v1 has no migrations. DrawCV owns its nested schema and asset loaders.
-- No callbacks/pickle in TutorDraw JSON, but this is not a sandbox for arbitrary
-  untrusted/custom scene assets. No large-document quota or streaming loader.
-- Source edits during save/render are unsupported; undo history/caches/PNG output
-  are not part of the lesson file. Hidden emphasis and layout warnings still apply
-  at render time, not merely at load time.
-- The local repo includes earlier M3/post-release changes plus this session's a4
-  work. No agent-created commits/pushes. Inspect current Git state before committing.
+Do not replace output/release a3 artifacts or reuse old upload commands. Any new
+publication requires an explicit owner request. Never print/store credentials.
+ASCII annotations and DrawCV serialization/asset limits still apply. JSON is not a
+sandbox for arbitrary assets. No source editing during rendering; no undo history
+or rendered output in lesson files. See COMPATIBILITY.md and PERSISTENCE.md.
 
-Next: owner review of a4, then either authorize a new release or proceed to timed
-lessons (M4). Keep existing static rendering and v1 round-trip guarantees intact.
-If publishing a4, update release instructions/filenames and run the complete checks;
-do not reuse a3 upload commands.
+Workspace C:/Projects/TutorDraw, Windows PowerShell; Python 3.12 in .venv.
+C:/Projects/DrawCV is context only. Git may need
+`git -c safe.directory=C:/Projects/TutorDraw ...`; no global setting was changed.
 
-## Environment
+## Copy this into Antigravity
 
-Workspace `C:/Projects/TutorDraw`, Windows PowerShell, Python 3.12 in `.venv`.
-DrawCV checkout `C:/Projects/DrawCV` is read-only context for this project.
-Read-only Git commands may need `git -c safe.directory=C:/Projects/TutorDraw ...`
-due to sandbox ownership; no global Git setting was changed.
-
-## Continuation prompt
-
-> Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md, docs/HANDOFF.md,
-> README, persistence, AI authoring, API, and roadmap. Published a3 is immutable;
-> the a4 checkout adds full lesson persistence with schema v1 and has 112 passing
-> source/installed-wheel tests. Do not reimplement or republish completed work.
-> Continue the owner's next request, preserve static rendering and persistence
-> contracts, keep DrawCV unchanged, and update the handoff with verified results.
+> Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
+> first, then docs/TIMING.md and docs/ROADMAP.md. Development a5 has durations,
+> pauses, deterministic seeking, streaming frames, schema-v2 persistence and v1
+> loading; 145 tests passed from source and installed wheel. Implement the next
+> bounded milestone: safe video export, following the concrete steps in HANDOFF.
+> Preserve existing contracts, keep DrawCV unchanged, and update documentation
+> with verified results. Do not publish, commit, or push without my instruction.

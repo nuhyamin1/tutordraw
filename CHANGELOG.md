@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0a5 — Unreleased
+
+- Add step durations and trailing pauses, direct time seeking, and streaming Canvas frames.
+- Save timing in schema v2 and load schema v1 with three-second defaults.
+- Add timing example, boundary/round-trip tests, and Antigravity continuation instructions.
+- Video encoding and transitions remain pending.
+
 The first public release is 0.1.0a3; earlier versions were local development milestones.
 
 ## 0.1.0a4 — lesson persistence (unreleased)

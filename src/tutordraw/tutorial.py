@@ -100,12 +100,33 @@ class Tutorial:
         self._targets[drawable.id] = target
         return target
 
-    def step(self, title: str) -> Step:
+    def step(self, title: str, *, duration: float = 3.0, pause: float = 0.0) -> Step:
         if not isinstance(title, str) or not title.strip():
             raise ValidationError("Step title must be a nonempty string")
-        step = Step(self, title)
+        step = Step(self, title, duration=duration, pause=pause)
         self._steps.append(step)
         return step
+
+    @property
+    def duration(self) -> float:
+        """Total lesson seconds, including pauses; zero for an empty lesson."""
+        from .timing import boundaries
+        ends = boundaries(self)
+        return ends[-1] if ends else 0.0
+
+    def step_at_time(self, time: float) -> int:
+        """Resolve seconds to a zero-based step, including the final endpoint."""
+        from .timing import step_at_time
+        return step_at_time(self, time)
+
+    def render_at_time(self, time: float, *, alpha: bool = False) -> Canvas:
+        """Seek directly to a static step; pauses hold that step's full image."""
+        return self.render_step(self.step_at_time(time), alpha=alpha)
+
+    def render_frames(self, *, fps: int = 30, alpha: bool = False):
+        """Iterate ceil(duration * fps) canvases sampled at k / fps seconds."""
+        from .timing import render_frames
+        return render_frames(self, fps=fps, alpha=alpha)
 
     def render_step(self, index: int, *, alpha: bool = False) -> Canvas:
         """Render a zero-based step. Source artwork/history remain untouched."""

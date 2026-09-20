@@ -83,7 +83,7 @@ def test_native_dict_and_scene_metadata_are_detached(lesson):
 
 @pytest.mark.parametrize("mutate,match", [
     (lambda d: d.update(format="other"), "format"),
-    (lambda d: d.update(schema_version=2), "version"),
+    (lambda d: d.update(schema_version=3), "version"),
     (lambda d: d.update(schema_version=True), "version"),
     (lambda d: d.update(schema_version=1.0), "version"),
     (lambda d: d.update(schema_version="1"), "version"),
@@ -222,7 +222,7 @@ def test_empty_lesson_and_image_scene_round_trip():
 def test_packaged_json_schema_validates_output_and_flags_structural_errors(lesson):
     from jsonschema import Draft202012Validator
 
-    schema = json.loads(files("tutordraw").joinpath("lesson-v1.schema.json").read_text(encoding="utf-8"))
+    schema = json.loads(files("tutordraw").joinpath("lesson-v2.schema.json").read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
     data = lesson[0].to_dict()

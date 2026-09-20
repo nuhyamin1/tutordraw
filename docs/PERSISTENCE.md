@@ -1,6 +1,6 @@
 # Saving, loading, and revising lessons
 
-Available in **0.1.0a4 (development)**. The published 0.1.0a3 release does not include these methods.
+Introduced in **0.1.0a4**; current development **0.1.0a5** adds schema v2 timing. The published 0.1.0a3 release does not include these methods.
 
 A lesson file contains the DrawCV scene, tutorial title, theme, all registered targets and labels (including hidden definitions), and ordered steps with callouts, highlights, focus sets, and dimming factors. Generated overlay artwork is not inserted into the saved source scene.
 
@@ -55,15 +55,15 @@ revised.save_json("lesson-revised.tutordraw.json")
 
 This fragment assumes a second step with a callout. The original lesson object and file remain unchanged. For adding teaching content, prefer the regular `step`, `show`, `highlight`, `explain`, and `dim_others` methods.
 
-## Format v1
+## Format v2 (with v1 loading)
 
-Envelope keys are `format`, `schema_version`, `title`, `theme`, `scene`, `targets`, `labels`, and `steps`. `format` must be `tutordraw.lesson`; `schema_version` must be integer `1`.
+Envelope keys are `format`, `schema_version`, `title`, `theme`, `scene`, `targets`, `labels`, and `steps`. `format` must be `tutordraw.lesson`; `schema_version` is integer `2` for new saves. Integer `1` is also accepted when loading.
 
 - `theme`: all Theme fields, RGB colors as arrays.
 - `scene`: the complete DrawCV document envelope, with its own schema version.
 - `targets`: `{id, drawable_id, name}` entries; name may be null.
 - `labels`: `{id, target_id, text, anchor, leader, gap, offset, font_scale, padding}`.
-- `steps`: `{id, title, labels, callouts, highlights, dim}`.
+- `steps`: `{id, title, duration, pause, labels, callouts, highlights, dim}`.
 - Step `labels` contains reusable label IDs.
 - Step `callouts` contains label-shaped entries plus `max_width` and `line_spacing`.
 - Step `highlights` contains `{target_id, padding, color, width}`.
@@ -71,16 +71,16 @@ Envelope keys are `format`, `schema_version`, `title`, `theme`, `scene`, `target
 
 Annotation values are concrete, resolved values; null is not a request to reuse a theme default. Tutorial identity IDs are unique across targets, labels, callouts, and steps. DrawCV drawable IDs are a separate namespace. No duplicate target binding, shared step-owned callout, duplicate shown label, duplicate focus target, or duplicate highlight is accepted.
 
-The packaged [lesson-v1.schema.json](../src/tutordraw/lesson-v1.schema.json) is a JSON Schema 2020-12 document. Load it without a checkout:
+The packaged [lesson-v2.schema.json](../src/tutordraw/lesson-v2.schema.json) is a JSON Schema 2020-12 document. Load it without a checkout:
 
 ```python
 from importlib.resources import files
 import json
 
-schema = json.loads(files("tutordraw").joinpath("lesson-v1.schema.json").read_text())
+schema = json.loads(files("tutordraw").joinpath("lesson-v2.schema.json").read_text())
 ```
 
-The schema checks document structure. `Tutorial.from_dict` additionally checks identity uniqueness, cross-references, authoring constraints, and the embedded DrawCV document. JSON Schema alone cannot verify reference integrity. Unsupported versions and unknown TutorDraw fields fail clearly; no migration is currently defined.
+The schema checks document structure. `Tutorial.from_dict` additionally checks identity uniqueness, cross-references, authoring constraints, and the embedded DrawCV document. JSON Schema alone cannot verify reference integrity. Unsupported versions and unknown TutorDraw fields fail clearly; v1 loading assigns duration=3.0 and pause=0.0 to every step; subsequent saves emit v2. The original input is unchanged. The v1 schema remains packaged for validating older documents. v2 requires finite duration > 0 and pause >= 0; v1 rejects timing fields. Older a4 readers cannot load v2.
 
 ## Failure behavior and file preservation
 

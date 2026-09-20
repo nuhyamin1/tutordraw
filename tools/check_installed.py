@@ -29,7 +29,7 @@ print('Installed:', installed)
 print('DrawCV:', drawcv.__file__)
 """
         subprocess.run([sys.executable, "-I", "-c", probe, str(root)], cwd=temporary, check=True)
-        for name in ("cell_tutorial.py", "group_focus.py", "save_and_revise.py"):
+        for name in ("cell_tutorial.py", "group_focus.py", "save_and_revise.py", "timed_lesson.py"):
             subprocess.run([sys.executable, "-I", "-W", "error", str(example_dir / name)],
                            cwd=temporary, check=True)
         verify = """
@@ -39,13 +39,16 @@ paths = sorted(Path('output/cell').glob('step-*.png'))
 assert len(paths) == 3, paths
 paths.append(Path('output/group-focus.png'))
 paths.extend([Path('output/persistence/before.png'), Path('output/persistence/after.png')])
+paths.extend([Path('output/timing/during-pause.png'), Path('output/timing/next-step.png')])
 for path in paths:
     image = cv2.imread(str(path))
     assert image is not None and image.size > 0, path
 from tutordraw import Tutorial
 saved = Tutorial.load_json('output/persistence/cell-revised.tutordraw.json')
 assert saved.get_target('nucleus').drawable.transform.translation_x == 20
-print('Verified six exported PNGs and a reloaded lesson outside the checkout')
+timed = Tutorial.load_json('output/timing/cell-timed.tutordraw.json')
+assert timed.duration == 10 and timed.step_at_time(3) == 1
+print('Verified eight PNGs and reloaded static/timed lessons outside the checkout')
 """
         subprocess.run([sys.executable, "-I", "-c", verify], cwd=temporary, check=True)
 

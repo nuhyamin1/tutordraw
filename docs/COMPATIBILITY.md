@@ -52,4 +52,4 @@ Direct construction of Target, Label, Callout, and Step is unsupported.
 
 Alpha releases may change APIs. Record any changes and migration instructions in
 [the changelog](../CHANGELOG.md). Version 0.1.0a3 intentionally retains the a2 API.
-Development 0.1.0a4 adds lesson schema v1. It rejects unsupported versions; migrations are not yet defined. See [persistence](PERSISTENCE.md).
+Development 0.1.0a5 writes lesson schema v2 and loads v1 with default timing. Unknown versions are rejected; a4 readers cannot read v2. See [persistence](PERSISTENCE.md).

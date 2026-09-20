@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset", "font_scale", "padding"}
 
 
@@ -77,6 +77,7 @@ def to_dict(tutorial: Tutorial) -> dict:
             "targets": [{"id": t.id, "drawable_id": t.drawable_id, "name": t.name} for t in tutorial.targets],
             "labels": [_annotation(label) for label in tutorial.labels],
             "steps": [{"id": step.id, "title": step.title,
+                       "duration": step.duration, "pause": step.pause,
                        "labels": [label.id for label in step.labels],
                        "callouts": [_annotation(c) for c in step.callouts],
                        "highlights": [{"target_id": h.target.id, "padding": h.padding,
@@ -105,8 +106,9 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
         _object(data, {"format", "schema_version", "title", "theme", "scene", "targets", "labels", "steps"}, "lesson")
         if data["format"] != FORMAT:
             raise LessonFormatError(f"Unsupported lesson format: {data['format']!r}")
-        if type(data["schema_version"]) is not int or data["schema_version"] != SCHEMA_VERSION:
-            raise LessonFormatError(f"Unsupported lesson schema version: {data['schema_version']!r}; expected 1")
+        version = data["schema_version"]
+        if type(version) is not int or version not in (1, SCHEMA_VERSION):
+            raise LessonFormatError(f"Unsupported lesson schema version: {version!r}; expected 1 or 2")
         theme_data = _object(data["theme"], {f.name for f in fields(Theme)}, "theme")
         for key in theme_data:
             if key.endswith("_color"):
@@ -178,9 +180,10 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
 
         for i, item in enumerate(_list(data["steps"], "steps")):
             where = f"steps[{i}]"
-            _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}, where)
+            timing_fields = {"duration", "pause"} if version == 2 else set()
+            _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"} | timing_fields, where)
             sid = identity(item["id"], f"{where}.id")
-            step = tutorial.step(item["title"])
+            step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
             step.show(*references(item["labels"], labels, f"{where}.labels"))
             for j, callout in enumerate(_list(item["callouts"], f"{where}.callouts")):
@@ -203,6 +206,7 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
                     raise LessonFormatError(f"{where}.dim.opacity cannot be null")
                 step.dim_others(*references(dim["target_ids"], targets, f"{where}.dim.target_ids"),
                                 opacity=dim["opacity"])
+        tutorial.duration  # Reject cumulative overflow or unrepresentable intervals.
         return tutorial
     except LessonFormatError:
         raise

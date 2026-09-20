@@ -2,7 +2,7 @@
 
 Status: M2 implemented: targets, labels, wrapped callouts, independent steps,
 scene copying, highlights, group-aware dimming, themes, and ordered PNG export.
-Timing remains a proposal; development 0.1.0a4 implements persistence. See `API.md` for the implemented API.
+Development 0.1.0a5 adds hard-cut timing; a4 introduced persistence. See `API.md` for the implemented API.
 
 ## Responsibility boundary
 
@@ -71,9 +71,10 @@ No step implicitly inherits another step's presentation state.
    attention request for an effectively hidden target with a clear explanation.
 6. Adding an annotation does not alter the source drawing.
 
-The first release has no time axis or transitions. Later timed playback should
-compile these step definitions into time-dependent presentation state. It must
-preserve the ability to render or seek directly to a chosen state.
+The published a3 has no time axis. Development a5 resolves seconds to independent
+static steps through `timing.py`, then uses the existing render path. Durations and
+pauses hold the same image; boundaries cut directly to the next step. No DrawCV
+animation sampling or transitions are implemented. See TIMING.md for endpoints.
 
 ## Anchors and layout
 
@@ -182,7 +183,7 @@ assets, rich typography, and broader compatibility remain unverified.
 
 ## Persistence and extensibility
 
-Persistence uses `serialization.py` and schema v1 (`tutordraw.lesson`). The
+Persistence uses `serialization.py` and schema v2 (also reads v1) (`tutordraw.lesson`). The
 versioned envelope embeds the DrawCV scene plus explicit target, annotation, theme,
 and step data. Stable IDs are restored without changing source references. JSON
 contains data only; no callbacks or pickle. Unknown TutorDraw fields, future

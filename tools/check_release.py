@@ -28,7 +28,7 @@ def main() -> None:
         names = set(archive.namelist())
         expected = {"tutordraw/" + p.relative_to(root / "src/tutordraw").as_posix()
                     for p in (root / "src/tutordraw").rglob("*.py")}
-        expected.add("tutordraw/lesson-v1.schema.json")
+        expected.update({"tutordraw/lesson-v1.schema.json", "tutordraw/lesson-v2.schema.json"})
         if not expected <= names:
             raise SystemExit(f"Wheel is missing modules: {expected - names}")
         metadata = BytesParser().parsebytes(archive.read(f"{name}-{version}.dist-info/METADATA"))
@@ -50,7 +50,7 @@ def main() -> None:
         for file in ("README.md", "LICENSE", "pyproject.toml", "CHANGELOG.md", "CONTRIBUTING.md",
                      "docs/API.md", "docs/RELEASING.md", "examples/cell_tutorial.py",
                      "examples/group_focus.py", "examples/save_and_revise.py", "docs/PERSISTENCE.md",
-                     "docs/AI_AUTHORING.md", "tools/check_installed.py", "tests/test_tutorial.py"):
+                     "docs/AI_AUTHORING.md", "docs/TIMING.md", "examples/timed_lesson.py", "tools/check_installed.py", "tests/test_tutorial.py"):
             if f"{name}-{version}/{file}" not in names:
                 raise SystemExit(f"Source distribution missing: {file}")
     subprocess.run([sys.executable, "-m", "twine", "check", "--strict", str(wheel), str(source)], check=True)

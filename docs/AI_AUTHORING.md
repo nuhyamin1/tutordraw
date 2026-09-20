@@ -1,6 +1,6 @@
 # AI authoring workflow
 
-TutorDraw is a Python library, not an AI service. A coding assistant can author and execute lessons using its existing Python tools. No dedicated application is required. This workflow uses the development 0.1.0a4 save/load API; install from the checkout until it is released.
+TutorDraw is a Python library, not an AI service. A coding assistant can author and execute lessons using its existing Python tools. No dedicated application is required. This workflow uses the development save/load API (introduced in a4; a5 adds timing); install from the checkout until it is released.
 
 ## A repeatable working loop
 

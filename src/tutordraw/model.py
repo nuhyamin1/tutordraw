@@ -114,15 +114,36 @@ def make_annotation(target: Target, text: str, *, anchor: Anchor = "right",
 class Step:
     """An independent collection of visible labels. Create with Tutorial.step()."""
 
-    def __init__(self, tutorial: Tutorial, title: str):
+    def __init__(self, tutorial: Tutorial, title: str, *, duration: float = 3.0, pause: float = 0.0):
         self._tutorial = tutorial
         self.title = title
+        self.set_timing(duration=duration, pause=pause)
         self._labels: list[Label] = []
         self._callouts: list[Callout] = []
         self._highlights: dict[str, Highlight] = {}
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._id = str(uuid4())
+
+    @property
+    def duration(self) -> float:
+        """Presentation duration in seconds, excluding the trailing pause."""
+        return self._duration
+
+    @property
+    def pause(self) -> float:
+        """Extra seconds holding this step before the next hard cut."""
+        return self._pause
+
+    def set_timing(self, *, duration: float, pause: float = 0.0) -> Step:
+        """Replace both timing values atomically; pause defaults to zero."""
+        seconds = finite_number(duration, "duration", minimum=0)
+        hold = finite_number(pause, "pause", minimum=0)
+        if seconds == 0:
+            raise ValidationError("duration must be positive")
+        finite_number(seconds + hold, "duration + pause")
+        self._duration, self._pause = seconds, hold
+        return self
 
     @property
     def id(self) -> str:

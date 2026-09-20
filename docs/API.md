@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a4 (development)
+# Implemented API — 0.1.0a5 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -114,3 +114,12 @@ content or unsupported schema versions; filesystem errors propagate normally.
 current source object or raises ValidationError if missing. `step.id` is stable
 across save/load. See [PERSISTENCE.md](PERSISTENCE.md) for file format and editing
 contracts, and [AI_AUTHORING.md](AI_AUTHORING.md) for a practical model-to-model workflow.
+
+## Timing (development 0.1.0a5)
+
+`step(title, *, duration=3.0, pause=0.0)` accepts seconds.
+`Step.set_timing(duration=..., pause=0.0)` replaces both values and returns the step.
+`Step.duration` and `Step.pause` are read-only; `Tutorial.duration` includes all pauses.
+`step_at_time(time)` returns a zero-based index; `render_at_time(time, alpha=False)`
+returns a Canvas; `render_frames(fps=30, alpha=False)` returns an iterator of canvases.
+See [TIMING.md](TIMING.md) for boundary semantics, validation, and limits.

@@ -107,3 +107,18 @@ Immutable annotations can be revised through detached documents; named targets
 resolve current source drawables. New step IDs survive persistence. Save defaults
 to no overwrite and validates before replacing files. Full undo history, rendered
 outputs, external-asset bundling, and schema migrations remain out of scope.
+
+## Bounded timing milestone — development 0.1.0a5
+
+The owner requested useful progress with limited remaining usage and an explicit
+Antigravity handoff. Complete the timing foundation; defer video encoding, animated
+reveals, and transitions. Each step defaults to 3 seconds plus 0 pause. A pause
+holds the same full static image; final pauses count toward lesson duration.
+Intervals are [start, end), with the exact final endpoint selecting the last step.
+Frames sample k/fps for ceil(total*fps) frames, matching DrawCV timing convention.
+No playback history or wall clock is consulted; source animation is not sampled.
+
+Use schema v2 with required duration/pause. Keep v1 schema and load support with
+3/0 defaults; always save v2. Strict version/field handling prevents silent loss.
+DrawCV VideoRenderer expects an animated Scene, not tutorial frame iterators;
+video integration needs a deliberate adapter and collision/failure tests.

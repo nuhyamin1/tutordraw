@@ -75,7 +75,9 @@ Prioritized after the first release to support continuation across AI sessions.
 
 ## M4 — Timed lessons
 
-- [ ] Design durations, holds, transitions, and deterministic seeking.
+- [x] Implement durations, trailing holds, deterministic seeking and streaming frames (a5).
+- [x] Persist timing in schema v2; load v1 with default timing.
+- [ ] Design and implement transitions; current playback uses hard cuts.
 - [ ] Integrate with DrawCV animation/video capabilities through the adapter.
 - [ ] Add progressive reveal and timed captions.
 - [ ] Define video codec dependencies and failure reporting.

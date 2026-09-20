@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tutordraw"
-version = "0.1.0a4"
+version = "0.1.0a5"
 description = "Author step-by-step visual tutorials using DrawCV drawings."
 readme = "README.md"
 license = "MIT"
@@ -34,7 +34,7 @@ Documentation = "https://github.com/nuhyamin1/tutordraw#readme"
 where = ["src"]
 
 [tool.setuptools.package-data]
-tutordraw = ["lesson-v1.schema.json"]
+tutordraw = ["lesson-v1.schema.json", "lesson-v2.schema.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
