@@ -13,6 +13,10 @@ class SceneCopyError(TutorDrawError):
     """The source scene cannot be copied through DrawCV serialization."""
 
 
+class LessonFormatError(ValidationError):
+    """Invalid or unsupported serialized lesson content."""
+
+
 class LayoutWarning(UserWarning):
     """An annotation extends beyond the output canvas."""
 

@@ -6,7 +6,9 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 ## Status
 
-**M2 implemented — local development alpha `0.1.0a2`.** This repository is installable, but TutorDraw has not been published to PyPI. The distribution name `tutordraw` remains provisional and has not been reserved.
+**Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
+
+**Development checkout: 0.1.0a4 (not yet published)** adds complete lesson save/load and AI revision support. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
 
 Implemented:
 
@@ -20,10 +22,19 @@ Implemented:
 - Customize shared typography, spacing, and colors through an immutable theme.
 - Export ordered PNGs with collision checks and partial-failure reporting.
 - Validate references/options and warn about off-canvas annotations.
+- Development only: save/reopen complete versioned JSON lessons with stable IDs and validated references.
 
 Video, interactive playback, rich typography, and automatic collision avoidance remain planned.
 
-## Install from this repository
+## Install the alpha
+
+```shell
+python -m pip install tutordraw==0.1.0a3
+```
+
+The exact version selects this prerelease explicitly. Requires Python 3.12+.
+
+## Develop from this repository
 
 Requires **Python 3.12+**. From the repository root:
 
@@ -34,9 +45,9 @@ python -m venv .venv
 .\.venv\Scripts\python.exe examples/cell_tutorial.py
 ```
 
-On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 has been tested; other platforms have not. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
+On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 112 tests. CI is configured for Windows, Linux, and macOS on Python 3.12–3.14; hosted results are pending. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
 
-No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.10.0.post1`, which imports as `drawcv`. A broader compatibility range is future work. Do not run `pip install tutordraw` expecting this unpublished project.
+No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.10.0.post1`, which imports as `drawcv`. A broader compatibility range is future work. Use an explicit version or `--pre` when selecting an alpha release.
 
 ## Working example
 
@@ -68,7 +79,13 @@ tutorial.export_steps("output/readme", overwrite=True)
 
 Each step starts from the current source scene. The second step has no labels because it does not explicitly show any. Rendering order does not affect results. Tutorial and step titles are metadata; add DrawCV text if you want visible titles.
 
-Run [the cell example](examples/cell_tutorial.py) for a composed diagram. It writes `output/cell/step-001.png` through `step-003.png`. Rerunning explicitly overwrites these example images. [The nested-group example](examples/group_focus.py) illustrates focusing a child while dimming its siblings.
+Run [the cell example](https://github.com/nuhyamin1/tutordraw/blob/master/examples/cell_tutorial.py) for a composed diagram. It writes `output/cell/step-001.png` through `step-003.png`. Rerunning explicitly overwrites these example images. [The nested-group example](https://github.com/nuhyamin1/tutordraw/blob/master/examples/group_focus.py) illustrates focusing a child while dimming its siblings.
+
+## Continue a lesson with another AI
+
+In the development checkout, use `tutorial.save_json("lesson.tutordraw.json")` and later `Tutorial.load_json("lesson.tutordraw.json")`. Named targets, annotation IDs, themes, and all step presentation settings survive the round trip.
+
+Run `python examples/save_and_revise.py` for the complete workflow. See [AI authoring](https://github.com/nuhyamin1/tutordraw/blob/master/docs/AI_AUTHORING.md) and [persistence](https://github.com/nuhyamin1/tutordraw/blob/master/docs/PERSISTENCE.md).
 
 ## Current limits
 
@@ -83,12 +100,21 @@ Run [the cell example](examples/cell_tutorial.py) for a composed diagram. It wri
 
 ## Documentation and continuation
 
-- [API guide](docs/API.md): implemented methods and errors.
-- [Product scope](docs/PRODUCT.md): intended tutorial capabilities.
-- [Architecture](docs/ARCHITECTURE.md): foundation and future design.
-- [Roadmap](docs/ROADMAP.md): milestones and acceptance checks.
-- [AI handoff](docs/HANDOFF.md): current state, verification, and continuation prompt.
-- [Decisions](docs/DECISIONS.md): choices and remaining questions.
-- [Agent instructions](AGENTS.md): repository conventions.
+- [Practical tutorial](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TUTORIAL.md): build a lesson from a DrawCV scene.
+- [API guide](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md): implemented methods and errors.
+- [Compatibility](https://github.com/nuhyamin1/tutordraw/blob/master/docs/COMPATIBILITY.md): evidence, fonts, and alpha API expectations.
+- [Release procedure](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RELEASING.md): exact artifact checks and manual publishing.
+- [Changelog](https://github.com/nuhyamin1/tutordraw/blob/master/CHANGELOG.md): milestone history.
+- [Contributing](https://github.com/nuhyamin1/tutordraw/blob/master/CONTRIBUTING.md): local development and installed-package checks.
+- [Product scope](https://github.com/nuhyamin1/tutordraw/blob/master/docs/PRODUCT.md): intended tutorial capabilities.
+- [Architecture](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ARCHITECTURE.md): foundation and future design.
+- [Roadmap](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ROADMAP.md): milestones and acceptance checks.
+- [AI handoff](https://github.com/nuhyamin1/tutordraw/blob/master/docs/HANDOFF.md): current state, verification, and continuation prompt.
+- [Decisions](https://github.com/nuhyamin1/tutordraw/blob/master/docs/DECISIONS.md): choices and remaining questions.
+- [Agent instructions](https://github.com/nuhyamin1/tutordraw/blob/master/AGENTS.md): repository conventions.
 
-To continue with another AI model, ask it to read `AGENTS.md` and `docs/HANDOFF.md` first. The next milestone is release preparation: compatibility, documentation, CI, and final package metadata. DrawCV remains a separate project.
+To continue with another AI model, ask it to read `AGENTS.md` and `docs/HANDOFF.md` first. Hosted CI verification remains pending; see the handoff for the latest release state. DrawCV remains a separate project.
+
+## License
+
+[MIT](https://github.com/nuhyamin1/tutordraw/blob/master/LICENSE), copyright 2026 Nuh Yamin.

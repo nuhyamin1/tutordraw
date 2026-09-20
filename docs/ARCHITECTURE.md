@@ -2,7 +2,7 @@
 
 Status: M2 implemented: targets, labels, wrapped callouts, independent steps,
 scene copying, highlights, group-aware dimming, themes, and ordered PNG export.
-Timing and persistence remain proposals. See `API.md` for the implemented API.
+Timing remains a proposal; development 0.1.0a4 implements persistence. See `API.md` for the implemented API.
 
 ## Responsibility boundary
 
@@ -182,11 +182,16 @@ assets, rich typography, and broader compatibility remain unverified.
 
 ## Persistence and extensibility
 
-Lesson save/load is deferred. Keep model fields explicit and reference-based so
-a later versioned lesson schema can store tutorial definitions alongside a
-DrawCV scene. Do not put arbitrary callbacks into the core model as the only way
-to describe a step. Do not promise compatibility for a schema that does not yet
-exist.
+Persistence uses `serialization.py` and schema v1 (`tutordraw.lesson`). The
+versioned envelope embeds the DrawCV scene plus explicit target, annotation, theme,
+and step data. Stable IDs are restored without changing source references. JSON
+contains data only; no callbacks or pickle. Unknown TutorDraw fields, future
+schema versions, duplicate IDs/keys, nonfinite numbers, and dangling references fail
+with LessonFormatError. Scene internals remain governed by DrawCV's own schema.
+
+Serialization validates reconstruction before replacing a saved file. Loaded
+lessons and exported dictionaries are detached from originals. See PERSISTENCE.md
+for the exact contract and AI_AUTHORING.md for session-to-session editing.
 
 ## M2 implementation details
 

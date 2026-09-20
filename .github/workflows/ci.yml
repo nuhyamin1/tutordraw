@@ -1,0 +1,49 @@
+name: Test installed distributions
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools and published dependencies
+        run: python -m pip install ".[dev]"
+      - name: Build source distribution and wheel
+        run: python -m build --no-isolation --outdir output/release
+      - name: Validate distribution contents and metadata
+        run: python tools/check_release.py --dist-dir output/release
+      - name: Install the built wheel
+        shell: python
+        run: |
+          import pathlib, subprocess, sys
+          wheel, = pathlib.Path('output/release').glob('*.whl')
+          subprocess.run([sys.executable, '-m', 'pip', 'install', '--no-deps', '--force-reinstall', str(wheel)], check=True)
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Test installed package
+        run: python -I -m pytest -q
+      - name: Verify examples outside the checkout
+        run: python -I tools/check_installed.py
+      - name: Validate documentation and run README example
+        run: python tools/check_docs.py

@@ -44,22 +44,34 @@ project and produce a legible annotated image without modifying the source scene
 **Exit condition:** the full acceptance lesson renders correctly; rerendering
 after an object move updates annotation placement; order does not affect results.
 
-## M3 — First-release preparation (next)
+## M3 — First-release preparation (local checks complete; hosted CI pending)
 
-- [ ] Finalize the package name, version, owner metadata, and license with the owner.
-- [ ] Verify a `pydrawcv` dependency range using released artifacts.
-- [ ] Replace proposed examples with runnable, tested examples and API documentation.
-- [ ] Document fonts, supported object types, limitations, errors, and migration
+- [x] Confirm package name, author, MIT license, and repository metadata.
+- [x] Owner authorized and published 0.1.0a3.
+- [x] Verify the exact supported dependency `pydrawcv==0.10.0.post1` using its released wheel; do not widen the range without evidence.
+- [x] Replace proposed examples with runnable, tested examples and API documentation.
+- [x] Document fonts, supported object types, limitations, errors, and migration
   expectations for an early release.
 - [x] Build wheel and source distribution and test wheel installation in a clean
   environment outside the repository.
-- [ ] Verify packaged imports and the example without relying on the DrawCV checkout.
-- [ ] Add suitable CI checks and record supported environments.
-- [ ] Prepare release notes and an owner-reviewed publishing procedure.
-- [ ] Publish only when explicitly requested by the owner.
+- [x] Verify packaged imports and the example without relying on the DrawCV checkout.
+- [x] Add installed-wheel CI and document local evidence separately from intended coverage.
+- [ ] Obtain passing hosted Windows/Linux/macOS results for Python 3.12–3.14.
+- [x] Prepare release notes and a manual publishing procedure for owner review.
+- [x] Published 0.1.0a3 after explicit authorization; verified public artifact hashes.
 
 **Exit condition:** an installable distribution and accurate documentation are
 ready for release. Public upload is a separate authorized action.
+
+## Persistence and AI authoring (development 0.1.0a4)
+
+Prioritized after the first release to support continuation across AI sessions.
+
+- [x] Add complete JSON save/load with stable IDs, a versioned schema, and reference validation.
+- [x] Expose target lookup and current source-drawable access for resumed editing.
+- [x] Verify pixel-identical round trips, detached state, malformed input errors, and save failure behavior.
+- [x] Provide packaged JSON Schema, AI authoring prompts, and a save/revise example.
+- [ ] Publish this update only after a new explicit release request.
 
 ## M4 — Timed lessons
 
@@ -74,7 +86,6 @@ ready for release. Public upload is a separate authorized action.
 - Multi-object targets outside an existing DrawCV group.
 - Automatic label collision reduction and routed leader lines.
 - Before-and-after comparisons, zoom, and pan.
-- Versioned tutorial save/load.
 - Narration and subtitle alignment.
 - Interactive lesson players, exercises, and quizzes.
 - PDF or other publishing formats and richer accessibility support.

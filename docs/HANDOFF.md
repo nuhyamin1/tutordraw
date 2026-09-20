@@ -1,83 +1,130 @@
 # AI handoff — start here
 
-Last updated: **2026-09-20**, after M2 implementation.
+Last updated: **2026-09-20**, persistence and AI authoring development.
 
-## Owner intent and current scope
+## Current state
 
-Build TutorDraw, a Python library for tutorials using drawings, on `pydrawcv` (import `drawcv`). Keep DrawCV unchanged. Maintain documentation for continuing with another AI model. The owner authorized continuing after M1 and requested its commit message first; it was supplied in chat. No Git commit or PyPI publication was requested/performed.
+**Published version: 0.1.0a3. Development checkout: 0.1.0a4, not published.**
 
-## Current implementation
+After discussing AI use without a dedicated app, the owner agreed to continue
+with the suggested development. This session prioritized complete lesson save/load
+and an AI authoring workflow before timed lessons. No new publication, Git commit,
+or push was performed. The previous publication authorization applied only to a3.
 
-**M0–M2 complete, local alpha `0.1.0a2`.**
+Owner metadata: `tutordraw`, MIT, Nuh Yamin. Origin:
+https://github.com/nuhyamin1/tutordraw.git, branch master. DrawCV remains unchanged;
+the runtime dependency is still the published `pydrawcv==0.10.0.post1` wheel.
 
-- `tutorial.py`: registration, independent steps, rendering, ordered PNG export.
-- `model.py`: Target, Label, step-owned Callout, Highlight, and Step authoring.
-- `themes.py` and `validation.py`: immutable presentation defaults and validation.
-- `layout.py`: measured ASCII Hershey wrapping, bounds anchors, panels, leader geometry, off-canvas warnings.
-- `attention.py`: structural visibility checks, outline highlights, group-aware dimming.
-- `export.py`: preflight collision checks, temporary encoding, exclusive creation or explicit replacement, partial-failure reporting.
-- `adapters/drawcv.py`: recursive ID validation, source-safe serialization copying, overlay layer.
-- `examples/cell_tutorial.py`: complete three-step cell lesson, writes `output/cell/step-001.png` through `step-003.png`.
-- `examples/group_focus.py`: nested-group emphasis, writes `output/group-focus.png`.
-- `tests/test_tutorial.py` and `tests/test_presentation.py`: **54 passing cases**.
-- `pyproject.toml`: Python >=3.12, pinned published `pydrawcv==0.10.0.post1`, development extra.
+## New functionality in a4
 
-Read README and `docs/API.md` for executable usage. Do not assume the earlier M1-only API guide is current. Video, playback, persistence, rich fonts, automatic collision avoidance, and interactive lessons remain unimplemented.
+- `Tutorial.to_dict/from_dict/to_json/from_json/save_json/load_json` serialize a
+  full lesson: DrawCV scene, theme, targets, every label (even unshown), ordered
+  steps, callouts, highlights, and focus/dimming state.
+- Format `tutordraw.lesson`, schema integer 1. Stable drawable/target/label/callout/
+  step IDs survive round trips. Shared labels remain shared after reload.
+- `tutorial.targets`, `tutorial.labels`, `tutorial.get_target(name)`, and
+  `target.drawable` expose useful entry points for resumed editing.
+- Step has a stable read-only `id`. Annotation definitions remain immutable;
+  revise their text in a detached document and validate with `from_dict`.
+- Unknown TutorDraw fields, unsupported versions, duplicate IDs/keys, dangling
+  references, invalid options, nonfinite JSON numbers, and invalid UTF-8 produce
+  `LessonFormatError` (a ValidationError). Filesystem errors propagate.
+- Saving refuses existing paths by default, validates before touching a file,
+  and replaces existing content only after writing a complete temporary document.
+  New files use exclusive creation; failed partial files are removed.
+- Packaged `lesson-v1.schema.json` supports structural validation; loading also
+  checks identity/reference semantics and the embedded DrawCV document.
+- `examples/save_and_revise.py` saves a cell lesson, reopens it, moves the nucleus,
+  revises an explanation, and saves a new lesson plus before/after PNGs.
+- `docs/PERSISTENCE.md` documents the format. `docs/AI_AUTHORING.md` gives practical
+  creation/revision prompts for any coding assistant; there is no AI-service SDK.
+
+## Files added/changed
+
+New runtime: `src/tutordraw/serialization.py`, `lesson-v1.schema.json`.
+Updated runtime: tutorial/model/errors/public exports and a4 version metadata.
+New tests: `tests/test_persistence.py`. `jsonschema` is a development dependency
+only; runtime loading uses standard-library JSON and existing validators.
+New docs/example: persistence, AI authoring, save_and_revise.
+Updated checks: installed-package runner now verifies six PNGs and a loaded
+revision; artifact check requires schema/example/docs in distribution files.
+README, API, architecture, compatibility, roadmap, decisions, and changelog reflect
+the distinction between published a3 and development-only a4.
+
+## Verification in this session
+
+Use `.venv/Scripts/python.exe` in place of python on this Windows machine.
+
+- `python -m pytest -q`: **112 passed** against editable source.
+- `python examples/save_and_revise.py`: original/revised JSON plus previews under
+  `output/persistence`. Visually inspected before/after: label, highlight and
+  callout follow the moved nucleus; updated text fits; original stays unchanged.
+- `python tools/check_docs.py`: 15 documents and the README example pass.
+- `python -m build --no-isolation --outdir output/development`: wheel and sdist built.
+- `python tools/check_release.py --dist-dir output/development --require-metadata`:
+  strict Twine, metadata and packaged-file checks pass.
+- Installed the a4 wheel locally with `pip install --no-deps --force-reinstall`,
+  then `python -I -m pytest -q`: **112 passed against the installed wheel**.
+- `python -I tools/check_installed.py`: all three examples run outside the checkout;
+  six PNGs decode and the revised lesson reloads correctly.
+- `python -m pip check`: no broken requirements; `git diff --check` passes.
+- Restored the editable development install with
+  `python -m pip install --no-deps --no-build-isolation -e .`.
+
+New tests cover pixel-identical round trips, source/history preservation, detached
+metadata, IDs/shared labels, nested groups and embedded raster images, resumed
+editing, schema validation, malformed input/reference failures, unsupported scene
+versions, UTF-8/BOM, collision races, invalid-save preservation, and failed-write
+cleanup. No additional OS/Python version was tested in this session.
+
+The a4 artifacts are in `output/development`, separate from the published a3
+files in `output/release`. Build log: `output/build-a4.log`. Do not upload a4
+without a new explicit owner request.
+
+## Published a3 evidence (preserved)
+
+https://pypi.org/project/tutordraw/0.1.0a3/
+
+PyPI accepted wheel and source archive, and a fresh public-index installation ran
+both original examples successfully. Recorded SHA256 hashes, rechecked unchanged
+in this session:
+
+- Wheel: `0026efa9b7ff6eda5dcc47d623d299eaf8a9da617c29bbc3ab6961aade8d9ea5`
+- Sdist: `115ae72b49c5cf55e4c45222ac658b96182f5452b90652a51173c935d4e00577`
+
+Do not rebuild and replace or re-upload a3. Credentials must never be printed or
+saved in source/docs. Further releases need explicit authorization.
+
+## Remaining limits and next work
+
+- Hosted CI remains unverified; nine OS/Python combinations are configured.
+- ASCII annotations only; no rich scripts, automatic overlap layout, or video yet.
+- Format v1 has no migrations. DrawCV owns its nested schema and asset loaders.
+- No callbacks/pickle in TutorDraw JSON, but this is not a sandbox for arbitrary
+  untrusted/custom scene assets. No large-document quota or streaming loader.
+- Source edits during save/render are unsupported; undo history/caches/PNG output
+  are not part of the lesson file. Hidden emphasis and layout warnings still apply
+  at render time, not merely at load time.
+- The local repo includes earlier M3/post-release changes plus this session's a4
+  work. No agent-created commits/pushes. Inspect current Git state before committing.
+
+Next: owner review of a4, then either authorize a new release or proceed to timed
+lessons (M4). Keep existing static rendering and v1 round-trip guarantees intact.
+If publishing a4, update release instructions/filenames and run the complete checks;
+do not reuse a3 upload commands.
 
 ## Environment
 
-Workspace: `C:/Projects/TutorDraw`, Windows PowerShell. Use `.venv/Scripts/python.exe`; the global `python` and `py -3.12` launchers were unavailable during M1. The virtual environment was created using the app's bundled Python 3.12. Do not hardcode runtime or checkout paths into the package.
+Workspace `C:/Projects/TutorDraw`, Windows PowerShell, Python 3.12 in `.venv`.
+DrawCV checkout `C:/Projects/DrawCV` is read-only context for this project.
+Read-only Git commands may need `git -c safe.directory=C:/Projects/TutorDraw ...`
+due to sandbox ownership; no global Git setting was changed.
 
-DrawCV checkout `C:/Projects/DrawCV` was inspected but not modified. Runtime imports use the published wheel in `.venv/Lib/site-packages`, not that checkout. No `.git` directory was present during M2; no commits were created.
+## Continuation prompt
 
-Network package installation during M1 required tool escalation after sandbox sockets were blocked. This was not a missing package release. M2 uses the existing environment. `.venv`, `dist`, build artifacts, caches, and `output` are ignored by `.gitignore`.
-
-## Verified in M2
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe examples/cell_tutorial.py
-.\.venv\Scripts\python.exe examples/group_focus.py
-```
-
-**54 tests passed.** M1 contracts remain covered. Added tests exercise paragraph/long-word wrapping, panel bounds, following moved objects, highlighted/dimmed pixels, no emphasis leakage, nested-group opacity without double dimming, multiple focus targets, hidden ancestors/layers, theme overrides, invalid operations, export order/collisions/races, partial failures, and cleanup after failed writes.
-
-Visually inspected all three cell images and the nested-group example. Text is readable and panels fit; nucleus emphasis occurs only in the focus step; review restores full artwork. The group example shows an undimmed selected child and equally dimmed unrelated branches with clear annotations.
-
-Built `dist/tutordraw-0.1.0a2.tar.gz` and `dist/tutordraw-0.1.0a2-py3-none-any.whl`
-with `.venv/Scripts/python.exe -m build --no-isolation`. Copied the wheel to the
-isolated M1 verification environment at
-`C:/Users/user/AppData/Local/Temp/tutordraw-m1-wheel-check` and installed it using
-that environment's Python with `-m pip install --no-deps --force-reinstall`.
-Published dependencies were already installed there. An isolated `python -I -c`
-smoke check imported version 0.1.0a2 from its `site-packages`, then rendered and
-exported two steps with callouts, highlights, and dimming to `m2-wheel-output`.
-It did not import source code from either project checkout.
-
-Executed the README Python example and checked all relative Markdown links.
-Both passed. Cross-platform runs, advanced DrawCV assets, non-ASCII typography,
-PyPI name availability, and broader dependency ranges remain unverified.
-License/author metadata are unresolved.
-
-## Design details to preserve
-
-- Render from current source state through `Scene.from_dict(deepcopy(scene.to_dict()))`; validate copied IDs/types. No mutation/undo on the live scene.
-- Each step owns its callouts/highlights/focus and explicitly shows reusable labels.
-- `explain` returns a Callout; `highlight`, `dim_others`, and `show` return Step.
-- Theme numeric defaults resolve while authoring; panel/text/leader styling resolves at render time. Themes use immutable RGB tuples.
-- Callout widths exclude padding. Long words split; impossible character widths fail clearly. ASCII plus newline support only.
-- Dimming preserves selected subtrees and their ancestors. Multiply each maximal unrelated branch once. Source opacity still applies.
-- Hidden flags and zero opacity are considered, including ancestors/layers; masks/occlusion are not. Missing registered targets still fail all rendering.
-- PNG export is not a batch transaction: completed files remain and are listed in ExportError. New files use exclusive creation; overwrite replaces only successfully encoded output.
-
-## Next task: M3 release preparation
-
-Read AGENTS.md, README, API, architecture, roadmap, and decisions. Improve release readiness: review public API/docs, add appropriate CI, verify supported platforms/dependency versions, and package metadata. Final naming, license, and author metadata need owner input before release; do useful independent checks first. Do not upload to PyPI without explicit authorization.
-
-## Ready-to-copy continuation prompt
-
-> Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md, then README, API, architecture, and roadmap. M2 is complete as local alpha 0.1.0a2 with 54 passing tests. Use .venv/Scripts/python.exe. Work on M3 release preparation: API/documentation review, CI, package verification, and compatibility. Keep DrawCV unchanged; use published pydrawcv. Preserve source-safe independent steps and tested export guarantees. Update documentation and handoff with actual results. Resolve owner-controlled naming/license/author choices before release. Do not publish to PyPI without explicit authorization.
-
-## Handoff maintenance
-
-Replace stale status after future work. Record exact commands/outcomes, unverified checks, decisions, issues, next task, and local prerequisites. Do not restart M1/M2 from older chat context.
+> Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md, docs/HANDOFF.md,
+> README, persistence, AI authoring, API, and roadmap. Published a3 is immutable;
+> the a4 checkout adds full lesson persistence with schema v1 and has 112 passing
+> source/installed-wheel tests. Do not reimplement or republish completed work.
+> Continue the owner's next request, preserve static rendering and persistence
+> contracts, keep DrawCV unchanged, and update the handoff with verified results.

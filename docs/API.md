@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a2
+# Implemented API — 0.1.0a4 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -100,3 +100,17 @@ Frames encode in temporary files. Explicit overwrite replaces an existing file o
 - `LayoutWarning`: an annotation extends outside the canvas. Rendering proceeds and may clip it.
 
 Direct render/save errors from DrawCV propagate; batch export wraps per-step failures in ExportError. Rendering preserves source content and history even on failure. Automatic label collision avoidance, rich fonts, timeline sampling, and concurrent source editing are not supported.
+
+
+## Lesson persistence and revision (new in 0.1.0a4)
+
+`Tutorial.to_dict`, `from_dict`, `to_json`, `from_json`, `save_json(path, overwrite=False)`,
+and `load_json(path)` preserve the complete scene and lesson model. `save_json`
+returns Path and refuses collisions by default. `LessonFormatError` reports invalid
+content or unsupported schema versions; filesystem errors propagate normally.
+
+`tutorial.targets` and `tutorial.labels` expose tuples of definitions.
+`tutorial.get_target(name)` resolves a named target. `target.drawable` returns its
+current source object or raises ValidationError if missing. `step.id` is stable
+across save/load. See [PERSISTENCE.md](PERSISTENCE.md) for file format and editing
+contracts, and [AI_AUTHORING.md](AI_AUTHORING.md) for a practical model-to-model workflow.

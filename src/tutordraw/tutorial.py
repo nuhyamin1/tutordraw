@@ -34,6 +34,55 @@ class Tutorial:
     def steps(self) -> tuple[Step, ...]:
         return tuple(self._steps)
 
+    @property
+    def targets(self) -> tuple[Target, ...]:
+        return tuple(self._targets.values())
+
+    @property
+    def labels(self) -> tuple[Label, ...]:
+        return tuple(self._labels.values())
+
+    def get_target(self, name: str) -> Target:
+        """Find a named target after loading or while revising a lesson."""
+        if not isinstance(name, str) or not name.strip():
+            raise ValidationError("Target name must be a nonempty string")
+        for target in self._targets.values():
+            if target.name == name:
+                return target
+        raise ValidationError(f"Unknown target name: {name!r}")
+
+    def to_dict(self) -> dict:
+        """Return a detached, validated JSON-compatible lesson document."""
+        from .serialization import to_dict
+        return to_dict(self)
+
+    @classmethod
+    def from_dict(cls, document: dict) -> "Tutorial":
+        """Load a complete lesson from a versioned document."""
+        from .serialization import from_dict
+        return from_dict(document, tutorial_type=cls)
+
+    def to_json(self) -> str:
+        """Serialize the drawing and teaching state as readable JSON."""
+        from .serialization import to_json
+        return to_json(self)
+
+    @classmethod
+    def from_json(cls, text: str) -> "Tutorial":
+        from .serialization import from_json
+        return from_json(text, tutorial_type=cls)
+
+    def save_json(self, path: str | Path, *, overwrite: bool = False) -> Path:
+        """Save a complete lesson; refuse existing files unless explicitly allowed."""
+        from .serialization import save_json
+        return save_json(self, path, overwrite=overwrite)
+
+    @classmethod
+    def load_json(cls, path: str | Path) -> "Tutorial":
+        """Load a UTF-8 lesson. Filesystem errors propagate unchanged."""
+        from .serialization import load_json
+        return load_json(path, tutorial_type=cls)
+
     def target(self, drawable: Drawable, *, name: str | None = None) -> Target:
         """Register a scene member, including a nested group child."""
         if not isinstance(drawable, Drawable) or index_scene(self.scene).get(drawable.id) is not drawable:

@@ -69,3 +69,41 @@ metadata or claim a package name is available without checking.
 - Structural visibility checks use object/ancestor/layer flags and opacity, not pixel-level masks or occlusion.
 - Export through temporary PNGs. Refuse collisions by default, including concurrent creations, and report completed files on later failure. Overwrite is explicit and replaces a file only after encoding succeeds.
 - Version advances to local alpha 0.1.0a2; publication and naming remain unresolved.
+
+
+## M3 release decisions — 2026-09-20
+
+- Owner confirmed distribution `tutordraw`, MIT license, and author Nuh Yamin.
+- Repository URL comes from configured origin: https://github.com/nuhyamin1/tutordraw.
+- Local candidate advances to 0.1.0a3; public upload and version approval are separate.
+- Keep the exact tested DrawCV pin; do not claim a broader range without testing it.
+- Keep the a2 authoring API unchanged. Clarify theme timing, step-owned callouts,
+  source-copy limits, and nontransactional export in the public documentation.
+- Test built wheels in CI on Windows/Linux/macOS and CPython 3.12–3.14. Configured
+  coverage is not evidence of successful hosted runs; those remain pending.
+- Use strict Twine/artifact checks and a metadata-required release gate, with no
+  automated upload workflow.
+
+
+## First public release — 2026-09-20
+
+The owner explicitly authorized PyPI publication and use of a locally saved token.
+Uploaded 0.1.0a3 wheel and source archive; PyPI JSON hashes match the approved files.
+No credential value was printed or written to this repository. The alpha retains
+Windows/CPython 3.12 verification claims; hosted CI remains pending. Future artifact
+changes require a new release version. Post-release documentation updates do not
+change the immutable uploaded artifacts.
+
+
+## Persistence priority — development 0.1.0a4
+
+Following the owner's agreement to continue AI-friendly development, implement
+complete lesson save/load before timed lessons. Use JSON data with schema version 1,
+embedding the DrawCV envelope and stable tutorial identities. Do not pickle or add
+an AI-service dependency. Strict TutorDraw field/reference validation prevents
+silently lost edits; DrawCV remains responsible for its scene schema.
+
+Immutable annotations can be revised through detached documents; named targets
+resolve current source drawables. New step IDs survive persistence. Save defaults
+to no overwrite and validates before replacing files. Full undo history, rendered
+outputs, external-asset bundling, and schema migrations remain out of scope.

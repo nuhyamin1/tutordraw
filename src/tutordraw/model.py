@@ -10,6 +10,7 @@ from .errors import ValidationError
 from .validation import finite_number, rgb
 
 if TYPE_CHECKING:
+    from drawcv import Drawable
     from .tutorial import Tutorial
 
 Anchor = Literal["left", "right", "top", "bottom", "center"]
@@ -54,6 +55,16 @@ class Target:
     drawable_id: str
     name: str | None = None
     id: str = field(default_factory=lambda: str(uuid4()))
+
+    @property
+    def drawable(self) -> Drawable:
+        """Resolve the current source object, including a nested group child."""
+        from .adapters.drawcv import index_scene
+
+        obj = index_scene(self._tutorial.scene).get(self.drawable_id)
+        if obj is None:
+            raise ValidationError(f"Missing target {self.name or self.id!r}: {self.drawable_id}")
+        return obj
 
     def label(
         self, text: str, *, anchor: Anchor = "right", leader: bool = True,
@@ -111,6 +122,12 @@ class Step:
         self._highlights: dict[str, Highlight] = {}
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
+        self._id = str(uuid4())
+
+    @property
+    def id(self) -> str:
+        """Stable identity retained by lesson save/load."""
+        return self._id
 
     @property
     def labels(self) -> tuple[Label, ...]:
