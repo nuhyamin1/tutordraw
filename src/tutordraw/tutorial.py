@@ -155,3 +155,9 @@ class Tutorial:
                      alpha: bool = False) -> list[Path]:
         """Write numbered PNGs; fail on existing destinations unless explicitly allowed."""
         return export_steps(self, directory, overwrite=overwrite, alpha=alpha)
+
+    def export_video(self, path: str | Path, *, fps: int = 30, fourcc: str = "mp4v",
+                     overwrite: bool = False) -> Path:
+        """Encode the timed lesson to one video file. Opaque only; no alpha channel."""
+        from .video import export_video
+        return export_video(self, path, fps=fps, fourcc=fourcc, overwrite=overwrite)

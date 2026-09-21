@@ -40,6 +40,17 @@ Rendering takes the current authored scene state, without sampling a timeline.
 Concurrent source mutation is unsupported. Dimming reduces branch opacity, not
 the background, and does not infer visibility through masks or occlusion.
 
+Video export calls `cv2.VideoWriter` directly. OpenCV is an unconditional
+requirement of `pydrawcv`, so no extra install is needed, but **codec and
+container availability depends on the host and the installed OpenCV wheel** and
+is not something this library can promise. Verified on Windows 11 x64, CPython
+3.12, `opencv-python` 5.0.0.93: `mp4v`/`.mp4`, `MJPG`/`.avi`, `XVID`/`.avi`
+encode and decode. `avc1` opened only after OpenCV reported it could not load
+`openh264`, so H.264 is not claimed. No other platform, Python version, or
+OpenCV build has been tested; hosted CI results remain pending. An unavailable
+codec raises `VideoExportError`. Encoding is lossy: decoded frames approximate
+`render_step` output rather than matching it exactly. See [VIDEO.md](VIDEO.md).
+
 PNG export is not an all-or-nothing batch transaction. Completed files survive a
 later failure and are reported by `ExportError`. Default export refuses existing
 files; explicit overwrite replaces a file only after PNG encoding succeeds.
@@ -52,4 +63,5 @@ Direct construction of Target, Label, Callout, and Step is unsupported.
 
 Alpha releases may change APIs. Record any changes and migration instructions in
 [the changelog](../CHANGELOG.md). Version 0.1.0a3 intentionally retains the a2 API.
-Development 0.1.0a5 writes lesson schema v2 and loads v1 with default timing. Unknown versions are rejected; a4 readers cannot read v2. See [persistence](PERSISTENCE.md).
+Development 0.1.0a6 adds `export_video` and `VideoExportError`; no existing
+API changed. Development 0.1.0a5 writes lesson schema v2 and loads v1 with default timing. Unknown versions are rejected; a4 readers cannot read v2. See [persistence](PERSISTENCE.md).

@@ -77,10 +77,15 @@ Prioritized after the first release to support continuation across AI sessions.
 
 - [x] Implement durations, trailing holds, deterministic seeking and streaming frames (a5).
 - [x] Persist timing in schema v2; load v1 with default timing.
+- [x] Export a video file from the frame iterator, with atomic replacement and
+  collision safety (a6). DrawCV's VideoRenderer requires a real Scene and is not
+  usable here, so TutorDraw owns a small OpenCV writer adapter instead.
+- [x] Define video codec dependencies and failure reporting (a6): OpenCV arrives
+  with DrawCV, no new dependency; unavailable codecs raise `VideoExportError`.
+- [ ] Obtain hosted CI evidence of codec availability beyond Windows/CPython 3.12.
 - [ ] Design and implement transitions; current playback uses hard cuts.
-- [ ] Integrate with DrawCV animation/video capabilities through the adapter.
 - [ ] Add progressive reveal and timed captions.
-- [ ] Define video codec dependencies and failure reporting.
+- [ ] Sample DrawCV object timelines instead of only selecting static steps.
 
 ## Future backlog (not committed scope)
 

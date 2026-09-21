@@ -30,3 +30,14 @@ class ExportError(TutorDrawError):
         self.completed_paths = tuple(completed_paths)
         super().__init__(f"Export failed at step {step_index + 1} ({path}); "
                          f"{len(self.completed_paths)} files completed")
+
+
+class VideoExportError(TutorDrawError):
+    """A video export failed; the destination file was not created or replaced."""
+
+    def __init__(self, message, path, fourcc, frames_written):
+        self.path = path
+        self.fourcc = fourcc
+        self.frames_written = frames_written
+        super().__init__(f"{message} ({path}, fourcc {fourcc!r}, "
+                         f"{frames_written} frames encoded)")

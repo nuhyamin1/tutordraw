@@ -50,7 +50,9 @@ def main() -> None:
         for file in ("README.md", "LICENSE", "pyproject.toml", "CHANGELOG.md", "CONTRIBUTING.md",
                      "docs/API.md", "docs/RELEASING.md", "examples/cell_tutorial.py",
                      "examples/group_focus.py", "examples/save_and_revise.py", "docs/PERSISTENCE.md",
-                     "docs/AI_AUTHORING.md", "docs/TIMING.md", "examples/timed_lesson.py", "tools/check_installed.py", "tests/test_tutorial.py"):
+                     "docs/AI_AUTHORING.md", "docs/TIMING.md", "examples/timed_lesson.py",
+                     "docs/VIDEO.md", "examples/video_lesson.py",
+                     "tools/check_installed.py", "tests/test_tutorial.py"):
             if f"{name}-{version}/{file}" not in names:
                 raise SystemExit(f"Source distribution missing: {file}")
     subprocess.run([sys.executable, "-m", "twine", "check", "--strict", str(wheel), str(source)], check=True)

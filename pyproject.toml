@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tutordraw"
-version = "0.1.0a5"
+version = "0.1.0a6"
 description = "Author step-by-step visual tutorials using DrawCV drawings."
 readme = "README.md"
 license = "MIT"

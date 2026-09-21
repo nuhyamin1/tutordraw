@@ -150,6 +150,7 @@ src/tutordraw/
     themes.py
     layout.py
     rendering.py
+    video.py
     errors.py
     adapters/drawcv.py
 examples/
@@ -211,3 +212,15 @@ files use exclusive creation (including protection against collisions after the
 preflight); overwrite uses replacement only after encoding succeeds. A failed new
 write removes its partial file. Successful earlier files remain and are reported
 in `ExportError.completed_paths`. This is not an all-or-nothing batch transaction.
+
+## Video export
+
+`video.py` is the only module importing `cv2`. It consumes `render_frames`,
+opening a `cv2.VideoWriter` lazily on the first rendered frame and sizing it from
+that frame, so a rendering failure opens no encoder. The writer is released in a
+`finally` on every path. Encoding targets a temporary file that carries the
+destination's extension, because OpenCV selects the container from it; the file
+moves into place only after encoding succeeds, so a video export is
+all-or-nothing and an existing destination survives any failure. DrawCV's
+`VideoRenderer` is unusable here because it requires a real `Scene`; see
+DECISIONS.md and VIDEO.md.

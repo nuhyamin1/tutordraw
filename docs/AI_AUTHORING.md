@@ -57,4 +57,4 @@ The example writes original/revised JSON files plus `before.png` and `after.png`
 
 ## Current limits
 
-The current font supports ASCII annotations, with newlines and wrapping in callouts. Thai and other scripts need future typography work. There is no automatic label-overlap solver, interactive lesson player, narration, or timed video export yet. Source drawings remain editable, but undo history is not saved. See [compatibility](COMPATIBILITY.md) and [persistence](PERSISTENCE.md).
+The current font supports ASCII annotations, with newlines and wrapping in callouts. Thai and other scripts need future typography work. Timed lessons export to a video file with `export_video`; see [video](VIDEO.md). There is no automatic label-overlap solver, interactive lesson player, narration, captions, or transitions yet. Source drawings remain editable, but undo history is not saved. See [compatibility](COMPATIBILITY.md) and [persistence](PERSISTENCE.md).

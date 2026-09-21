@@ -8,7 +8,7 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 **Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-**Development checkout: 0.1.0a5 (not yet published)** adds complete lesson save/load, AI revision support, and deterministic timed playback. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
+**Development checkout: 0.1.0a6 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, and video export. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
 
 Implemented:
 
@@ -25,8 +25,9 @@ Implemented:
 - Development only: save/reopen complete versioned JSON lessons with stable IDs and validated references.
 
 - Development only: step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](docs/TIMING.md).
+- Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](docs/VIDEO.md).
 
-Video encoding, interactive playback, rich typography, and automatic collision avoidance remain planned.
+Transitions, timed captions, progressive reveals, interactive playback, rich typography, and automatic collision avoidance remain planned.
 
 ## Install the alpha
 
@@ -47,7 +48,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe examples/cell_tutorial.py
 ```
 
-On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 145 tests. CI is configured for Windows, Linux, and macOS on Python 3.12–3.14; hosted results are pending. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
+On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 171 tests (one symlink test skips without symlink privileges). CI is configured for Windows, Linux, and macOS on Python 3.12–3.14; hosted results are pending. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
 
 No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.10.0.post1`, which imports as `drawcv`. A broader compatibility range is future work. Use an explicit version or `--pre` when selecting an alpha release.
 
@@ -89,6 +90,20 @@ In the development checkout, use `tutorial.save_json("lesson.tutordraw.json")` a
 
 Run `python examples/save_and_revise.py` for the complete workflow. See [AI authoring](https://github.com/nuhyamin1/tutordraw/blob/master/docs/AI_AUTHORING.md) and [persistence](https://github.com/nuhyamin1/tutordraw/blob/master/docs/PERSISTENCE.md).
 
+## Export a timed lesson to video
+
+In the development checkout, give each step a duration and encode the result:
+
+```
+lesson.steps[0].set_timing(duration=2, pause=1)
+lesson.export_video("output/video/lesson.mp4", fps=30)
+```
+
+Run `python examples/video_lesson.py` for the complete workflow. It encodes the
+10-second cell lesson at 12 fps, then decodes the file to report its frame count.
+See [video export](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md)
+for codec limits and failure behavior.
+
 ## Current limits
 
 - Labels support **single-line printable ASCII**; callouts additionally support newlines and measured word wrapping. Other scripts and rich typography are not implemented yet.
@@ -98,11 +113,13 @@ Run `python examples/save_and_revise.py` for the complete workflow. See [AI auth
 - Dimming multiplies artwork opacity, not the background. Complex masks, blend modes, and occlusion are not pixel-level spotlight isolation. Hidden or zero-opacity attention targets are rejected; clipping and masks are not used to infer visibility.
 - Scenes must round-trip through DrawCV serialization; unsupported copying raises `SceneCopyError`. Arbitrary custom drawables/assets are not guaranteed supported.
 - Rendering uses authored scene state without sampling a timeline. Concurrent source edits during rendering are unsupported.
+- Video export is opaque only and uses hard cuts. Which codecs work depends on the host OpenCV build; an unavailable codec raises `VideoExportError`. Encoding is lossy, so decoded frames approximate `render_step` output.
 - Missing registered targets fail rendering, even if their label is not shown in that step. Hidden artwork does not suppress an explicitly shown label.
 
 ## Documentation and continuation
 
 - [Practical tutorial](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TUTORIAL.md): build a lesson from a DrawCV scene.
+- [Video export](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md): encoding contract, codecs, and limits.
 - [API guide](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md): implemented methods and errors.
 - [Compatibility](https://github.com/nuhyamin1/tutordraw/blob/master/docs/COMPATIBILITY.md): evidence, fonts, and alpha API expectations.
 - [Release procedure](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RELEASING.md): exact artifact checks and manual publishing.

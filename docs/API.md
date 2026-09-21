@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a5 (development)
+# Implemented API — 0.1.0a6 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -96,6 +96,8 @@ Frames encode in temporary files. Explicit overwrite replaces an existing file o
 - `TutorDrawError`: base exception.
 - `ValidationError`: invalid options/references/indices, hidden attention targets, or layout that cannot fit a character. Also a ValueError.
 - `SceneCopyError`: failure copying through DrawCV's document API, with chained cause.
+- `VideoExportError`: a video export failed; the destination was not created or
+  replaced. Inspect `path`, `fourcc`, `frames_written`, and `__cause__`.
 - `ExportError`: failure after export starts. Inspect zero-based `step_index`, `path`, `completed_paths` (tuple), and `__cause__`.
 - `LayoutWarning`: an annotation extends outside the canvas. Rendering proceeds and may clip it.
 
@@ -123,3 +125,17 @@ contracts, and [AI_AUTHORING.md](AI_AUTHORING.md) for a practical model-to-model
 `step_at_time(time)` returns a zero-based index; `render_at_time(time, alpha=False)`
 returns a Canvas; `render_frames(fps=30, alpha=False)` returns an iterator of canvases.
 See [TIMING.md](TIMING.md) for boundary semantics, validation, and limits.
+
+## Video export (development 0.1.0a6)
+
+`tutorial.export_video(path, *, fps=30, fourcc="mp4v", overwrite=False) -> Path`
+encodes `ceil(duration * fps)` frames into one video file. The file extension
+selects the container. Output is always opaque three-channel BGR; there is no
+`alpha` option, because these codecs carry no alpha channel.
+
+Invalid `fps`, `fourcc`, `overwrite`, and empty lessons raise `ValidationError`
+before any file or encoder is opened. Existing destinations raise
+`FileExistsError` unless `overwrite=True`; symlinks are refused either way.
+Codec, rendering, and write failures raise `VideoExportError` and leave an
+existing destination untouched. Which codecs are available depends on the host
+OpenCV build. See [VIDEO.md](VIDEO.md) for the full contract and local evidence.

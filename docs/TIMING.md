@@ -1,6 +1,7 @@
 # Timed lessons
 
 Implemented in development **0.1.0a5**, not published on PyPI yet.
+Development 0.1.0a6 encodes this playback to a video file; see [VIDEO.md](VIDEO.md).
 This is deterministic playback of static steps with hard cuts.
 
 ```python
@@ -53,7 +54,7 @@ consumes 20 frames at 2 fps under `output/timing`.
 Schema v2 stores duration and pause on each step. Loading v1 assigns 3/0 defaults,
 preserving IDs and static images. Saving always produces v2. See [PERSISTENCE.md](PERSISTENCE.md).
 
-No video-file exporter, player UI, crossfades, progressive reveals, timed captions,
-audio, or DrawCV animation sampling is implemented. `render_at_time` selects a
-TutorDraw step; it does not advance timelines attached to source DrawCV objects.
-The next milestone is a tested video export adapter consuming this frame iterator.
+No player UI, crossfades, progressive reveals, timed captions, audio, or DrawCV
+animation sampling is implemented. `render_at_time` selects a TutorDraw step;
+it does not advance timelines attached to source DrawCV objects. Video export
+(`export_video`) consumes this frame iterator and is documented in [VIDEO.md](VIDEO.md).

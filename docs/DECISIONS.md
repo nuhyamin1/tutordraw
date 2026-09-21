@@ -122,3 +122,37 @@ Use schema v2 with required duration/pause. Keep v1 schema and load support with
 3/0 defaults; always save v2. Strict version/field handling prevents silent loss.
 DrawCV VideoRenderer expects an animated Scene, not tutorial frame iterators;
 video integration needs a deliberate adapter and collision/failure tests.
+
+## Video export — development 0.1.0a6 (2026-09-21)
+
+Do not reuse DrawCV's `VideoRenderer`. Every entry point is typed `scene: Scene`,
+`render_frames` enforces `isinstance(scene, Scene)`, and it drives
+`Scene.render_at_time`. A tutorial is not a scene and must not pretend to be one,
+and DrawCV exposes no encoder accepting a frame sequence. TutorDraw therefore owns
+`video.py`, a small OpenCV writer adapter, and DrawCV stays unmodified.
+
+Call `cv2` directly instead of adding a dependency. `pydrawcv==0.10.0.post1`
+requires `opencv-python>=4.8.0` and `numpy` unconditionally, and DrawCV already
+writes PNGs with `cv2.imwrite`, so TutorDraw's implicit OpenCV dependency is not
+new — only newly visible. `video.py` is the single module importing `cv2`.
+Re-check this if the DrawCV pin is ever widened. An ffmpeg backend was considered
+and rejected for now: it would add a real dependency for one output format.
+
+Export opaque frames only. `VideoWriter.write` takes three-channel BGR and these
+codecs carry no alpha, so `export_video` has no `alpha` option; `export_steps`
+remains the transparent-output path.
+
+Open the encoder lazily on the first rendered frame, and size it from that frame
+rather than `scene.width`. A rendering failure then never leaves an encoder open,
+and a frame whose size changes mid-export fails loudly instead of being written
+distorted. Release the writer in a `finally` on every path.
+
+Apply the PNG export safety model to a single file: preflight the destination,
+encode into a temporary file carrying the destination's extension (OpenCV selects
+the container from it), then `os.replace` when overwriting or create exclusively
+otherwise. Unlike PNG batch export this is all-or-nothing, because there is one
+output file. Treat a zero-byte result from an encoder that opened successfully as
+a failure, since `isOpened()` alone does not prove a codec works.
+
+Codec availability is a host property, not a library guarantee. Report it through
+`VideoExportError` with the fourcc, and claim only what was measured locally.

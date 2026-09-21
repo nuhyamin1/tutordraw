@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0a6 — Unreleased
+
+- Add `Tutorial.export_video(path, fps=30, fourcc="mp4v", overwrite=False)`,
+  encoding the streaming frame iterator into one video file.
+- Add `VideoExportError` carrying `path`, `fourcc`, and `frames_written`.
+- Refuse existing destinations and symlinks, encode through a temporary file, and
+  replace the destination only after encoding succeeds, so a failure leaves any
+  existing file untouched.
+- Report unavailable codecs instead of writing a broken or empty file.
+- Add no dependency: OpenCV already ships as an unconditional DrawCV requirement.
+- Add `docs/VIDEO.md`, `examples/video_lesson.py`, and 27 video tests.
+- Verified locally on Windows 11 / CPython 3.12 / opencv-python 5.0.0.93:
+  171 tests pass, and the cell lesson encodes to 120 mp4v frames at 12 fps whose
+  only large frame-to-frame changes fall exactly on the two step boundaries.
+- Transitions, progressive reveals, timed captions, and audio remain pending.
+
 ## 0.1.0a5 — Unreleased
 
 - Add step durations and trailing pauses, direct time seeking, and streaming Canvas frames.

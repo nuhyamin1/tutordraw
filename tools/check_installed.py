@@ -29,7 +29,8 @@ print('Installed:', installed)
 print('DrawCV:', drawcv.__file__)
 """
         subprocess.run([sys.executable, "-I", "-c", probe, str(root)], cwd=temporary, check=True)
-        for name in ("cell_tutorial.py", "group_focus.py", "save_and_revise.py", "timed_lesson.py"):
+        for name in ("cell_tutorial.py", "group_focus.py", "save_and_revise.py",
+                     "timed_lesson.py", "video_lesson.py"):
             subprocess.run([sys.executable, "-I", "-W", "error", str(example_dir / name)],
                            cwd=temporary, check=True)
         verify = """
@@ -48,7 +49,16 @@ saved = Tutorial.load_json('output/persistence/cell-revised.tutordraw.json')
 assert saved.get_target('nucleus').drawable.transform.translation_x == 20
 timed = Tutorial.load_json('output/timing/cell-timed.tutordraw.json')
 assert timed.duration == 10 and timed.step_at_time(3) == 1
-print('Verified eight PNGs and reloaded static/timed lessons outside the checkout')
+# The video example writes nothing when the host provides no usable codec.
+videos = sorted(Path('output/video').glob('cell-lesson.*'))
+for path in videos:
+    capture = cv2.VideoCapture(str(path))
+    try:
+        assert capture.isOpened(), path
+        assert int(capture.get(cv2.CAP_PROP_FRAME_COUNT)) == 120, path
+    finally:
+        capture.release()
+print(f'Verified eight PNGs, {len(videos)} video(s), and reloaded lessons outside the checkout')
 """
         subprocess.run([sys.executable, "-I", "-c", verify], cwd=temporary, check=True)
 
