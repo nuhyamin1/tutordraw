@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a7 (development)
+# Implemented API — 0.1.0a8 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -63,6 +63,26 @@ step.dim_others(target, another_target, opacity=0.25)
 `dim_others(*targets, opacity=None) -> Step` preserves one or more targets and multiplies unrelated artwork opacity by a factor in [0,1]. The theme default is 0.25. Repeating it replaces the focus set. A selected group preserves its subtree; a selected child preserves its ancestors while unrelated branches dim exactly once. Existing ancestor opacity still applies. Annotations are never dimmed.
 
 Highlight/focus requests for targets under hidden or zero-opacity objects/layers fail at render time. Empty/all-hidden groups are rejected. Masks, clipping, blend modes, and occlusion are not visibility tests. Dimming is opacity reduction, not pixel-level spotlight isolation. Background color is unchanged. Titles drawn into the source are artwork too; register and focus them if they should stay undimmed.
+
+## Changing artwork per step (new in 0.1.0a8)
+
+```python
+step.restyle(moon, move=(0, 190), fill=(168, 68, 52))
+step.restyle(sun, opacity=0.35)
+step.restyle(shadow, visible=False)
+```
+
+`restyle(target, *, move=None, fill=None, opacity=None, visible=None) -> Step`
+changes a target's artwork for that step only, on the working copy, leaving the
+source drawing untouched. `move` is a `(dx, dy)` shift relative to the source
+placement; attached labels, leaders and highlights follow it. `fill` sets a
+shape's fill or a Text object's colour and is refused for Line and Group.
+`opacity` is absolute, and `dim_others` still multiplies on top of it.
+`visible=False` hides the target, after which emphasising it raises.
+
+At least one option is required, and repeating the call for a target replaces
+its settings entirely. `step.restyles` exposes the definitions. Restyles persist
+in lesson schema v3. See [RESTYLE.md](RESTYLE.md).
 
 ## Theme
 

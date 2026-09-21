@@ -66,5 +66,6 @@ Direct construction of Target, Label, Callout, and Step is unsupported.
 
 Alpha releases may change APIs. Record any changes and migration instructions in
 [the changelog](../CHANGELOG.md). Version 0.1.0a3 intentionally retains the a2 API.
+Development 0.1.0a8 adds `Step.restyle` and lesson schema v3; v1 and v2 still load.
 Development 0.1.0a6 adds `export_video` and `VideoExportError`; no existing
 API changed. Development 0.1.0a5 writes lesson schema v2 and loads v1 with default timing. Unknown versions are rejected; a4 readers cannot read v2. See [persistence](PERSISTENCE.md).

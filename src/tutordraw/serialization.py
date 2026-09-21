@@ -21,7 +21,8 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+SUPPORTED_VERSIONS = (1, 2, SCHEMA_VERSION)
 ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset", "font_scale", "padding"}
 
 
@@ -83,7 +84,12 @@ def to_dict(tutorial: Tutorial) -> dict:
                        "highlights": [{"target_id": h.target.id, "padding": h.padding,
                                        "color": list(h.color), "width": h.width} for h in step.highlights],
                        "dim": None if step._dim_opacity is None else {
-                           "target_ids": [t.id for t in step._focus], "opacity": step._dim_opacity}}
+                           "target_ids": [t.id for t in step._focus], "opacity": step._dim_opacity},
+                       "restyles": [{"target_id": r.target.id,
+                                     "move": None if r.move is None else list(r.move),
+                                     "fill": None if r.fill is None else list(r.fill),
+                                     "opacity": r.opacity, "visible": r.visible}
+                                    for r in step.restyles]}
                       for step in tutorial.steps],
         }
         result = _json_copy(document)
@@ -107,8 +113,10 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
         if data["format"] != FORMAT:
             raise LessonFormatError(f"Unsupported lesson format: {data['format']!r}")
         version = data["schema_version"]
-        if type(version) is not int or version not in (1, SCHEMA_VERSION):
-            raise LessonFormatError(f"Unsupported lesson schema version: {version!r}; expected 1 or 2")
+        if type(version) is not int or version not in SUPPORTED_VERSIONS:
+            raise LessonFormatError(
+                f"Unsupported lesson schema version: {version!r}; expected "
+                + " or ".join((", ".join(map(str, SUPPORTED_VERSIONS[:-1])), str(SUPPORTED_VERSIONS[-1]))))
         theme_data = _object(data["theme"], {f.name for f in fields(Theme)}, "theme")
         for key in theme_data:
             if key.endswith("_color"):
@@ -180,8 +188,10 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
 
         for i, item in enumerate(_list(data["steps"], "steps")):
             where = f"steps[{i}]"
-            timing_fields = {"duration", "pause"} if version == 2 else set()
-            _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"} | timing_fields, where)
+            timing_fields = {"duration", "pause"} if version >= 2 else set()
+            restyle_fields = {"restyles"} if version >= 3 else set()
+            _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
+                    | timing_fields | restyle_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -200,6 +210,23 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
                 highlighted.add(target.id)
                 step.highlight(target, padding=highlight["padding"], width=highlight["width"],
                                color=tuple(_list(highlight["color"], f"{location}.color")))
+            restyled = set()
+            for j, entry in enumerate(_list(item.get("restyles", []), f"{where}.restyles")):
+                location = f"{where}.restyles[{j}]"
+                _object(entry, {"target_id", "move", "fill", "opacity", "visible"}, location)
+                target = reference(entry["target_id"], targets, f"{location}.target_id")
+                if target.id in restyled:
+                    raise LessonFormatError(f"{location}: duplicate restyle for {target.id!r}")
+                restyled.add(target.id)
+                move = entry["move"]
+                fill = entry["fill"]
+                try:
+                    step.restyle(target,
+                                 move=None if move is None else tuple(_list(move, f"{location}.move")),
+                                 fill=None if fill is None else tuple(_list(fill, f"{location}.fill")),
+                                 opacity=entry["opacity"], visible=entry["visible"])
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{location}: {exc}") from exc
             if item["dim"] is not None:
                 dim = _object(item["dim"], {"target_ids", "opacity"}, f"{where}.dim")
                 if dim["opacity"] is None:

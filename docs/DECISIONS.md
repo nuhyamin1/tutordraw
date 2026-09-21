@@ -203,3 +203,42 @@ environment confirmed the extra installs cleanly on Windows and that Thai and
 Arabic then render correctly, so the milestone is viable rather than
 speculative. Note DrawCV's font path rejects Greek, so the two paths have
 complementary coverage and cannot yet be mixed in one string.
+
+## Per-step artwork changes — development 0.1.0a8 (2026-09-21)
+
+Trying to build the owner's own example, "explain a lunar eclipse", exposed the
+real limit: a lesson was one fixed drawing with annotations on top. The
+narration could say "the Moon turns red" while the Moon stayed grey, because a
+step could point at artwork but never change it. For a live explainer that is
+the difference between showing something happen and describing it.
+
+The obvious workaround is editing `target.drawable` between renders. It was
+tested and rejected: every render reads the current source, so an edit is
+retroactive and silently changes steps already rendered. A saved lesson could
+not have a grey Moon in beat one and a red Moon in beat four.
+
+Add `Step.restyle`, applied to the working copy each render already makes. That
+keeps step independence, keeps the source untouched, and needs no new rendering
+machinery. Apply restyles **before** labels, highlights and dimming are
+computed, so annotations attached to a moved target follow it for free; a test
+asserts this equals moving the source object by the same amount.
+
+One method rather than separate `move`/`recolor`/`hide` verbs, with repetition
+replacing the whole record, matching `highlight`'s existing contract. Named
+`restyle` even though it also moves, because it is short, verb-first, and
+`move=` is visible in the signature. Scope is move, fill, opacity and visible;
+stroke, scale and rotation are deferred rather than guessed at.
+
+`move` is a delta, not an absolute position, because DrawCV objects carry a
+transform whose translation is separate from the shape's own coordinates. A
+delta composes with whatever the source already does; an absolute would have to
+pick one of those meanings and would surprise either way.
+
+`opacity` is absolute while `dim_others` keeps multiplying. Dimming is described
+everywhere as a multiplier over authored opacity, so a restyled value is simply
+the new authored value. The two compose predictably instead of one overriding
+the other.
+
+Bump to schema v3 with `restyles` required on each step, following the v2
+precedent for timing. v1 and v2 load without restyles and saving always writes
+v3, so older readers reject new files rather than silently dropping content.

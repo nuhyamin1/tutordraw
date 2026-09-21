@@ -85,8 +85,17 @@ Prioritized after the first release to support continuation across AI sessions.
   with DrawCV, no new dependency; unavailable codecs raise `VideoExportError`.
 - [ ] Obtain hosted CI evidence of codec availability beyond Windows/CPython 3.12.
 - [ ] Design and implement transitions; current playback uses hard cuts.
-- [ ] Add progressive reveal and timed captions.
+- [x] Change a target's position, fill, opacity and visibility per step (a8),
+  which covers progressive reveal of artwork.
+- [ ] Reveal annotations progressively within a step; today they appear at once.
+- [ ] Add timed captions.
 - [ ] Sample DrawCV object timelines instead of only selecting static steps.
+
+## Showing change
+
+- [x] Per-step artwork changes through `Step.restyle`, persisted in schema v3 (a8).
+- [ ] Animate between beats: motion is currently a jump at the hard cut.
+- [ ] Stroke, scale and rotation overrides; today only move, fill, opacity, visible.
 
 ## Text and languages
 

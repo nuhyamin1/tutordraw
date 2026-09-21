@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 
-from drawcv import Drawable, Group, Scene
+from drawcv import Color, Drawable, FillStyle, Group, Scene
 
 from ..errors import SceneCopyError, ValidationError
 
@@ -46,3 +46,28 @@ def overlay_layer(scene: Scene) -> str:
         name += "_"
     scene.create_layer(name)
     return name
+
+
+def supports_fill(drawable: Drawable) -> bool:
+    """Shapes carry a FillStyle; text carries a plain color. Lines and groups have neither."""
+    return hasattr(drawable, "fill") or hasattr(drawable, "color")
+
+
+def set_fill(drawable: Drawable, color: tuple[int, int, int]) -> None:
+    """Recolor a working copy, keeping the fill's other settings intact."""
+    tint = Color(*color)
+    if hasattr(drawable, "fill"):
+        existing = drawable.fill
+        # FillStyle holds a private paint field, so replace() cannot be used.
+        drawable.fill = (FillStyle(color=tint) if existing is None else
+                         FillStyle(color=tint, opacity=existing.opacity, enabled=existing.enabled))
+    elif hasattr(drawable, "color"):
+        drawable.color = tint
+    else:
+        raise ValidationError(f"{type(drawable).__name__} has no fill or color to set")
+
+
+def translate(drawable: Drawable, dx: float, dy: float) -> None:
+    """Shift a working copy relative to wherever the source placed it."""
+    drawable.transform.translation_x += dx
+    drawable.transform.translation_y += dy

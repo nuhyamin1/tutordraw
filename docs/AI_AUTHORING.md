@@ -55,6 +55,23 @@ The example writes original/revised JSON files plus `before.png` and `after.png`
 - Run `Tutorial.from_dict` after JSON edits; structural schema checks alone do not verify references.
 - Review both individual steps and the full order. Independently correct images can still form a confusing lesson.
 
+## Make the drawing change, not just the words
+
+A step can alter its targets for that step only, which is how a lesson shows
+something happening instead of narrating over a still picture:
+
+```python
+beat.restyle(moon, move=(0, 190), fill=(168, 68, 52))  # into shadow, turns red
+beat.restyle(shadow, visible=False)                    # not part of this beat yet
+beat.restyle(sun, opacity=0.35)                        # push it back
+```
+
+Prefer this over editing `target.drawable`. Editing the source is retroactive:
+it changes every step, including ones already rendered. `restyle` applies to a
+working copy, so beats stay independent. Labels and highlights follow a moved
+target automatically. Repeating `restyle` for a target replaces its settings, so
+pass every option you still want. See [restyle](RESTYLE.md).
+
 ## Characters you may use in annotations
 
 This matters when a model writes lesson text at runtime. Labels and callouts

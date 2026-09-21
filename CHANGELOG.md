@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0a8 — Unreleased
+
+- Add `Step.restyle(target, move=, fill=, opacity=, visible=)`, changing a
+  target's artwork for one step on the working copy. The source drawing is never
+  edited, so steps stay independent and render in any order.
+- Attached labels, leaders and highlights follow a moved target: moving by
+  `restyle` is pixel-identical to moving the source object by the same amount.
+- `visible=False` covers progressive reveal of artwork. `opacity` is absolute and
+  `dim_others` still multiplies on top of it. `fill` recolours shapes and text,
+  and is refused for Line and Group.
+- Persist restyles in lesson schema v3 and package its JSON Schema. v1 and v2
+  still load without restyles; saving always writes v3.
+- Add `docs/RESTYLE.md`, `examples/eclipse_lesson.py`, and 32 restyle tests.
+- Lessons can now show change over time. Annotations within a step still appear
+  at once, and motion is a jump at the cut rather than an animation.
+
 ## 0.1.0a7 — Unreleased
 
 - Accept annotation text beyond ASCII: Latin with accents, Greek, Cyrillic, CJK,

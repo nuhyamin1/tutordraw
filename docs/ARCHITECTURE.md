@@ -184,7 +184,7 @@ assets, rich typography, and broader compatibility remain unverified.
 
 ## Persistence and extensibility
 
-Persistence uses `serialization.py` and schema v2 (also reads v1) (`tutordraw.lesson`). The
+Persistence uses `serialization.py` and schema v3 (also reads v1 and v2) (`tutordraw.lesson`). The
 versioned envelope embeds the DrawCV scene plus explicit target, annotation, theme,
 and step data. Stable IDs are restored without changing source references. JSON
 contains data only; no callbacks or pickle. Unknown TutorDraw fields, future

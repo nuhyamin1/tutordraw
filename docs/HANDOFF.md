@@ -1,14 +1,14 @@
 # AI handoff — start here
 
-Last updated: **2026-09-21**, character-support milestone (Claude Code).
+Last updated: **2026-09-21**, per-step artwork milestone (Claude Code).
 
 ## Current state
 
-**Published: 0.1.0a3. Development checkout: 0.1.0a7, NOT published.**
+**Published: 0.1.0a3. Development checkout: 0.1.0a8, NOT published.**
 
-Two milestones landed today: a6 added video export, a7 replaced the
-printable-ASCII restriction on annotation text. a6 is committed and pushed;
-a7 is committed locally only.
+Three milestones landed today: a6 video export, a7 annotation text beyond
+ASCII, a8 per-step artwork changes. a6 is pushed; a7 and a8 are committed
+locally only.
 
 Owner: Nuh Yamin; package tutordraw; MIT. Origin:
 https://github.com/nuhyamin1/tutordraw.git, branch master.
@@ -47,6 +47,7 @@ Consequences worth remembering:
 - a5: step `duration`/`pause`, seeking, `render_frames`, schema v2 with v1 loading.
 - a6: `Tutorial.export_video(...)` and `VideoExportError`. See [VIDEO.md](VIDEO.md).
 - a7: annotation text beyond ASCII. See [TEXT.md](TEXT.md).
+- a8: `Step.restyle` and lesson schema v3. See [RESTYLE.md](RESTYLE.md).
 
 ## What a7 decided and why
 
@@ -78,36 +79,77 @@ raises `UnicodeEncodeError` when printing the offending character, so an error
 message containing it would hide the very failure the caller needs to read.
 `U+XXXX` carries the identity instead. Keep this property; a test asserts it.
 
+## What a8 decided and why
+
+Building the owner's own example, "explain a lunar eclipse", exposed the real
+limit: a lesson was one fixed drawing with annotations on top, so the narration
+could say "the Moon turns red" while the Moon stayed grey. A step could point at
+artwork but never change it.
+
+The obvious workaround, editing `target.drawable` between renders, was tested
+and rejected: every render reads the current source, so an edit is retroactive
+and silently rewrites steps already rendered.
+
+`Step.restyle(target, move=, fill=, opacity=, visible=)` applies to the working
+copy each render already makes, **before** labels, highlights and dimming are
+computed. That keeps steps independent, leaves the source untouched, and makes
+attached annotations follow a moved target for free. A test asserts a `move`
+produces pixel-identical output to moving the source object by the same amount.
+
+`move` is a delta, not an absolute, because DrawCV transforms are separate from
+shape coordinates and a delta composes with both. `opacity` is absolute while
+`dim_others` keeps multiplying, so the two compose instead of fighting. Schema
+bumped to v3 with `restyles` required per step, following the v2 timing
+precedent; v1 and v2 still load, saving always writes v3.
+
 ## Code map and changed files
 
+a7 (text):
 - `src/tutordraw/text.py`: **new** — ranges, cached probe, one validator.
 - `model.py`: `make_annotation` calls `validate_annotation_text`.
-- `tests/test_text.py`: **new**, 29 cases. `docs/TEXT.md`: **new**.
-- `examples/symbols_lesson.py`: **new**, a three-step diagram using the symbols.
-- `tools/check_installed.py`: six examples; **fails if no video was produced**.
-- `tools/check_release.py`: requires the new doc and example in the sdist.
-- Version a7 in `pyproject.toml` and `__init__.py`. README, API, COMPATIBILITY,
-  AI_AUTHORING, DECISIONS, ROADMAP, CHANGELOG updated.
+- `tests/test_text.py` (29 cases), `docs/TEXT.md`, `examples/symbols_lesson.py`.
+
+a8 (per-step artwork):
+- `model.py`: `Restyle` record and `Step.restyle`; `Step._restyles`.
+- `attention.py`: `apply_restyles`, called from `tutorial.render_step` before
+  `apply_attention` so annotations follow moved artwork.
+- `adapters/drawcv.py`: `supports_fill`, `set_fill`, `translate` keep the
+  DrawCV specifics out of the model, per AGENTS.md.
+- `serialization.py`: schema v3, `SUPPORTED_VERSIONS`, restyle round trip.
+- `lesson-v3.schema.json`: **new**, generated from v2 and packaged.
+- `tests/test_restyle.py` (32 cases), `docs/RESTYLE.md`,
+  `examples/eclipse_lesson.py`.
+
+Shared: `tools/check_installed.py` runs seven examples and **fails if no video
+was produced**; `tools/check_release.py` requires three schemas plus the new
+docs and examples. Version a8 in `pyproject.toml` and `__init__.py`. README,
+API, PERSISTENCE, TIMING, COMPATIBILITY, ARCHITECTURE, AI_AUTHORING, DECISIONS,
+ROADMAP and CHANGELOG updated.
 
 ## Verification completed this session
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 
-- `python -m pytest -q`: **200 passed, 1 skipped** (a6 was 171). The skip is the
-  symlink-refusal test, needing privileges Windows does not grant by default.
-  The text tests also pass under `-W error::UserWarning`.
+- `python -m pytest -q`: **232 passed, 1 skipped** (a6 was 171, a7 was 200). The
+  skip is the symlink-refusal test, needing privileges Windows does not grant by
+  default. The text tests also pass under `-W error::UserWarning`.
+- `python examples/eclipse_lesson.py`: four beats, 27-second lesson.
+  **Visually inspected** beats 1 and 4: beat 1 hides the shadow cone and shows a
+  grey Moon above it; beat 4 has the Moon moved 190 px down into the cone, red,
+  with the Sun faded and the rest dimmed. The label, leader and highlight box
+  all followed the moved Moon. This is the case that motivated the milestone.
 - `python examples/symbols_lesson.py`: three steps written to `output/symbols`.
   **Visually inspected** steps 1 and 3: `30 µm`, `½`, an em dash, `α = 45°`,
   `2 ×` and `37 °C ± 0.5 °C` all render as real glyphs, correctly spaced, inside
   their panels, with no clipping. Wrapping measures the wide glyphs correctly.
 - Confirmed by hand that Thai, Arabic, Hebrew, Devanagari and emoji each raise
   `ValidationError` naming the character and codepoint.
-- `python tools/check_docs.py`: 18 documents and one README example pass.
-- `python -m build --no-isolation --outdir output/development`: a7 built.
+- `python tools/check_docs.py`: 19 documents and one README example pass.
+- `python -m build --no-isolation --outdir output/development`: a8 built.
 - `python tools/check_release.py --dist-dir output/development --require-metadata`: passes.
-- Installed the a7 wheel, `python -I -m pytest -q`: **200 passed, 1 skipped**.
-- `python -I tools/check_installed.py`: six examples run outside the checkout;
-  11 PNGs and one 120-frame video decode, and lessons reload correctly.
+- Installed the a8 wheel, `python -I -m pytest -q`: **232 passed, 1 skipped**.
+- `python -I tools/check_installed.py`: seven examples run outside the checkout;
+  15 PNGs and one 120-frame video decode, and lessons reload correctly.
 - Restored the editable install; `python -m pip check` clean.
 
 ### Hosted CI is green — earlier docs were wrong
@@ -161,9 +203,25 @@ above shows the work is viable rather than speculative.
 6. Keep the a7 validator: it should route supported-but-shaped scripts to the
    font path when configured, and keep refusing them when it is not.
 
-Other open work, in the owner's rough priority order: timed captions (the
-product needs on-screen explanation), progressive reveal within a step, then
-transitions. Publishing a4–a7 to PyPI needs an explicit owner request.
+Thai and Arabic stay next because they are the last **hard blocker**: no
+workaround exists, while the other gaps below have one.
+
+Then, in order:
+
+1. **Animate between beats.** `restyle` made motion expressible but it is still
+   a jump at the cut. Interpolating a target's move, fill and opacity across a
+   step's duration would make `render_at_time` and video export genuinely
+   animated. This is the largest remaining change to the timing model and needs
+   its contract designed first: today every frame equals some `render_step`
+   output, and `tests/test_timing.py` and `tests/test_video.py` rely on that.
+2. **Reveal annotations progressively within a step.** Artwork reveal already
+   works through `restyle(visible=False)`; labels and callouts still appear all
+   at once. Note the caller can approximate this today by adding one step per
+   reveal, which is why it ranks below the items with no workaround.
+3. **Timed captions.** Lower than it looks: the owner's product supplies its own
+   voice and text, so burned-in captions mostly serve exported video.
+
+Publishing a4–a8 to PyPI needs an explicit owner request.
 
 ## Release and environment notes
 
@@ -184,12 +242,13 @@ C:/Projects/DrawCV is context only. Git may need
 ## Copy this into another model
 
 > Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
-> first, then docs/TEXT.md and docs/ROADMAP.md. It is the visual engine for a
-> real-time, LLM-driven explainer, not an offline video tool. Development a7 has
-> timing, schema-v2 persistence, video export, and annotation text covering
-> Latin, Greek, Cyrillic, CJK and technical symbols; 200 tests pass from source
-> and from the installed wheel, and hosted CI is green on nine jobs. The next
-> milestone is Thai and Arabic via DrawCV's font path — read the reconnaissance
-> in the handoff before planning it, and decide the font-bundling question first.
+> first, then docs/RESTYLE.md, docs/TEXT.md and docs/ROADMAP.md. It is the visual
+> engine for a real-time, LLM-driven explainer, not an offline video tool.
+> Development a8 has timing, schema-v3 persistence, video export, annotation text
+> covering Latin, Greek, Cyrillic, CJK and technical symbols, and per-step
+> artwork changes through Step.restyle; 232 tests pass from source and from the
+> installed wheel, and hosted CI is green on nine jobs. The next milestone is
+> Thai and Arabic via DrawCV's font path — read the reconnaissance in the
+> handoff before planning it, and decide the font-bundling question first.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.

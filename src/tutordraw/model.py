@@ -48,6 +48,17 @@ class Highlight:
     width: float
 
 
+@dataclass(frozen=True)
+class Restyle:
+    """How one step changes a target's artwork. Create with Step.restyle()."""
+
+    target: Target
+    move: tuple[float, float] | None
+    fill: tuple[int, int, int] | None
+    opacity: float | None
+    visible: bool | None
+
+
 @dataclass(frozen=True, eq=False)
 class Target:
     """A reference to an existing drawable. Create with Tutorial.target()."""
@@ -119,6 +130,7 @@ class Step:
         self._labels: list[Label] = []
         self._callouts: list[Callout] = []
         self._highlights: dict[str, Highlight] = {}
+        self._restyles: dict[str, Restyle] = {}
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._id = str(uuid4())
@@ -199,6 +211,43 @@ class Step:
             raise ValidationError("width must be positive")
         tint = rgb(theme.highlight_color if color is None else color, "color")
         self._highlights[target.id] = Highlight(target, pad, tint, stroke)
+        return self
+
+    @property
+    def restyles(self) -> tuple[Restyle, ...]:
+        return tuple(self._restyles.values())
+
+    def restyle(self, target: Target, *, move: tuple[float, float] | None = None,
+                fill: tuple[int, int, int] | None = None, opacity: float | None = None,
+                visible: bool | None = None) -> Step:
+        """Change this target's artwork for this step only, leaving the source alone.
+
+        `move` shifts by (dx, dy) pixels relative to wherever the source placed
+        it, so attached labels and highlights follow. Repeating this call for the
+        same target replaces its settings, as `highlight` does.
+        """
+        from .adapters.drawcv import supports_fill
+
+        self._check_target(target)
+        if move is None and fill is None and opacity is None and visible is None:
+            raise ValidationError("restyle needs at least one of move, fill, opacity or visible")
+        if move is not None:
+            if not isinstance(move, (tuple, list)) or len(move) != 2:
+                raise ValidationError("move must contain two finite numbers")
+            move = tuple(finite_number(value, "move") for value in move)
+        if fill is not None:
+            fill = rgb(fill, "fill")
+            drawable = target.drawable
+            if not supports_fill(drawable):
+                raise ValidationError(
+                    f"fill cannot be set on {type(drawable).__name__}; it has no fill or color")
+        if opacity is not None:
+            opacity = finite_number(opacity, "opacity")
+            if not 0 <= opacity <= 1:
+                raise ValidationError("opacity must be between 0 and 1")
+        if visible is not None and not isinstance(visible, bool):
+            raise ValidationError("visible must be a boolean")
+        self._restyles[target.id] = Restyle(target, move, fill, opacity, visible)
         return self
 
     def dim_others(self, *targets: Target, opacity: float | None = None) -> Step:

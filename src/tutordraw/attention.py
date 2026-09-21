@@ -1,7 +1,8 @@
-"""Step-local focus and emphasis, applied only to a working scene."""
+"""Step-local artwork changes, focus and emphasis, applied only to a working copy."""
 
 from drawcv import Color, Drawable, Group, Point, Rectangle, Scene, StrokeStyle
 
+from .adapters.drawcv import set_fill, translate
 from .errors import ValidationError
 from .model import Highlight, Step
 
@@ -49,6 +50,20 @@ def apply_dimming(scene: Scene, focused_ids: set[str], factor: float) -> None:
         mark(obj)
     for obj in scene.objects:
         dim(obj)
+
+
+def apply_restyles(objects: dict[str, Drawable], step: Step) -> None:
+    """Apply artwork changes first, so labels, highlights and dimming all see them."""
+    for restyle in step.restyles:
+        obj = objects[restyle.target.drawable_id]
+        if restyle.move is not None:
+            translate(obj, *restyle.move)
+        if restyle.fill is not None:
+            set_fill(obj, restyle.fill)
+        if restyle.opacity is not None:
+            obj.opacity = restyle.opacity
+        if restyle.visible is not None:
+            obj.visible = restyle.visible
 
 
 def apply_attention(scene: Scene, step: Step) -> None:

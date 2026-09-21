@@ -8,7 +8,7 @@ from .adapters.drawcv import copy_scene, index_scene, overlay_layer
 from .errors import ValidationError
 from .layout import label_artwork
 from .model import Label, Step, Target
-from .attention import apply_attention, highlight_artwork
+from .attention import apply_attention, apply_restyles, highlight_artwork
 from .export import export_steps
 from .themes import Theme
 
@@ -141,6 +141,8 @@ class Tutorial:
         working = copy_scene(self.scene)
         objects = index_scene(working)
         step = self._steps[index]
+        # Artwork changes land before emphasis, so attached annotations follow them.
+        apply_restyles(objects, step)
         apply_attention(working, step)
         layer = overlay_layer(working)
         for highlight in step.highlights:

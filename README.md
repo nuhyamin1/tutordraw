@@ -8,7 +8,7 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 **Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-**Development checkout: 0.1.0a7 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, and annotation text beyond ASCII. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
+**Development checkout: 0.1.0a8 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, and per-step artwork changes. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
 
 Implemented:
 
@@ -27,6 +27,7 @@ Implemented:
 - Development only: step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](docs/TIMING.md).
 - Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](docs/VIDEO.md).
 - Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](docs/TEXT.md).
+- Development only: move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](docs/RESTYLE.md).
 
 Transitions, timed captions, progressive reveals, interactive playback, rich typography, and automatic collision avoidance remain planned.
 
@@ -120,6 +121,7 @@ for codec limits and failure behavior.
 ## Documentation and continuation
 
 - [Practical tutorial](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TUTORIAL.md): build a lesson from a DrawCV scene.
+- [Per-step artwork](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RESTYLE.md): move, recolour, fade and hide targets per step.
 - [Video export](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md): encoding contract, codecs, and limits.
 - [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md): which characters annotations accept, and why the rest are refused.
 - [API guide](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md): implemented methods and errors.
