@@ -31,7 +31,7 @@ print('DrawCV:', drawcv.__file__)
         subprocess.run([sys.executable, "-I", "-c", probe, str(root)], cwd=temporary, check=True)
         for name in ("cell_tutorial.py", "group_focus.py", "save_and_revise.py",
                      "timed_lesson.py", "video_lesson.py", "symbols_lesson.py",
-                     "eclipse_lesson.py"):
+                     "eclipse_lesson.py", "multilingual_lesson.py"):
             subprocess.run([sys.executable, "-I", "-W", "error", str(example_dir / name)],
                            cwd=temporary, check=True)
         verify = """
@@ -45,6 +45,10 @@ paths.extend(symbols)
 eclipse = sorted(Path('output/eclipse').glob('step-*.png'))
 assert len(eclipse) == 4, eclipse
 paths.extend(eclipse)
+# One to three steps, depending on whether this host has a Thai/Arabic font.
+multilingual = sorted(Path('output/multilingual').glob('step-*.png'))
+assert multilingual, 'multilingual example produced nothing'
+paths.extend(multilingual)
 paths.append(Path('output/group-focus.png'))
 paths.extend([Path('output/persistence/before.png'), Path('output/persistence/after.png')])
 paths.extend([Path('output/timing/during-pause.png'), Path('output/timing/next-step.png')])

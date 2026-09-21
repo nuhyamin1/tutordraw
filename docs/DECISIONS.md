@@ -242,3 +242,48 @@ the other.
 Bump to schema v3 with `restyles` required on each step, following the v2
 precedent for timing. v1 and v2 load without restyles and saving always writes
 v3, so older readers reject new files rather than silently dropping content.
+
+## Thai and Arabic — development 0.1.0a9 (2026-09-21)
+
+The owner named English, Thai and Arabic as the target languages, and DrawCV's
+font engine happens to support exactly Latin, Thai and Arabic. Support them.
+
+**Optional, not required.** `pip install "tutordraw[typography]"` pulls
+`pydrawcv[typography]`: five native packages including uharfbuzz and ICU. A
+default install stays at one dependency, and the built-in renderer keeps
+covering Latin, Greek, Cyrillic, CJK and symbols. Reconnaissance had already
+shown the extra installs cleanly on Windows because `pyicu-wheels` ships a
+prebuilt binary.
+
+**TutorDraw ships no font; the caller supplies one.** Bundling an OFL font would
+add megabytes to every wheel for a feature most lessons will not use, and one
+font never covers every script anyway. `Tutorial(font=...)` takes a path, bytes
+or a `FontAsset`. The owner deferred this choice, so it is recorded here as the
+conventional answer rather than a preference.
+
+**Choose the renderer per annotation, not per lesson.** The two paths have
+complementary gaps: the font engine rejects Greek, Cyrillic and CJK, while the
+built-in renderer cannot shape Thai or Arabic. A per-lesson switch would mean
+turning on a font silently broke Greek. Per annotation, a lesson can carry a
+Thai callout and a Greek label at once. A configured font is still used for
+everything it can draw, so lessons keep one typeface wherever possible. One
+annotation mixing both sides cannot be drawn by either path and raises, naming
+the fix.
+
+**Do not persist the font.** A lesson file would have to hold either a
+machine-specific path or an embedded megabyte of font data; PERSISTENCE.md
+already rules external assets out of scope. The text itself declares the need,
+so loading without a font raises `LessonFormatError` naming the first character
+that requires one. No schema change, and a lesson can never silently lose its
+script.
+
+**Segment Thai for line breaking.** TutorDraw wraps text itself rather than
+delegating to DrawCV, so Thai was breaking mid-syllable. `pythainlp` arrives
+with the extra; use it to find break opportunities, guarded so its absence
+falls back to whitespace splitting. Right-to-left wrapped lines are aligned to
+the panel's right edge, which plain left alignment got visibly wrong.
+
+Font size is derived as `font_scale * 24`, measured to match the built-in
+renderer's height on this DrawCV release. A `Theme` field would have been
+nicer, but `Theme` is persisted field-by-field with a strict key check, so
+adding one breaks every existing lesson file. Not worth a schema bump.

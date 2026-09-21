@@ -27,7 +27,7 @@ This fragment assumes an existing saved lesson with a target named nucleus. A co
 | `tutorial.to_json()` | Readable JSON text, finite numbers only |
 | `Tutorial.from_json(text)` | Load a JSON string; duplicate keys are rejected |
 | `tutorial.save_json(path, overwrite=False)` | Save UTF-8 JSON; return Path |
-| `Tutorial.load_json(path)` | Load UTF-8 JSON; optional BOM accepted |
+| `Tutorial.load_json(path, font=None)` | Load UTF-8 JSON; optional BOM accepted. Supply `font` for Thai or Arabic |
 | `tutorial.targets`, `tutorial.labels` | Tuples of registered definitions |
 | `tutorial.get_target(name)` | Resolve a unique registered name; errors if missing |
 | `target.drawable` | Resolve the current source object, including nested children |

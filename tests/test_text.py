@@ -17,12 +17,17 @@ ACCEPTED = [
     "биология",  # Cyrillic
 ]
 
-REJECTED_SCRIPTS = [
+# Shaped scripts the built-in renderer would draw wrongly, but a font fixes.
+NEEDS_A_FONT = [
     "สวัสดี",  # Thai renders as literal question marks
     "مرحبا",        # Arabic draws unjoined and left to right
+]
+
+# Neither renderer handles these: DrawCV's font engine takes Latin, Thai, Arabic.
+UNSUPPORTED = [
     "שלום",              # Hebrew
     "नमस्ते",  # Devanagari
-    "hi \U0001f642",                          # emoji
+    "hi 🙂",                          # emoji
 ]
 
 
@@ -49,8 +54,8 @@ def test_supported_characters_are_accepted_and_drawn(target, value):
     assert rendered.min() < 250
 
 
-@pytest.mark.parametrize("value", REJECTED_SCRIPTS)
-def test_unsupported_scripts_name_the_character_and_codepoint(target, value):
+@pytest.mark.parametrize("value", NEEDS_A_FONT)
+def test_shaped_scripts_point_at_the_font_option(target, value):
     _, subject = target
     offending = next(c for c in value if ord(c) > 0x7E)
     with pytest.raises(ValidationError) as caught:
@@ -60,7 +65,19 @@ def test_unsupported_scripts_name_the_character_and_codepoint(target, value):
     assert message.isascii(), message
     assert ascii(offending) in message
     assert f"U+{ord(offending):04X}" in message
-    assert "font rendering" in message
+    assert "font" in message and "Tutorial(scene, font=" in message
+
+
+@pytest.mark.parametrize("value", UNSUPPORTED)
+def test_unsupported_scripts_say_so_plainly(target, value):
+    _, subject = target
+    offending = next(c for c in value if ord(c) > 0x7E)
+    with pytest.raises(ValidationError) as caught:
+        subject.label(value)
+    message = str(caught.value)
+    assert message.isascii(), message
+    assert ascii(offending) in message and f"U+{ord(offending):04X}" in message
+    assert "cannot draw" in message
 
 
 def test_symbols_change_the_rendered_image(target):

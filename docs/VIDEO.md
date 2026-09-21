@@ -87,9 +87,16 @@ provide is not something TutorDraw can promise**. When the writer cannot open,
 Verified locally on Windows 11 x64, CPython 3.12, `opencv-python` 5.0.0.93:
 `mp4v`/`.mp4`, `MJPG`/`.avi`, and `XVID`/`.avi` all encoded and decoded.
 `avc1` opened only after OpenCV reported it could not load `openh264`, so H.264
-is **not** claimed. Nothing is claimed for Linux, macOS, or other OpenCV builds;
-hosted CI results are still pending. Portable code should catch
-`VideoExportError` and fall back, as `examples/video_lesson.py` does.
+is **not** claimed.
+
+Hosted CI additionally proves that **at least one** of `mp4v`, `MJPG` and
+`XVID` encodes and decodes on every supported environment. `check_installed.py`
+fails when no video is produced, and all nine jobs passed on commit `188b4d2`
+and `d06ceab` across Windows, Ubuntu and macOS on CPython 3.12, 3.13 and 3.14,
+each decoding the example back to its full 120 frames. Which of the three a
+given platform used is not recorded, so no single codec is claimed everywhere.
+Portable code should still catch `VideoExportError` and fall back, as
+`examples/video_lesson.py` does.
 
 ## Encoding is lossy
 

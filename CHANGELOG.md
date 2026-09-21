@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0a9 — Unreleased
+
+- Support **Thai and Arabic** through DrawCV's font engine, behind a new
+  optional extra: `pip install "tutordraw[typography]"`. A default install is
+  unchanged and still needs only `pydrawcv`.
+- Add `Tutorial(scene, font=...)` taking a path, bytes or a DrawCV `FontAsset`,
+  and `font=` on `load_json`, `from_json` and `from_dict`. TutorDraw ships no
+  font; supply one covering your scripts.
+- Choose the renderer per annotation, so a lesson can hold a Thai callout and a
+  Greek label. A configured font is used for everything it can draw. One
+  annotation cannot mix the two sides and says so.
+- Break Thai lines at word boundaries using the bundled segmenter, and align
+  wrapped right-to-left lines to the panel's right edge.
+- Lesson files are unchanged: the text declares the need, and loading Thai or
+  Arabic without a font raises naming the first character that requires one.
+- Add `docs/TEXT.md` guidance, `examples/multilingual_lesson.py`, and 11 font
+  tests that skip when no covering font is installed.
+
 ## 0.1.0a8 — Unreleased
 
 - Add `Step.restyle(target, move=, fill=, opacity=, visible=)`, changing a

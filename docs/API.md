@@ -1,10 +1,10 @@
-# Implemented API — 0.1.0a8 (development)
+# Implemented API — 0.1.0a9 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
 ## Tutorial
 
-`Tutorial(scene, *, title="", theme=None)` holds a DrawCV Scene reference and a Theme (defaults to `Theme()`). The scene is read at each render. Titles are metadata, not automatically drawn text.
+`Tutorial(scene, *, title="", theme=None, font=None)` holds a DrawCV Scene reference and a Theme (defaults to `Theme()`). `font` accepts a path, bytes or a DrawCV `FontAsset` and enables Thai and Arabic; see [TEXT.md](TEXT.md). `tutorial.font` exposes it. The scene is read at each render. Titles are metadata, not automatically drawn text.
 
 `tutorial.target(drawable, *, name=None) -> Target` registers an existing object/group, including nested children. Re-registration returns the same target. Explicit names must be nonempty and unique; conflicting names raise `ValidationError`.
 
@@ -127,7 +127,7 @@ Direct render/save errors from DrawCV propagate; batch export wraps per-step fai
 ## Lesson persistence and revision (new in 0.1.0a4)
 
 `Tutorial.to_dict`, `from_dict`, `to_json`, `from_json`, `save_json(path, overwrite=False)`,
-and `load_json(path)` preserve the complete scene and lesson model. `save_json`
+and `load_json(path)` preserve the complete scene and lesson model. The three loaders also take `font=` for lessons using Thai or Arabic. `save_json`
 returns Path and refuses collisions by default. `LessonFormatError` reports invalid
 content or unsupported schema versions; filesystem errors propagate normally.
 

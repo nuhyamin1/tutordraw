@@ -83,7 +83,8 @@ Prioritized after the first release to support continuation across AI sessions.
   usable here, so TutorDraw owns a small OpenCV writer adapter instead.
 - [x] Define video codec dependencies and failure reporting (a6): OpenCV arrives
   with DrawCV, no new dependency; unavailable codecs raise `VideoExportError`.
-- [ ] Obtain hosted CI evidence of codec availability beyond Windows/CPython 3.12.
+- [x] Obtain hosted CI evidence of codec availability beyond Windows/CPython 3.12:
+  all nine jobs encode and decode a 120-frame video (188b4d2, d06ceab).
 - [ ] Design and implement transitions; current playback uses hard cuts.
 - [x] Change a target's position, fill, opacity and visibility per step (a8),
   which covers progressive reveal of artwork.
@@ -102,11 +103,15 @@ Prioritized after the first release to support continuation across AI sessions.
 - [x] Accept Latin, Greek, Cyrillic, CJK and common technical symbols, validated
   against what the installed renderer actually draws (a7).
 - [x] Refuse silently-wrong scripts with actionable errors naming the character (a7).
-- [ ] Render Thai and Arabic through DrawCV's font path. Needs
-  `pydrawcv[typography]` plus a caller-supplied font; verified viable on Windows.
-- [ ] Decide whether TutorDraw ships a font or requires one from the caller.
-- [ ] Reconcile the two paths: DrawCV's font path rejects Greek, the built-in
-  path cannot do Thai or Arabic, so neither alone covers a mixed string.
+- [x] Render Thai and Arabic through DrawCV's font path, behind the optional
+  `typography` extra and a caller-supplied font (a9).
+- [x] Decide the font question: TutorDraw ships none and the caller supplies one.
+- [x] Reconcile the two paths per annotation, so Greek and Thai can coexist in a
+  lesson; one annotation still cannot mix them (a9).
+- [x] Break Thai lines at word boundaries using the bundled segmenter (a9).
+- [ ] Get font-path coverage into hosted CI; no runner is known to carry a font
+  covering both scripts, so those tests currently skip outside Windows.
+- [ ] Support Hebrew and Indic scripts, which DrawCV's engine rejects today.
 
 ## Future backlog (not committed scope)
 

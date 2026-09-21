@@ -94,7 +94,7 @@ def to_dict(tutorial: Tutorial) -> dict:
         }
         result = _json_copy(document)
         # Validate references and reconstruction before a save can replace a file.
-        from_dict(result)
+        from_dict(result, font=tutorial.font)
         return result
     except LessonFormatError:
         raise
@@ -102,7 +102,7 @@ def to_dict(tutorial: Tutorial) -> dict:
         raise LessonFormatError(f"Unable to serialize lesson: {exc}") from exc
 
 
-def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
+def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
     from .tutorial import Tutorial
 
     if tutorial_type is None:
@@ -123,7 +123,7 @@ def from_dict(document: dict, *, tutorial_type=None) -> Tutorial:
                 theme_data[key] = tuple(_list(theme_data[key], f"theme.{key}"))
         scene = Scene.from_dict(data["scene"])
         objects = index_scene(scene)
-        tutorial = tutorial_type(scene, title=data["title"], theme=Theme(**theme_data))
+        tutorial = tutorial_type(scene, title=data["title"], theme=Theme(**theme_data), font=font)
         seen_ids: set[str] = set()
 
         def identity(value, where):
@@ -245,7 +245,7 @@ def to_json(tutorial: Tutorial) -> str:
     return json.dumps(to_dict(tutorial), ensure_ascii=False, allow_nan=False, indent=2) + "\n"
 
 
-def from_json(text: str, *, tutorial_type=None) -> Tutorial:
+def from_json(text: str, *, tutorial_type=None, font=None) -> Tutorial:
     if not isinstance(text, str):
         raise LessonFormatError("Lesson JSON must be a string")
 
@@ -264,7 +264,7 @@ def from_json(text: str, *, tutorial_type=None) -> Tutorial:
         document = json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
     except (ValueError, RecursionError) as exc:
         raise LessonFormatError(f"Invalid lesson JSON: {exc}") from exc
-    return from_dict(document, tutorial_type=tutorial_type)
+    return from_dict(document, tutorial_type=tutorial_type, font=font)
 
 
 def save_json(tutorial: Tutorial, path: str | Path, *, overwrite: bool) -> Path:
@@ -298,9 +298,9 @@ def save_json(tutorial: Tutorial, path: str | Path, *, overwrite: bool) -> Path:
     return destination
 
 
-def load_json(path: str | Path, *, tutorial_type=None) -> Tutorial:
+def load_json(path: str | Path, *, tutorial_type=None, font=None) -> Tutorial:
     try:
         text = Path(path).read_text(encoding="utf-8-sig")
     except UnicodeError as exc:
         raise LessonFormatError("Lesson file is not valid UTF-8") from exc
-    return from_json(text, tutorial_type=tutorial_type)
+    return from_json(text, tutorial_type=tutorial_type, font=font)

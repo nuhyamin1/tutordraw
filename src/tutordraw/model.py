@@ -96,7 +96,8 @@ def make_annotation(target: Target, text: str, *, anchor: Anchor = "right",
                     padding: float | None = None, callout: bool = False,
                     max_width: float | None = None, line_spacing: float | None = None) -> Label:
     theme = target._tutorial.theme
-    text = validate_annotation_text(text, allow_newlines=callout)
+    text = validate_annotation_text(text, allow_newlines=callout,
+                                    font=target._tutorial.font is not None)
     if anchor not in ("left", "right", "top", "bottom", "center"):
         raise ValidationError(f"Unsupported anchor: {anchor!r}")
     if not isinstance(leader, bool):

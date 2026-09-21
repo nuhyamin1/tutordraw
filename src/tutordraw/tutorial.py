@@ -4,7 +4,7 @@ from pathlib import Path
 
 from drawcv import Canvas, Drawable, OpenCVRenderer, Scene
 
-from .adapters.drawcv import copy_scene, index_scene, overlay_layer
+from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, typography_errors
 from .errors import ValidationError
 from .layout import label_artwork
 from .model import Label, Step, Target
@@ -16,7 +16,8 @@ from .themes import Theme
 class Tutorial:
     """Attach teaching labels to an existing DrawCV scene without editing it."""
 
-    def __init__(self, scene: Scene, *, title: str = "", theme: Theme | None = None):
+    def __init__(self, scene: Scene, *, title: str = "", theme: Theme | None = None,
+                 font=None):
         if not isinstance(scene, Scene):
             raise ValidationError("scene must be a DrawCV Scene")
         if not isinstance(title, str):
@@ -26,9 +27,16 @@ class Tutorial:
         self.theme = theme or Theme()
         self.scene = scene
         self.title = title
+        # A font enables Thai and Arabic and is used for everything it can draw.
+        self._font = None if font is None else load_font(font)
         self._targets: dict[str, Target] = {}
         self._labels: dict[str, Label] = {}
         self._steps: list[Step] = []
+
+    @property
+    def font(self):
+        """The configured DrawCV FontAsset, or None for built-in text only."""
+        return self._font
 
     @property
     def steps(self) -> tuple[Step, ...]:
@@ -57,10 +65,10 @@ class Tutorial:
         return to_dict(self)
 
     @classmethod
-    def from_dict(cls, document: dict) -> "Tutorial":
-        """Load a complete lesson from a versioned document."""
+    def from_dict(cls, document: dict, *, font=None) -> "Tutorial":
+        """Load a complete lesson. Supply the font again for Thai or Arabic text."""
         from .serialization import from_dict
-        return from_dict(document, tutorial_type=cls)
+        return from_dict(document, tutorial_type=cls, font=font)
 
     def to_json(self) -> str:
         """Serialize the drawing and teaching state as readable JSON."""
@@ -68,9 +76,9 @@ class Tutorial:
         return to_json(self)
 
     @classmethod
-    def from_json(cls, text: str) -> "Tutorial":
+    def from_json(cls, text: str, *, font=None) -> "Tutorial":
         from .serialization import from_json
-        return from_json(text, tutorial_type=cls)
+        return from_json(text, tutorial_type=cls, font=font)
 
     def save_json(self, path: str | Path, *, overwrite: bool = False) -> Path:
         """Save a complete lesson; refuse existing files unless explicitly allowed."""
@@ -78,10 +86,10 @@ class Tutorial:
         return save_json(self, path, overwrite=overwrite)
 
     @classmethod
-    def load_json(cls, path: str | Path) -> "Tutorial":
+    def load_json(cls, path: str | Path, *, font=None) -> "Tutorial":
         """Load a UTF-8 lesson. Filesystem errors propagate unchanged."""
         from .serialization import load_json
-        return load_json(path, tutorial_type=cls)
+        return load_json(path, tutorial_type=cls, font=font)
 
     def target(self, drawable: Drawable, *, name: str | None = None) -> Target:
         """Register a scene member, including a nested group child."""
@@ -145,13 +153,15 @@ class Tutorial:
         apply_restyles(objects, step)
         apply_attention(working, step)
         layer = overlay_layer(working)
-        for highlight in step.highlights:
-            working.add(highlight_artwork(highlight, objects[highlight.target.drawable_id]), layer=layer)
-        for label in (*step.labels, *step.callouts):
-            _, artwork = label_artwork(label, objects[label.target.drawable_id], working.width, working.height, self.theme)
-            for obj in artwork:
-                working.add(obj, layer=layer)
-        return OpenCVRenderer().render(working, alpha=alpha)
+        with typography_errors():
+            for highlight in step.highlights:
+                working.add(highlight_artwork(highlight, objects[highlight.target.drawable_id]), layer=layer)
+            for label in (*step.labels, *step.callouts):
+                _, artwork = label_artwork(label, objects[label.target.drawable_id],
+                                           working.width, working.height, self.theme, self._font)
+                for obj in artwork:
+                    working.add(obj, layer=layer)
+            return OpenCVRenderer().render(working, alpha=alpha)
 
     def export_steps(self, directory: str | Path, *, overwrite: bool = False,
                      alpha: bool = False) -> list[Path]:

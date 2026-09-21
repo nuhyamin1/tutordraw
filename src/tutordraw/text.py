@@ -46,9 +46,87 @@ SIMPLE_SCRIPT_RANGES = (
 SUPPORTED_SUMMARY = ("Latin, Greek, Cyrillic, CJK, and symbols including the "
                      "micro, degree, multiplication, plus-minus and fraction signs")
 
+# Script-neutral punctuation, digits and symbols, drawable on either path.
+COMMON_RANGES = (
+    (0x0020, 0x007E), (0x00A0, 0x024F), (0x2000, 0x206F), (0x2070, 0x209F),
+    (0x20A0, 0x20CF), (0x2100, 0x214F), (0x2150, 0x218F), (0x2190, 0x21FF),
+    (0x2200, 0x22FF),
+)
+
+# DrawCV's font engine accepts Latin, Thai and Arabic only, and rejects Greek,
+# Cyrillic and CJK outright -- the opposite gap from the built-in renderer.
+# Neither path covers everything, so TutorDraw picks per annotation.
+FONT_SCRIPT_RANGES = COMMON_RANGES + (
+    (0x0600, 0x06FF),  # Arabic
+    (0x0750, 0x077F),  # Arabic Supplement
+    (0x0E00, 0x0E7F),  # Thai
+    (0xFB50, 0xFDFF),  # Arabic Presentation Forms-A
+    (0xFE70, 0xFEFF),  # Arabic Presentation Forms-B
+)
+
+FONT_ONLY_SUMMARY = "Latin, Thai, Arabic and common symbols"
+
+
+def _within(code: int, ranges) -> bool:
+    return any(low <= code <= high for low, high in ranges)
+
 
 def _in_simple_script(code: int) -> bool:
-    return any(low <= code <= high for low, high in SIMPLE_SCRIPT_RANGES)
+    return _within(code, SIMPLE_SCRIPT_RANGES)
+
+
+def uses_font_path(text: str, font_available: bool) -> bool:
+    """A configured font draws everything it can, for one typeface per lesson.
+
+    Greek, Cyrillic and CJK fall back to the built-in renderer, because the
+    font engine rejects those scripts whatever the font actually contains.
+    """
+    return font_available and all(
+        c.isspace() or _within(ord(c), FONT_SCRIPT_RANGES) for c in text)
+
+
+THAI_RANGE = (0x0E00, 0x0E7F)
+
+
+def has_thai(text: str) -> bool:
+    return any(THAI_RANGE[0] <= ord(c) <= THAI_RANGE[1] for c in text)
+
+
+def thai_segments(paragraph: str) -> list[str] | None:
+    """Thai has no spaces, so ask the bundled dictionary where words end.
+
+    Returns None when the text is not Thai or the segmenter is unavailable, and
+    the caller falls back to splitting on whitespace.
+    """
+    if not has_thai(paragraph):
+        return None
+    import os
+
+    os.environ.setdefault("PYTHAINLP_READ_ONLY", "1")
+    os.environ.setdefault("PYTHAINLP_OFFLINE", "1")
+    try:
+        from pythainlp.tokenize import word_tokenize
+    except Exception:
+        return None
+    try:
+        return [piece for piece in word_tokenize(paragraph, engine="newmm",
+                                                 keep_whitespace=True) if piece]
+    except Exception:
+        return None
+
+
+RTL_RANGES = ((0x0600, 0x06FF), (0x0750, 0x077F), (0xFB50, 0xFDFF), (0xFE70, 0xFEFF))
+
+
+def is_rtl(text: str) -> bool:
+    """True for right-to-left text, which must sit against the panel's right edge."""
+    return any(_within(ord(c), RTL_RANGES) for c in text)
+
+
+def needs_font(text: str) -> bool:
+    """True when any character can only be drawn by the font engine."""
+    return any(not _in_simple_script(ord(c)) and _within(ord(c), FONT_SCRIPT_RANGES)
+               for c in text)
 
 
 @lru_cache(maxsize=4096)
@@ -79,13 +157,18 @@ def renders(char: str) -> bool:
     return drawn != ink("?")
 
 
-def validate_annotation_text(text: str, *, allow_newlines: bool) -> str:
-    """Return NFC-normalized text, or raise naming the offending character."""
+def validate_annotation_text(text: str, *, allow_newlines: bool,
+                             font: bool = False) -> str:
+    """Return NFC-normalized text, or raise naming the offending character.
+
+    `font` says whether the tutorial has a font configured. It widens the
+    accepted set to Thai and Arabic, which only the font engine can shape.
+    """
     if not isinstance(text, str) or not text.strip():
         raise ValidationError("Annotation text must be a nonempty string")
     # Normalizing first accepts "e" plus a combining acute as the precomposed
     # form, rather than rejecting it as a stray mark. NFC is idempotent, so
-    # saved lessons still round trip unchanged.
+    # saved lessons still round trip.
     text = unicodedata.normalize("NFC", text)
     for char in text:
         if char == "\n":
@@ -101,15 +184,29 @@ def validate_annotation_text(text: str, *, allow_newlines: bool) -> str:
             continue  # Spacing renders no ink, so the probe cannot judge it.
         if code <= 0x7E:
             continue  # ASCII always renders; skip the probe for the common case.
-        if not _in_simple_script(code):
-            raise ValidationError(
-                f"Annotation text contains {ascii(char)} (U+{code:04X}), from a script "
-                f"TutorDraw cannot draw yet. Built-in text supports "
-                f"{SUPPORTED_SUMMARY}. Thai, Arabic and other shaped scripts need "
-                f"font rendering, which is not implemented.")
-        if not renders(char):
-            raise ValidationError(
-                f"This OpenCV build draws a placeholder instead of {ascii(char)} "
-                f"(U+{code:04X}). Upgrade opencv-python, or use a character from "
-                f"the supported set: {SUPPORTED_SUMMARY}.")
+        if _in_simple_script(code):
+            if not renders(char):
+                raise ValidationError(
+                    f"This OpenCV build draws a placeholder instead of {ascii(char)} "
+                    f"(U+{code:04X}). Upgrade opencv-python, or use a character from "
+                    f"the supported set: {SUPPORTED_SUMMARY}.")
+            continue
+        if _within(code, FONT_SCRIPT_RANGES):
+            if not font:
+                raise ValidationError(
+                    f"Annotation text contains {ascii(char)} (U+{code:04X}), a shaped "
+                    f"script the built-in renderer would draw wrongly. Give the "
+                    f"tutorial a font to enable it: Tutorial(scene, font='NotoSansThai.ttf').")
+            continue
+        raise ValidationError(
+            f"Annotation text contains {ascii(char)} (U+{code:04X}), from a script "
+            f"TutorDraw cannot draw. The built-in renderer supports "
+            f"{SUPPORTED_SUMMARY}; a configured font adds Thai and Arabic.")
+    # Each annotation renders through one path, and neither path covers both
+    # sides of this split, so a single annotation cannot mix them.
+    if needs_font(text) and any(ord(c) > 0x7E and _in_simple_script(ord(c))
+                                and not _within(ord(c), FONT_SCRIPT_RANGES) for c in text):
+        raise ValidationError(
+            "One annotation cannot mix Thai or Arabic with Greek, Cyrillic or CJK: "
+            "they need different renderers. Split them into separate annotations.")
     return text

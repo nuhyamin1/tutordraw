@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tutordraw"
-version = "0.1.0a8"
+version = "0.1.0a9"
 description = "Author step-by-step visual tutorials using DrawCV drawings."
 readme = "README.md"
 license = "MIT"
@@ -23,7 +23,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "build>=1", "setuptools>=77", "wheel", "twine>=6", "jsonschema>=4.18,<5"]
+# Shaped scripts (Thai, Arabic) need DrawCV's font engine. Everything else,
+# including Latin, Greek, Cyrillic, CJK and symbols, works without this.
+typography = ["pydrawcv[typography]==0.10.0.post1"]
+dev = ["pytest>=8", "build>=1", "setuptools>=77", "wheel", "twine>=6", "jsonschema>=4.18,<5",
+       "pydrawcv[typography]==0.10.0.post1"]
 
 [project.urls]
 Repository = "https://github.com/nuhyamin1/tutordraw"

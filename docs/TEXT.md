@@ -1,7 +1,8 @@
 # Annotation text and character support
 
-Changed in development **0.1.0a7**. Earlier versions accepted printable ASCII
-only. Labels and callouts now accept a much wider set, with **no new dependency**.
+Changed in development **0.1.0a7**, extended in **0.1.0a9**. Earlier versions
+accepted printable ASCII only. Labels and callouts now accept a much wider set
+with no new dependency, and Thai and Arabic with an optional one.
 
 ```python
 target.label("30 µm")
@@ -85,19 +86,50 @@ never drawn, and are not restricted.
 
 ## Thai and Arabic
 
-Not supported yet, but the path is proven. Correct rendering needs DrawCV's font
-path, which requires `pip install "pydrawcv[typography]"` and a caller-supplied
-`.ttf` or `.otf` — DrawCV bundles no fonts and does not search the system.
+Supported since 0.1.0a9, behind an optional dependency and a font you supply:
 
-Verified in a throwaway environment on Windows 11 / CPython 3.12: the extra
-installs cleanly (`pyicu-wheels` ships a prebuilt binary, so the usual ICU build
-problem does not arise), and with Tahoma as the font asset, `สวัสดี` renders as
-correct Thai and `مرحبا` renders correctly joined and right to left.
+```shell
+pip install "tutordraw[typography]"
+```
 
-One complication to design around: DrawCV's font path has its own hardcoded
-script whitelist of Latin, Thai and Arabic, and **rejects Greek**. The two paths
-therefore have complementary coverage, and `α` cannot share a string with Thai
-on either path.
+```python
+lesson = Tutorial(scene, font="NotoSansThai-Regular.ttf")
+nucleus.label("นิวเคลียส")
+```
+
+`font` accepts a path, raw bytes, or a DrawCV `FontAsset`. **TutorDraw ships no
+font**: pick one covering your scripts, such as Noto Sans Thai or Noto Naskh
+Arabic. `.ttc` collections and WOFF are rejected by DrawCV; use `.ttf` or
+`.otf`. Run `python examples/multilingual_lesson.py` for a worked example.
+
+A configured font is used for **everything it can draw**, so one lesson has one
+typeface. Greek, Cyrillic and CJK are the exception: DrawCV's font engine
+rejects those scripts outright, so annotations containing them fall back to the
+built-in renderer. That fallback is per annotation, which means a lesson can
+hold a Thai callout and a Greek label side by side — but **one annotation
+cannot mix them**, and trying raises a `ValidationError` telling you to split it.
+
+Arabic is shaped and reordered by DrawCV, and TutorDraw right-aligns wrapped
+right-to-left lines so they hang from the panel's right edge. Thai line breaks
+use the bundled word segmenter, so wrapping falls between words rather than
+inside them.
+
+Without the extra installed, rendering shaped text raises a `ValidationError`
+naming the install command. Without a font configured, authoring shaped text
+raises one naming the `font=` option. Both fail at the earliest point they can.
+
+### Persistence
+
+A lesson file records the text, not the font. Reopen a Thai or Arabic lesson
+with the font supplied again:
+
+```python
+Tutorial.load_json("lesson.tutordraw.json", font="NotoSansThai-Regular.ttf")
+```
+
+`from_dict` and `from_json` take the same argument. Loading without it raises
+`LessonFormatError` naming the first character that needs a font, so a lesson
+can never silently lose its script. No schema change was needed.
 
 ## Not implemented
 

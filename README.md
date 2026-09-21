@@ -8,7 +8,7 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 **Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-**Development checkout: 0.1.0a8 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, and per-step artwork changes. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
+**Development checkout: 0.1.0a9 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, per-step artwork changes, and Thai and Arabic. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
 
 Implemented:
 
@@ -28,6 +28,7 @@ Implemented:
 - Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](docs/VIDEO.md).
 - Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](docs/TEXT.md).
 - Development only: move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](docs/RESTYLE.md).
+- Development only: teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](docs/TEXT.md).
 
 Transitions, timed captions, progressive reveals, interactive playback, rich typography, and automatic collision avoidance remain planned.
 
@@ -108,7 +109,7 @@ for codec limits and failure behavior.
 
 ## Current limits
 
-- Labels are **single line**; callouts add newlines and measured word wrapping. Latin, Greek, Cyrillic, CJK and common symbols are supported. Thai, Arabic, Hebrew, Indic scripts and emoji are refused with an error naming the character, because the built-in renderer would draw them wrong; see [Text](docs/TEXT.md).
+- Labels are **single line**; callouts add newlines and measured word wrapping. Latin, Greek, Cyrillic, CJK and common symbols work out of the box. Thai and Arabic need the optional `typography` extra and a font you supply. Hebrew, Indic scripts and emoji are refused with an error naming the character; see [Text](docs/TEXT.md).
 - Anchors use transformed axis-aligned `get_bounds()` results, including supported shape strokes but excluding post-processing effect extents.
 - Labels stay upright and spacing uses canvas pixels. Automatic collision avoidance and routed leaders are deferred.
 - Off-canvas annotations issue `LayoutWarning` and may be clipped. Callout widths measure the text area; padding adds to the panel width.

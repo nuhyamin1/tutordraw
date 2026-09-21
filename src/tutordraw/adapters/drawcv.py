@@ -1,6 +1,8 @@
 """DrawCV operations isolated from the teaching model."""
 
+from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
 
 from drawcv import Color, Drawable, FillStyle, Group, Scene
 
@@ -71,3 +73,39 @@ def translate(drawable: Drawable, dx: float, dy: float) -> None:
     """Shift a working copy relative to wherever the source placed it."""
     drawable.transform.translation_x += dx
     drawable.transform.translation_y += dy
+
+
+def load_font(value) -> "FontAsset":
+    """Accept a font file path, raw bytes, or an already-built FontAsset."""
+    from drawcv import FontAsset
+
+    if isinstance(value, FontAsset):
+        return value
+    try:
+        if isinstance(value, (bytes, bytearray)):
+            return FontAsset(name="supplied", data=bytes(value))
+        if isinstance(value, (str, Path)):
+            return FontAsset.from_file(str(value))
+    except Exception as exc:
+        raise ValidationError(f"Unusable font: {exc}") from exc
+    raise ValidationError("font must be a path, bytes, or a DrawCV FontAsset")
+
+
+def typography_error(exc: Exception) -> ValidationError | None:
+    """Turn DrawCV's missing-engine failure into TutorDraw's own instruction."""
+    if "optional dependencies" in str(exc):
+        return ValidationError(
+            "Shaped scripts need DrawCV's font engine: pip install \"tutordraw[typography]\"")
+    return None
+
+
+@contextmanager
+def typography_errors():
+    """Replace DrawCV's missing-engine message with TutorDraw's install command."""
+    try:
+        yield
+    except Exception as exc:
+        translated = typography_error(exc)
+        if translated is not None:
+            raise translated from exc
+        raise

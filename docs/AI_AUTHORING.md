@@ -79,11 +79,12 @@ accept Latin (with accents), Greek, Cyrillic, CJK, and common symbols including
 `µm`, `°C`, `×`, `÷`, `±`, `≤`, `≥`, `½`, arrows, em dashes and curly quotes. Prefer the
 real symbol over an ASCII imitation: write `45°` rather than `45 deg`.
 
-**Thai, Arabic, Hebrew, Indic scripts and emoji are refused** with a
-`ValidationError` naming the character and its codepoint. This is deliberate:
-the built-in renderer substitutes `?` for Thai and draws Arabic unjoined and
-backwards, so accepting them would produce confidently wrong images. If you hit
-this error, answer in a supported script rather than retrying. Labels are single
+**Thai and Arabic** need the tutorial to have a font configured. If you hit that
+error, the lesson was built without one: say so rather than retrying, because no
+wording will work. **Hebrew, Indic scripts and emoji are refused outright** and
+no font helps. The built-in renderer substitutes `?` for Thai and draws Arabic
+unjoined and backwards, so refusing beats producing confidently wrong images.
+One annotation cannot mix Thai or Arabic with Greek, Cyrillic or CJK; split it. Labels are single
 line; only callouts accept newlines. See [text](TEXT.md) for the exact rules.
 
 ## Current limits

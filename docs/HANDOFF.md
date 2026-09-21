@@ -1,14 +1,14 @@
 # AI handoff — start here
 
-Last updated: **2026-09-21**, per-step artwork milestone (Claude Code).
+Last updated: **2026-09-21**, Thai and Arabic milestone (Claude Code).
 
 ## Current state
 
-**Published: 0.1.0a3. Development checkout: 0.1.0a8, NOT published.**
+**Published: 0.1.0a3. Development checkout: 0.1.0a9, NOT published.**
 
-Three milestones landed today: a6 video export, a7 annotation text beyond
-ASCII, a8 per-step artwork changes. a6 is pushed; a7 and a8 are committed
-locally only.
+Four milestones landed today: a6 video export, a7 annotation text beyond ASCII,
+a8 per-step artwork changes, a9 Thai and Arabic. a6 through a8 are pushed; a9
+is committed locally only.
 
 Owner: Nuh Yamin; package tutordraw; MIT. Origin:
 https://github.com/nuhyamin1/tutordraw.git, branch master.
@@ -48,6 +48,7 @@ Consequences worth remembering:
 - a6: `Tutorial.export_video(...)` and `VideoExportError`. See [VIDEO.md](VIDEO.md).
 - a7: annotation text beyond ASCII. See [TEXT.md](TEXT.md).
 - a8: `Step.restyle` and lesson schema v3. See [RESTYLE.md](RESTYLE.md).
+- a9: Thai and Arabic behind the optional `typography` extra. See [TEXT.md](TEXT.md).
 
 ## What a7 decided and why
 
@@ -102,6 +103,31 @@ shape coordinates and a delta composes with both. `opacity` is absolute while
 bumped to v3 with `restyles` required per step, following the v2 timing
 precedent; v1 and v2 still load, saving always writes v3.
 
+## What a9 decided and why
+
+DrawCV's font engine supports exactly Latin, Thai and Arabic, matching the
+owner's stated languages. Four decisions shaped the implementation, all in
+DECISIONS.md:
+
+1. **Optional extra, not a dependency.** `pip install "tutordraw[typography]"`
+   pulls five native packages. A default install still needs only `pydrawcv`,
+   and the built-in renderer keeps covering Latin, Greek, Cyrillic, CJK.
+2. **No bundled font.** The owner deferred this; the conventional answer is
+   recorded instead. `Tutorial(font=...)` takes a path, bytes or a `FontAsset`.
+3. **Renderer chosen per annotation.** The two paths have complementary gaps:
+   the font engine rejects Greek, Cyrillic and CJK, the built-in one cannot
+   shape Thai or Arabic. A per-lesson switch would mean enabling a font
+   silently broke Greek. Per annotation, both coexist in one lesson; a single
+   annotation mixing them raises, naming the fix.
+4. **The font is not persisted.** A lesson file would need a machine-specific
+   path or an embedded megabyte. The text declares the need instead, so loading
+   without a font raises naming the first character requiring one. **No schema
+   change** — still v3.
+
+Two quality fixes came out of looking at real output: Thai was breaking
+mid-syllable, now segmented with the bundled `pythainlp`; and wrapped
+right-to-left lines were left-aligned, now hung from the panel's right edge.
+
 ## Code map and changed files
 
 a7 (text):
@@ -120,7 +146,21 @@ a8 (per-step artwork):
 - `tests/test_restyle.py` (32 cases), `docs/RESTYLE.md`,
   `examples/eclipse_lesson.py`.
 
-Shared: `tools/check_installed.py` runs seven examples and **fails if no video
+a9 (Thai and Arabic):
+- `pyproject.toml`: optional `typography` extra; `dev` includes it.
+- `tutorial.py`: `font=` on the constructor and all three loaders; `tutorial.font`.
+- `adapters/drawcv.py`: `load_font`, `typography_errors` context manager that
+  rewrites DrawCV's missing-engine message into TutorDraw's install command.
+- `text.py`: `FONT_SCRIPT_RANGES`, `uses_font_path`, `is_rtl`, `thai_segments`;
+  the validator now takes `font=` and distinguishes "needs a font" from
+  "cannot draw at all".
+- `layout.py`: `annotation_text` picks the renderer per line,
+  `FONT_SIZE_PER_SCALE = 24`, Thai segmentation and RTL alignment in wrapping.
+- `serialization.py`: `font=` threaded through `from_dict`/`from_json`/`load_json`.
+- `tests/test_fonts.py` (11 cases, skipped without a covering font),
+  `examples/multilingual_lesson.py`.
+
+Shared: `tools/check_installed.py` runs eight examples and **fails if no video
 was produced**; `tools/check_release.py` requires three schemas plus the new
 docs and examples. Version a8 in `pyproject.toml` and `__init__.py`. README,
 API, PERSISTENCE, TIMING, COMPATIBILITY, ARCHITECTURE, AI_AUTHORING, DECISIONS,
@@ -130,9 +170,14 @@ ROADMAP and CHANGELOG updated.
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 
-- `python -m pytest -q`: **232 passed, 1 skipped** (a6 was 171, a7 was 200). The
+- `python -m pytest -q`: **243 passed, 1 skipped** (a6 171, a7 200, a8 232). The
   skip is the symlink-refusal test, needing privileges Windows does not grant by
   default. The text tests also pass under `-W error::UserWarning`.
+- `python examples/multilingual_lesson.py`: three language steps using Tahoma.
+  **Visually inspected** the Thai and Arabic steps: Thai shapes correctly and
+  breaks between words; Arabic is joined, right-to-left, and its wrapped second
+  line hangs from the right edge of the panel. Both were wrong before the
+  segmentation and alignment fixes, and neither is caught by pixel assertions.
 - `python examples/eclipse_lesson.py`: four beats, 27-second lesson.
   **Visually inspected** beats 1 and 4: beat 1 hides the shadow cone and shows a
   grey Moon above it; beat 4 has the Moon moved 190 px down into the cone, red,
@@ -145,11 +190,11 @@ Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 - Confirmed by hand that Thai, Arabic, Hebrew, Devanagari and emoji each raise
   `ValidationError` naming the character and codepoint.
 - `python tools/check_docs.py`: 19 documents and one README example pass.
-- `python -m build --no-isolation --outdir output/development`: a8 built.
+- `python -m build --no-isolation --outdir output/development`: a9 built.
 - `python tools/check_release.py --dist-dir output/development --require-metadata`: passes.
-- Installed the a8 wheel, `python -I -m pytest -q`: **232 passed, 1 skipped**.
-- `python -I tools/check_installed.py`: seven examples run outside the checkout;
-  15 PNGs and one 120-frame video decode, and lessons reload correctly.
+- Installed the a9 wheel, `python -I -m pytest -q`: **243 passed, 1 skipped**.
+- `python -I tools/check_installed.py`: eight examples run outside the checkout;
+  18 PNGs and one 120-frame video decode, and lessons reload correctly.
 - Restored the editable install; `python -m pip check` clean.
 
 ### Hosted CI is green — earlier docs were wrong
@@ -158,70 +203,56 @@ Both `fd16904` (a5) and `c1fbef1` (a6) passed **all nine jobs**
 (Windows/Ubuntu/macOS × CPython 3.12/3.13/3.14). Four documents still claimed
 hosted results were pending; corrected this session. M3's last checkbox is done.
 
-**Still unproven: codec availability outside Windows.** CI green did not prove
-video encoded on Linux or macOS, because the example degrades gracefully when no
-codec exists. `tools/check_installed.py` now **fails** when no video is produced,
-so the next push settles it. If a platform turns red, that is the finding — record
-it and relax the check deliberately rather than by accident.
+**Codec availability is now proven beyond Windows.** Since a7,
+`tools/check_installed.py` fails when no video is produced, and all nine jobs
+passed on `188b4d2` and `d06ceab`, each decoding the example back to 120 frames.
+So at least one of mp4v, MJPG and XVID works on every supported environment.
+Which one a given platform chose is not recorded, so no single codec is claimed
+everywhere.
 
-### Thai/Arabic reconnaissance (done, positive)
+### Font-path coverage is Windows-only so far
 
-In a throwaway venv outside the project, `pip install "pydrawcv[typography]"`
-**installed cleanly on Windows 11 / CPython 3.12** — `pyicu-wheels` ships a
-prebuilt binary, so the usual ICU build problem does not arise. With
-`FontAsset.from_file(r"C:\Windows\Fonts\tahoma.ttf")`, `สวัสดี` rendered as
-correct Thai and `مرحبا` rendered correctly joined and right to left; both were
-visually confirmed. The project venv was not modified.
-
-Complication: DrawCV's font path has its own hardcoded whitelist of Latin, Thai
-and Arabic and **rejects Greek** (`drawcv/typography/layout.py:209-217`), so the
-two paths have complementary coverage and cannot yet be mixed in one string.
+`tests/test_fonts.py` discovers a font covering Thai and Arabic and **skips the
+whole module** when none is found, so the suite still runs on a default install.
+Locally it finds `C:\Windows\Fonts\tahoma.ttf` and all 11 cases run. No GitHub
+runner is known to carry a font covering both scripts, so hosted CI almost
+certainly skips them — treat font-path behavior as verified on Windows only, and
+set `TUTORDRAW_TEST_FONT` to run them elsewhere. Getting this into CI is an open
+roadmap item; vendoring a subset Noto font would be the obvious way.
 
 Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 
-## Next concrete task: Thai and Arabic text
+## Next concrete task: animate between beats
 
-The owner named these as the languages after English, and the reconnaissance
-above shows the work is viable rather than speculative.
+`restyle` made change expressible, but motion is still a jump at the hard cut:
+the Moon teleports into the shadow rather than sliding. Interpolating a target's
+move, fill and opacity across a step's duration would make `render_at_time` and
+video export genuinely animated, and it is the largest remaining gap for a
+real-time explainer.
 
-1. Read AGENTS.md, TEXT.md, then `src/tutordraw/text.py` and `layout.py`.
-2. **Decide the font story first**, because everything follows from it: does
-   TutorDraw bundle an OFL font (size and licensing commitment), or require the
-   caller to supply one? The owner is not deeply technical — recommend rather
-   than ask them to choose blind. Not bundling is the conventional answer.
-3. Plumb a font through `Theme`/`Tutorial`. **Persistence is the hard part**: a
-   lesson file must stay portable across machines, so store a font *name*, not
-   an absolute path, and resolve it at load. `PERSISTENCE.md` says external
-   assets are out of scope; either honor that or change it deliberately.
-4. `layout.py` will need both measurement paths. They are not equivalent:
-   `measure()` is font-path only and raises on Hershey, `get_line_metrics()`
-   returns different meanings per path, and Hershey hardcodes `line_step = 1.4`
-   while the font path honors `line_spacing`. `get_text_bounds_dimensions()` is
-   the only call that works on both.
-5. Make `pydrawcv[typography]` an **optional** extra. CI must keep testing the
-   default install too, or the zero-dependency promise silently rots.
-6. Keep the a7 validator: it should route supported-but-shaped scripts to the
-   font path when configured, and keep refusing them when it is not.
+1. Read AGENTS.md, then RESTYLE.md, TIMING.md, `timing.py` and `attention.py`.
+2. **Design the contract change before writing code.** Today every frame equals
+   some `render_step` output; `tests/test_timing.py` and `tests/test_video.py`
+   both rely on that, and `render_frames` renders whole steps. Animation breaks
+   the identity. Decide explicitly: does `render_step(i)` show the beginning or
+   the end of the step? Probably the end, with `render_at_time` interpolating,
+   so static export keeps its current meaning.
+3. Interpolate on the working copy in `apply_restyles`, given a progress value.
+   Position and opacity interpolate cleanly; fill needs a colour space decision
+   (linear RGB is fine and honest, document it).
+4. Make it opt-in per step, so existing lessons keep hard cuts and the schema
+   only grows a flag or an easing name. Keep v3 loading.
+5. Caching matters here for the first time: at 30 fps an animated step
+   re-renders the whole scene per frame. Measure before optimising, and record
+   the number — `render_step` was 35–40 ms on the cell lesson.
 
-Thai and Arabic stay next because they are the last **hard blocker**: no
-workaround exists, while the other gaps below have one.
+After that, in order: reveal annotations progressively within a step (artwork
+reveal already works via `restyle(visible=False)`; the caller can approximate
+annotation reveal today by adding steps); timed captions, which rank low because
+the owner's product supplies its own voice and text; and Hebrew or Indic
+scripts, which DrawCV's engine rejects and would need upstream work.
 
-Then, in order:
-
-1. **Animate between beats.** `restyle` made motion expressible but it is still
-   a jump at the cut. Interpolating a target's move, fill and opacity across a
-   step's duration would make `render_at_time` and video export genuinely
-   animated. This is the largest remaining change to the timing model and needs
-   its contract designed first: today every frame equals some `render_step`
-   output, and `tests/test_timing.py` and `tests/test_video.py` rely on that.
-2. **Reveal annotations progressively within a step.** Artwork reveal already
-   works through `restyle(visible=False)`; labels and callouts still appear all
-   at once. Note the caller can approximate this today by adding one step per
-   reveal, which is why it ranks below the items with no workaround.
-3. **Timed captions.** Lower than it looks: the owner's product supplies its own
-   voice and text, so burned-in captions mostly serve exported video.
-
-Publishing a4–a8 to PyPI needs an explicit owner request.
+Publishing a4–a9 to PyPI needs an explicit owner request.
 
 ## Release and environment notes
 
@@ -244,11 +275,11 @@ C:/Projects/DrawCV is context only. Git may need
 > Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
 > first, then docs/RESTYLE.md, docs/TEXT.md and docs/ROADMAP.md. It is the visual
 > engine for a real-time, LLM-driven explainer, not an offline video tool.
-> Development a8 has timing, schema-v3 persistence, video export, annotation text
-> covering Latin, Greek, Cyrillic, CJK and technical symbols, and per-step
-> artwork changes through Step.restyle; 232 tests pass from source and from the
-> installed wheel, and hosted CI is green on nine jobs. The next milestone is
-> Thai and Arabic via DrawCV's font path — read the reconnaissance in the
-> handoff before planning it, and decide the font-bundling question first.
+> Development a9 has timing, schema-v3 persistence, video export, per-step
+> artwork changes through Step.restyle, and text covering Latin, Greek,
+> Cyrillic, CJK, symbols, plus Thai and Arabic behind an optional extra; 243
+> tests pass from source and from the installed wheel, and hosted CI is green
+> on nine jobs. The next milestone is animating between beats — design the
+> timing contract change before writing code, as the handoff explains.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.
