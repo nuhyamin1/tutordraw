@@ -8,6 +8,8 @@ Future publication also requires an explicit owner request. The CI workflow neve
 - Distribution/import: `tutordraw` (owner confirmed).
 - License: MIT; copyright holder/author: Nuh Yamin (owner confirmed).
 - Published: `0.1.0a3` on 2026-09-20; still an early alpha.
+- Next candidate: `0.1.0a11`. Versions a4 through a10 were never published and
+  never will be; a11 contains all of their work.
 - Repository: `https://github.com/nuhyamin1/tutordraw`, read from the configured origin.
 - PyPI accepted both release files under the owner-authorized credential.
 
@@ -36,11 +38,34 @@ Install the wheel in a separate virtual environment, using its Python for
 checks their PNGs, rejects editable source imports, and verifies version metadata.
 CI repeats installed-wheel tests across the configured OS/Python matrix.
 
+## Release readiness gate
+
+Every item must be true before asking the owner to authorise an upload.
+
+| Check | How |
+| --- | --- |
+| Working tree clean and pushed | `git status`, `git log origin/master..HEAD` |
+| Hosted CI green on the exact commit | all nine jobs, not just the local machine |
+| Version not already on PyPI | published versions are immutable |
+| Local suite green from source and the installed wheel | `pytest`, then `python -I -m pytest` |
+| Examples run outside the checkout | `python -I tools/check_installed.py` |
+| Docs links valid and README renders on PyPI | `tools/check_docs.py`; the README is the project page, so **every link in it must be absolute** |
+| Artifacts validate | `tools/check_release.py --require-metadata` |
+| Changelog dates the release | replace "Unreleased" with the date for the shipped version only |
+
+Two judgement calls that are not mechanical:
+
+- **The lesson format moved v2 to v5 in one day.** Published schema versions
+  become other people's files. Consider whether the format should settle first.
+- **Alpha scope.** a11 adds video, non-ASCII text, per-step artwork, animation,
+  reveals and optional Thai/Arabic since a3. That is a large jump for one
+  version number; say so in the release notes rather than hiding it.
+
 ## Before release
 
 1. Confirm the configured repository and documentation links are publicly accessible.
 2. Confirm the chosen version and PyPI account/project ownership with the owner.
-3. Obtain passing hosted CI results for the claimed supported environments.
+3. Work through the readiness gate above.
 4. Review the changelog, package description, license, and tutorial images.
 5. Rebuild the candidate artifacts, then run:
 
@@ -59,10 +84,10 @@ files, never a wildcard that might select old releases:
 
 ```powershell
 # TestPyPI rehearsal, only when requested:
-python -m twine upload --repository testpypi output/release/tutordraw-0.1.0a3-py3-none-any.whl output/release/tutordraw-0.1.0a3.tar.gz
+python -m twine upload --repository testpypi output/release/tutordraw-0.1.0a11-py3-none-any.whl output/release/tutordraw-0.1.0a11.tar.gz
 
 # Public PyPI release, only when requested:
-python -m twine upload output/release/tutordraw-0.1.0a3-py3-none-any.whl output/release/tutordraw-0.1.0a3.tar.gz
+python -m twine upload output/release/tutordraw-0.1.0a11-py3-none-any.whl output/release/tutordraw-0.1.0a11.tar.gz
 ```
 
 Use the owner's credential mechanism; never put tokens in repository files,

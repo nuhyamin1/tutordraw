@@ -5,7 +5,7 @@
 | Environment | Status |
 | --- | --- |
 | Windows x64, CPython 3.12 | Locally tested: unit tests, examples, wheel install, PNG rendering |
-| Windows, Ubuntu, macOS; CPython 3.12, 3.13, 3.14 | Hosted CI: all nine jobs passed on commits fd16904 (a5) and c1fbef1 (a6) |
+| Windows, Ubuntu, macOS; CPython 3.12, 3.13, 3.14 | Hosted CI: all nine jobs green through d06ceab (a8). a9-a11 failed macOS install only, from the typography extra being in the `dev` group; fixed and awaiting a green run |
 | Other Python implementations, architectures, or versions | Not verified |
 
 `requires-python >=3.12` is an installation constraint, not a claim that every

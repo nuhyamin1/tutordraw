@@ -24,13 +24,13 @@ Implemented:
 - Validate references/options and warn about off-canvas annotations.
 - Development only: save/reopen complete versioned JSON lessons with stable IDs and validated references.
 
-- Development only: step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](docs/TIMING.md).
-- Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](docs/VIDEO.md).
-- Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](docs/TEXT.md).
-- Development only: move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](docs/RESTYLE.md).
-- Development only: teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](docs/TEXT.md).
-- Development only: ease a step into its new state instead of cutting to it; see [Animation](docs/ANIMATION.md).
-- Development only: delay a label or explanation so a narrated beat introduces one thing at a time; see [Reveal](docs/REVEAL.md).
+- Development only: step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TIMING.md).
+- Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md).
+- Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
+- Development only: move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RESTYLE.md).
+- Development only: teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
+- Development only: ease a step into its new state instead of cutting to it; see [Animation](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ANIMATION.md).
+- Development only: delay a label or explanation so a narrated beat introduces one thing at a time; see [Reveal](https://github.com/nuhyamin1/tutordraw/blob/master/docs/REVEAL.md).
 
 Timed captions, interactive playback, and automatic collision avoidance remain planned.
 
@@ -111,7 +111,7 @@ for codec limits and failure behavior.
 
 ## Current limits
 
-- Labels are **single line**; callouts add newlines and measured word wrapping. Latin, Greek, Cyrillic, CJK and common symbols work out of the box. Thai and Arabic need the optional `typography` extra and a font you supply. Hebrew, Indic scripts and emoji are refused with an error naming the character; see [Text](docs/TEXT.md).
+- Labels are **single line**; callouts add newlines and measured word wrapping. Latin, Greek, Cyrillic, CJK and common symbols work out of the box. Thai and Arabic need the optional `typography` extra and a font you supply. Hebrew, Indic scripts and emoji are refused with an error naming the character; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
 - Anchors use transformed axis-aligned `get_bounds()` results, including supported shape strokes but excluding post-processing effect extents.
 - Labels stay upright and spacing uses canvas pixels. Automatic collision avoidance and routed leaders are deferred.
 - Off-canvas annotations issue `LayoutWarning` and may be clipped. Callout widths measure the text area; padding adds to the panel width.

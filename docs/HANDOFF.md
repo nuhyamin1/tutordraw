@@ -305,39 +305,44 @@ roadmap item; vendoring a subset Noto font would be the obvious way.
 
 Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 
-## Next concrete task: let the format settle, then decide with the owner
+## Next concrete task: get CI green, then decide on release with the owner
 
-There is no obvious next feature, and that is itself the finding. The gaps
-that remain are smaller than the one now in front of the project:
+The owner asked whether a11 is ready for PyPI. Preparation is done; the answer
+is "not yet, and here is exactly what is missing".
 
-**The lesson format moved v2 to v5 in a single day.** Every bump is honest and
-every older version still loads, but nothing has been published since a3, and
-a4 through a11 are all unreleased. Before adding more format surface, it is
-worth asking the owner whether to cut a release. `tests/conftest.py` now makes
-bumps cheap to test, which is not the same as cheap to live with once people
-have lesson files.
+**A regression was found while checking.** Hosted CI has been red since a9 on
+all three macOS jobs, at the `pip install ".[dev]"` step. Cause: a9 put
+`pydrawcv[typography]` into the `dev` group, and on macOS DrawCV requires real
+`PyICU`, which publishes no wheels and builds against Homebrew ICU4C. Windows
+and Linux get `pyicu-wheels` instead, which is why local evidence looked fine.
+Fixed here: the extra is out of `dev`, and CI installs it with
+`continue-on-error` so font tests run where they can. **This needs a push and a
+green nine-job run to confirm.**
 
-Candidate features, none clearly ahead of the others — ask rather than guess:
+A second, latent bug surfaced from the same investigation: a host with a font
+but no engine crashed `examples/multilingual_lesson.py`, because
+`export_steps` wraps render failures in `ExportError` and the example only
+caught `ValidationError`. Fixed, with a platform-independent regression test.
 
-1. **Timed captions.** Ranked low all along because the owner's product
-   supplies its own voice and text, so this mainly serves exported video.
-   Cheap if scoped to a caption band plus `.srt` export.
-2. **Fade annotations in.** Small and visible; needs one decision about the
-   fade duration, which is why a11 left it out.
-3. **Stroke, scale and rotation in `restyle`.** Mechanical, and animation gets
-   them free since it interpolates whatever `restyle` carries.
-4. **Whole-image crossfades between beats.** A genuinely different mechanism
-   from per-target interpolation: it composites two rendered steps rather than
-   blending properties. Decide whether it is wanted before building it.
-5. **Font-path tests in CI.** Needs a vendored subset Noto font; until then
-   Thai and Arabic are verified on Windows only.
-6. **Automatic label collision avoidance.** The oldest deferred item and still
-   the biggest authoring irritation: every `gap` in the examples is hand-tuned.
+Remaining before an upload, in order:
 
-A good session could also simply harden what exists: the examples are the only
-place layout quality is checked, and it is checked by a person looking.
+1. Push and confirm all nine CI jobs pass on the release commit.
+2. Owner decides the version. a11 is free on PyPI; a3 is the only published
+   release. a4-a10 were never published.
+3. Owner decides whether the lesson format should settle first. It moved v2 to
+   v5 in one day, and published schema versions become other people's files.
+4. Date the shipped version in CHANGELOG.md, replacing "Unreleased".
+5. Work the gate in [RELEASING.md](RELEASING.md), then ask for authorisation.
 
-Publishing a4-a11 to PyPI needs an explicit owner request.
+Already done during preparation: README links made absolute (relative ones 404
+on PyPI, where the README is the project page), Python 3.12/3.13/3.14
+classifiers added, `Typing :: Typed` deliberately **not** added because there
+is no `py.typed` marker, metadata and all five schemas verified in the wheel.
+
+Candidate features afterwards, none clearly ahead: timed captions, fading
+annotations in, stroke/scale/rotation in `restyle`, whole-image crossfades,
+font-path tests in CI via a vendored subset font, and automatic label
+collision avoidance. Ask rather than guess.
 
 ## Release and environment notes
 
@@ -364,8 +369,8 @@ C:/Projects/DrawCV is context only. Git may need
 > artwork changes, animation between beats, timed annotation reveals, and text
 > covering Latin, Greek, Cyrillic, CJK, symbols, plus Thai and Arabic behind an
 > optional extra; 285 tests pass from source and from the installed wheel, and
-> hosted CI is green on nine jobs. There is no obvious next feature: read the
-> handoff's candidate list and ask me which, and whether to cut a release
-> first, since the lesson format moved v2 to v5 in one day.
+> hosted CI needs a green run to confirm a macOS install fix. The owner is
+> weighing a first release since a3: read the handoff's readiness list and
+> docs/RELEASING.md, and do not upload anything without an explicit request.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.

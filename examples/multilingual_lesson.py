@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 
 from drawcv import Circle, Color, FillStyle, Point, Scene, StrokeStyle, Text
-from tutordraw import Theme, Tutorial, ValidationError
+from tutordraw import Theme, TutorDrawError, Tutorial
 
 # Fonts covering Thai and Arabic that are commonly present. Supply your own with
 # TUTORDRAW_FONT; Noto Sans Thai and Noto Naskh Arabic are good free choices.
@@ -73,14 +73,19 @@ def main() -> None:
         print("No font found for Thai or Arabic. Set TUTORDRAW_FONT to a .ttf "
               "covering them and install: pip install \"tutordraw[typography]\"")
     output = Path(__file__).resolve().parents[1] / "output" / "multilingual"
-    try:
-        lesson = build_tutorial(font)
-    except ValidationError as error:
-        print(f"Falling back to English only: {error}")
-        lesson = build_tutorial(None)
-    paths = lesson.export_steps(output, overwrite=True)
-    print(f"Saved {len(paths)} language step(s) in {output}"
-          + (f" using {Path(font).name}" if font else " (English only)"))
+    # A host can have a font but not the engine, so the export has to be inside
+    # the guard too: shaped text only fails once it is actually rendered.
+    for candidate in (font, None):
+        lesson = build_tutorial(candidate)
+        try:
+            paths = lesson.export_steps(output, overwrite=True)
+        except TutorDrawError as error:
+            # export_steps wraps a render failure, so report the real cause.
+            print(f"Falling back to English only: {error.__cause__ or error}")
+            continue
+        print(f"Saved {len(paths)} language step(s) in {output}"
+              + (f" using {Path(candidate).name}" if candidate else " (English only)"))
+        return
 
 
 if __name__ == "__main__":

@@ -178,3 +178,21 @@ def test_non_ascii_survives_the_json_round_trip(target, tmp_path):
 
     assert restored.labels[0].text == value
     np.testing.assert_array_equal(restored.render_step(0).buffer, before)
+
+
+def test_missing_font_engine_is_reported_as_a_tutordraw_instruction():
+    """Platform independent: DrawCV's message is rewritten, whatever is installed."""
+    from tutordraw.adapters.drawcv import typography_errors
+
+    with pytest.raises(ValidationError, match=r"tutordraw\[typography\]"):
+        with typography_errors():
+            raise RuntimeError('Font text requires the optional dependencies: '
+                               'pip install "pydrawcv[typography]"')
+
+
+def test_unrelated_errors_pass_through_untouched():
+    from tutordraw.adapters.drawcv import typography_errors
+
+    with pytest.raises(RuntimeError, match="something else entirely"):
+        with typography_errors():
+            raise RuntimeError("something else entirely")

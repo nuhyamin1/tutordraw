@@ -29,6 +29,12 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install development tools and published dependencies
         run: python -m pip install ".[dev]"
+      - name: Install optional typography support
+        # Thai and Arabic need a native font engine. On macOS DrawCV requires
+        # PyICU, which has no wheel and builds against Homebrew ICU, so this
+        # is allowed to fail: the font tests skip and the rest still runs.
+        continue-on-error: true
+        run: python -m pip install ".[typography]"
       - name: Build source distribution and wheel
         run: python -m build --no-isolation --outdir output/release
       - name: Validate distribution contents and metadata

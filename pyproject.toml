@@ -18,6 +18,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Education",
     "Topic :: Multimedia :: Graphics",
 ]
@@ -26,8 +29,10 @@ classifiers = [
 # Shaped scripts (Thai, Arabic) need DrawCV's font engine. Everything else,
 # including Latin, Greek, Cyrillic, CJK and symbols, works without this.
 typography = ["pydrawcv[typography]==0.10.0.post1"]
-dev = ["pytest>=8", "build>=1", "setuptools>=77", "wheel", "twine>=6", "jsonschema>=4.18,<5",
-       "pydrawcv[typography]==0.10.0.post1"]
+# Deliberately excludes the typography extra: on macOS DrawCV requires real
+# PyICU, which has no wheels and builds against Homebrew ICU. Install it
+# separately when you need Thai or Arabic.
+dev = ["pytest>=8", "build>=1", "setuptools>=77", "wheel", "twine>=6", "jsonschema>=4.18,<5"]
 
 [project.urls]
 Repository = "https://github.com/nuhyamin1/tutordraw"
