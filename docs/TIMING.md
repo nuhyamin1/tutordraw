@@ -52,12 +52,13 @@ consumes 20 frames at 2 fps under `output/timing`.
 ## Persistence and scope
 
 Schema v2 stores duration and pause on each step. Loading v1 assigns 3/0 defaults,
-preserving IDs and static images. Saving always produces the current version, v4. See [PERSISTENCE.md](PERSISTENCE.md).
+preserving IDs and static images. Saving always produces the current version, v5. See [PERSISTENCE.md](PERSISTENCE.md).
 
 Steps can now ease into their restyled state; see [ANIMATION.md](ANIMATION.md).
-Hard cuts remain the default, so every frame of a lesson without `animate()`
-still equals some `render_step` output. No player UI, crossfades between whole
-images, progressive annotation reveal, timed captions, audio, or DrawCV
+Annotations can be delayed within a step; see [REVEAL.md](REVEAL.md). Hard cuts
+remain the default, so every frame of a lesson using neither `animate()` nor a
+reveal delay still equals some `render_step` output. No player UI, crossfades between whole
+images, timed captions, audio, or DrawCV
 animation sampling is implemented. `render_at_time` selects a TutorDraw step;
 it does not advance timelines attached to source DrawCV objects. Video export
 (`export_video`) consumes this frame iterator and is documented in [VIDEO.md](VIDEO.md).

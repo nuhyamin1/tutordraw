@@ -1,8 +1,9 @@
 """Show change over time: the Moon moves into Earth's shadow and turns red.
 
-Each beat restyles the same source drawing, and the last two animate into
-their state so the Moon slides rather than jumps. The scene itself is never
-edited, so the beats stay independent and render in any order.
+Each beat restyles the same source drawing, the last two animate into their
+state so the Moon slides rather than jumps, and every explanation arrives a
+beat after its label, the way a narrator would introduce it. The scene itself
+is never edited, so the beats stay independent and render in any order.
 """
 
 from pathlib import Path
@@ -53,20 +54,20 @@ def build_tutorial() -> Tutorial:
     # The shadow is not part of the story yet, so hide it entirely.
     cast.restyle(t_umbra, visible=False)
     cast.explain(t_earth, "Sunlight falls on the Earth. The Moon orbits well "
-                          "beyond it.", anchor="bottom", gap=110, max_width=280)
+                          "beyond it.", anchor="bottom", gap=110, max_width=280, at=1.5)
 
     shadow = lesson.step("Shadow", duration=7).show(t_earth.label("Earth", anchor="bottom", gap=30))
     shadow.highlight(t_umbra).dim_others(t_umbra, t_earth, t_sun, opacity=0.3)
     shadow.explain(t_umbra, "Earth blocks that light and casts a shadow cone — "
                             "the umbra — roughly 1.4 million km long.",
-                   anchor="top", gap=70, max_width=290)
+                   anchor="top", gap=70, max_width=290, at=2)
 
     entry = lesson.step("Entry", duration=6).animate("ease_in_out")
     entry.restyle(t_moon, move=(0, 190))
     entry.show(t_moon.label("Moon", anchor="top", gap=24))
     entry.highlight(t_moon).dim_others(t_moon, t_umbra, opacity=0.35)
     entry.explain(t_moon, "About twice a year the orbit carries the Moon straight "
-                          "into that cone.", anchor="bottom", gap=95, max_width=280)
+                          "into that cone.", anchor="bottom", gap=95, max_width=280, at=2)
 
     total = lesson.step("Totality", duration=8).animate("ease_in_out")
     total.restyle(t_moon, move=(0, 190), fill=MOON_RED)
@@ -75,7 +76,7 @@ def build_tutorial() -> Tutorial:
     total.highlight(t_moon).dim_others(t_moon, opacity=0.4)
     total.explain(t_moon, "Totality lasts up to ≈ 100 min. The Moon turns red: "
                           "Earth's atmosphere bends red light (λ ≈ 700 nm) "
-                          "around the planet.", anchor="bottom", gap=95, max_width=300)
+                          "around the planet.", anchor="bottom", gap=95, max_width=300, at=2.5)
     return lesson
 
 
@@ -84,8 +85,9 @@ def main() -> None:
     lesson = build_tutorial()
     paths = lesson.export_steps(output, overwrite=True)
     animated = sum(1 for step in lesson.steps if step.easing)
+    delayed = sum(len(step.reveals) for step in lesson.steps)
     print(f"Saved {len(paths)} beats of a {lesson.duration:g}-second lesson "
-          f"({animated} animated) in {output}")
+          f"({animated} animated, {delayed} delayed explanations) in {output}")
 
 
 if __name__ == "__main__":

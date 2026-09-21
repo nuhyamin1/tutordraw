@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a10 (development)
+# Implemented API — 0.1.0a11 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -36,7 +36,7 @@ Labels are immutable reusable definitions, absent until explicitly shown. Target
 
 `None` uses the theme default at authoring time. Center-anchored labels are placed to the right of the target center. Text remains upright. Leaders terminate on panel edges; if the target lies within the panel, its leader is omitted. Spacing uses canvas pixels and does not inherit object scaling.
 
-`step.show(*labels) -> Step` accepts registered labels from the same tutorial, ignores duplicates, and leaves the step unchanged if any argument is invalid. `step.labels` is a tuple. Steps never inherit presentation state from each other.
+`step.show(*labels, at=None) -> Step` accepts registered labels from the same tutorial, ignores duplicates, and leaves the step unchanged if any argument is invalid. `step.labels` is a tuple. Steps never inherit presentation state from each other.
 
 ## Callouts
 
@@ -83,6 +83,18 @@ shape's fill or a Text object's colour and is refused for Line and Group.
 At least one option is required, and repeating the call for a target replaces
 its settings entirely. `step.restyles` exposes the definitions. Restyles persist
 in lesson schema v3. See [RESTYLE.md](RESTYLE.md).
+
+## Revealing annotations one at a time (new in 0.1.0a11)
+
+`show(*labels, at=None)` and `explain(target, text, ..., at=None)` take an
+optional delay in seconds from the start of the step, so a narrated beat can
+introduce one thing at a time. `at=None` means immediately, as before.
+`step.revealed_at(annotation)` and `step.reveals` report the timings.
+
+A step with no delays is unchanged and stays a hard cut. `render_step` always
+shows every annotation, so PNG export is unaffected; only `render_at_time` and
+what builds on it honour delays. A delay past the step's duration reveals at
+its end. Saved in lesson schema v5. See [REVEAL.md](REVEAL.md).
 
 ## Animating a step (new in 0.1.0a10)
 

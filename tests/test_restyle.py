@@ -7,6 +7,7 @@ from jsonschema import Draft202012Validator
 import numpy as np
 import pytest
 
+from conftest import LEGACY_VERSIONS, SCHEMA_VERSION, downgrade, packaged_schema
 from tutordraw import Tutorial, ValidationError
 
 
@@ -163,8 +164,8 @@ def test_restyles_survive_the_round_trip_and_validate_against_the_schema(lesson)
     tutorial.step("Two").restyle(pair, visible=False).restyle(caption, fill=(5, 5, 5))
 
     data = tutorial.to_dict()
-    assert data["schema_version"] == 4
-    schema = json.loads(files("tutordraw").joinpath("lesson-v4.schema.json").read_text(encoding="utf-8"))
+    assert data["schema_version"] == SCHEMA_VERSION
+    schema = packaged_schema()
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(data)
 
@@ -177,20 +178,18 @@ def test_restyles_survive_the_round_trip_and_validate_against_the_schema(lesson)
     assert (first.move, first.fill, first.opacity, first.visible) == ((120, 10), (180, 60, 40), 0.7, None)
 
 
-@pytest.mark.parametrize("version,drop", [(2, ("restyles", "easing")), (3, ("easing",))])
-def test_older_documents_load_without_the_newer_fields(lesson, version, drop):
+@pytest.mark.parametrize("version", LEGACY_VERSIONS)
+def test_every_older_schema_version_still_loads(lesson, version):
+    """One test covers all past versions, so a bump needs no new case here."""
     tutorial, moon, *_ = lesson
     tutorial.step("One")
     data = tutorial.to_dict()
-    legacy = deepcopy(data)
-    legacy["schema_version"] = version
-    for step in legacy["steps"]:
-        for field in drop:
-            del step[field]
-    upgraded = Tutorial.from_dict(legacy)
+
+    upgraded = Tutorial.from_dict(downgrade(data, version))
     assert upgraded.steps[0].restyles == ()
     assert upgraded.steps[0].easing is None
-    assert upgraded.to_dict()["schema_version"] == 4
+    assert upgraded.steps[0].reveals == {}
+    assert upgraded.to_dict()["schema_version"] == SCHEMA_VERSION
     np.testing.assert_array_equal(upgraded.render_step(0).buffer, tutorial.render_step(0).buffer)
 
 

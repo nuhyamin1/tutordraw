@@ -133,6 +133,7 @@ class Step:
         self._highlights: dict[str, Highlight] = {}
         self._restyles: dict[str, Restyle] = {}
         self._easing: str | None = None
+        self._reveals: dict[str, float] = {}
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._id = str(uuid4())
@@ -166,15 +167,33 @@ class Step:
     def labels(self) -> tuple[Label, ...]:
         return tuple(self._labels)
 
-    def show(self, *labels: Label) -> Step:
-        """Show registered labels, without inheriting any other step's state."""
+    def show(self, *labels: Label, at: float | None = None) -> Step:
+        """Show registered labels, without inheriting any other step's state.
+
+        `at` delays them by that many seconds from the start of the step, so a
+        narrator can introduce one thing at a time. See docs/REVEAL.md.
+        """
         for label in labels:
             if not isinstance(label, Label) or self._tutorial._labels.get(label.id) is not label:
                 raise ValidationError("Label must belong to this tutorial")
+        seconds = None if at is None else finite_number(at, "at", minimum=0)
         for label in labels:
             if label not in self._labels:
                 self._labels.append(label)
+            if seconds is not None:
+                self._reveals[label.id] = seconds
         return self
+
+    @property
+    def reveals(self) -> dict[str, float]:
+        """Annotation id to its delay in seconds; only delayed ones appear."""
+        return dict(self._reveals)
+
+    def revealed_at(self, annotation: Label) -> float:
+        """Seconds from the start of this step before the annotation appears."""
+        if not isinstance(annotation, Label):
+            raise ValidationError("revealed_at needs a label or callout")
+        return self._reveals.get(annotation.id, 0.0)
 
     @property
     def callouts(self) -> tuple[Callout, ...]:
@@ -192,14 +211,17 @@ class Step:
                 leader: bool = True, gap: float | None = None,
                 offset: tuple[float, float] = (0, 0), font_scale: float | None = None,
                 padding: float | None = None, max_width: float | None = None,
-                line_spacing: float | None = None) -> Callout:
+                line_spacing: float | None = None, at: float | None = None) -> Callout:
         """Add a wrapped explanation only to this step; return its definition."""
         self._check_target(target)
+        seconds = None if at is None else finite_number(at, "at", minimum=0)
         annotation = make_annotation(target, text, anchor=anchor, leader=leader,
                                      gap=gap, offset=offset, font_scale=font_scale,
                                      padding=padding, callout=True, max_width=max_width,
                                      line_spacing=line_spacing)
         self._callouts.append(annotation)
+        if seconds is not None:
+            self._reveals[annotation.id] = seconds
         return annotation
 
     def highlight(self, target: Target, *, padding: float | None = None,

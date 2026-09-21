@@ -84,5 +84,5 @@ with that in mind, or pre-render.
 
 Interpolating anything `restyle` does not cover, such as stroke, scale and
 rotation. Per-property or staggered timing within a step. Motion paths other
-than a straight line. Animating annotations themselves: labels and callouts
-still appear whole at the start of their step.
+than a straight line. Fading annotations in: they can now be delayed with `at=` (see
+[REVEAL.md](REVEAL.md)) but still appear whole rather than fading.

@@ -7,6 +7,7 @@ from jsonschema import Draft202012Validator
 import numpy as np
 import pytest
 
+from conftest import SCHEMA_VERSION, packaged_schema
 from tutordraw import LessonFormatError, Tutorial, ValidationError
 
 
@@ -160,14 +161,14 @@ def test_hard_cut_undoes_animation(lesson):
                                   tutorial.render_step(1).buffer)
 
 
-def test_easing_round_trips_and_validates_against_v4(lesson):
+def test_easing_round_trips_and_validates_against_the_schema(lesson):
     tutorial, _ = lesson
     tutorial.steps[1].animate("ease_out_cubic")
     data = tutorial.to_dict()
-    assert data["schema_version"] == 4
+    assert data["schema_version"] == SCHEMA_VERSION
     assert [step["easing"] for step in data["steps"]] == [None, "ease_out_cubic"]
 
-    schema = json.loads(files("tutordraw").joinpath("lesson-v4.schema.json").read_text(encoding="utf-8"))
+    schema = packaged_schema()
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(data)
 

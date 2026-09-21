@@ -66,6 +66,10 @@ beat.restyle(shadow, visible=False)                    # not part of this beat y
 beat.restyle(sun, opacity=0.35)                        # push it back
 ```
 
+Delay an explanation so it lands when the narration reaches it:
+`beat.explain(target, text, at=1.5)`, and `beat.show(label, at=3)` for labels.
+Seconds count from the start of the step; see [reveal](REVEAL.md).
+
 Add `.animate()` to the step when the change should slide rather than jump:
 `lesson.step("Entry", duration=6).animate("ease_in_out")`. It eases from the
 previous step's state; see [animation](ANIMATION.md).

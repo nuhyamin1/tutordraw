@@ -89,7 +89,9 @@ Prioritized after the first release to support continuation across AI sessions.
   crossfades are still not implemented, only per-target interpolation.
 - [x] Change a target's position, fill, opacity and visibility per step (a8),
   which covers progressive reveal of artwork.
-- [ ] Reveal annotations progressively within a step; today they appear at once.
+- [x] Reveal annotations progressively within a step with `show(at=)` and
+  `explain(at=)`, timed in seconds from the step's start (a11).
+- [ ] Fade annotations in; today they appear whole at their moment.
 - [ ] Add timed captions.
 - [ ] Sample DrawCV object timelines instead of only selecting static steps.
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0a11 — Unreleased
+
+- `Step.show(*labels, at=None)` and `Step.explain(..., at=None)` accept a delay
+  in seconds from the start of the step, so a narrated beat introduces one
+  thing at a time instead of showing everything at once.
+- Add `Step.revealed_at(annotation)` and `Step.reveals`.
+- A delay alone makes a step time-varying; `animate()` is not required, and the
+  two combine. A step with no delays is unchanged and stays a hard cut.
+- `render_step` still shows every annotation, so PNG export is unaffected.
+- A delay past the step's duration reveals at its end, so playback and
+  `render_step` always agree.
+- Save reveal times in lesson schema v5; v1 through v4 still load.
+- Add `docs/REVEAL.md` and 20 reveal tests; the eclipse example now delays
+  each explanation behind its labels.
+- Tests derive the schema version from one table in `tests/conftest.py`, so a
+  future bump updates one place and one test covers every older version.
+
 ## 0.1.0a10 — Unreleased
 
 - Add `Step.animate(easing="ease_in_out")` and `Step.hard_cut()`. An animated

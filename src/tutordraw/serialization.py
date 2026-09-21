@@ -16,13 +16,14 @@ from .adapters.drawcv import index_scene
 from .errors import LessonFormatError, ValidationError
 from .model import Callout, Label, make_annotation
 from .themes import Theme
+from .validation import finite_number
 
 if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 4
-SUPPORTED_VERSIONS = (1, 2, 3, SCHEMA_VERSION)
+SCHEMA_VERSION = 5
+SUPPORTED_VERSIONS = (1, 2, 3, 4, SCHEMA_VERSION)
 ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset", "font_scale", "padding"}
 
 
@@ -86,6 +87,7 @@ def to_dict(tutorial: Tutorial) -> dict:
                        "dim": None if step._dim_opacity is None else {
                            "target_ids": [t.id for t in step._focus], "opacity": step._dim_opacity},
                        "easing": step.easing,
+                       "reveals": step.reveals,
                        "restyles": [{"target_id": r.target.id,
                                      "move": None if r.move is None else list(r.move),
                                      "fill": None if r.fill is None else list(r.fill),
@@ -192,8 +194,9 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             timing_fields = {"duration", "pause"} if version >= 2 else set()
             restyle_fields = {"restyles"} if version >= 3 else set()
             easing_fields = {"easing"} if version >= 4 else set()
+            reveal_fields = {"reveals"} if version >= 5 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
-                    | timing_fields | restyle_fields | easing_fields, where)
+                    | timing_fields | restyle_fields | easing_fields | reveal_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -212,6 +215,17 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                 highlighted.add(target.id)
                 step.highlight(target, padding=highlight["padding"], width=highlight["width"],
                                color=tuple(_list(highlight["color"], f"{location}.color")))
+            delays = item.get("reveals", {})
+            if not isinstance(delays, dict):
+                raise LessonFormatError(f"{where}.reveals must be an object")
+            shown = {label.id for label in step.labels} | {c.id for c in step.callouts}
+            for key, value in delays.items():
+                if key not in shown:
+                    raise LessonFormatError(f"{where}.reveals: unknown annotation {key!r}")
+                try:
+                    step._reveals[key] = finite_number(value, "at", minimum=0)
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.reveals[{key!r}]: {exc}") from exc
             if item.get("easing") is not None:
                 try:
                     step.animate(item["easing"])

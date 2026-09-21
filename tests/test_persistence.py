@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from drawcv import Circle, Color, FillStyle, Group, ImageObject, Point, Scene, Transform
 
+from conftest import SCHEMA_VERSION, packaged_schema
 from tutordraw import LessonFormatError, Theme, Tutorial, ValidationError
 
 
@@ -83,7 +84,7 @@ def test_native_dict_and_scene_metadata_are_detached(lesson):
 
 @pytest.mark.parametrize("mutate,match", [
     (lambda d: d.update(format="other"), "format"),
-    (lambda d: d.update(schema_version=5), "version"),
+    (lambda d: d.update(schema_version=SCHEMA_VERSION + 1), "version"),
     (lambda d: d.update(schema_version=True), "version"),
     (lambda d: d.update(schema_version=1.0), "version"),
     (lambda d: d.update(schema_version="1"), "version"),
@@ -222,7 +223,7 @@ def test_empty_lesson_and_image_scene_round_trip():
 def test_packaged_json_schema_validates_output_and_flags_structural_errors(lesson):
     from jsonschema import Draft202012Validator
 
-    schema = json.loads(files("tutordraw").joinpath("lesson-v4.schema.json").read_text(encoding="utf-8"))
+    schema = packaged_schema()
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
     data = lesson[0].to_dict()

@@ -134,11 +134,10 @@ class Tutorial:
         if not isinstance(alpha, bool):
             raise ValidationError("alpha must be a boolean")
         index, progress = position_at_time(self, time)
-        easing = self._steps[index].easing
-        if easing is None or progress >= 1.0:
+        step = self._steps[index]
+        if progress >= 1.0 or (step.easing is None and not step._reveals):
             return self.render_step(index, alpha=alpha)
-        from drawcv import get_easing
-        return self._render(index, get_easing(easing)(progress), alpha)
+        return self._render(index, progress, alpha)
 
     def render_frames(self, *, fps: int = 30, alpha: bool = False):
         """Iterate ceil(duration * fps) canvases sampled at k / fps seconds."""
@@ -161,15 +160,26 @@ class Tutorial:
         working = copy_scene(self.scene)
         objects = index_scene(working)
         step = self._steps[index]
+        # Easing shapes the artwork blend; reveals use plain elapsed seconds.
+        eased = progress
+        if step.easing is not None and progress < 1.0:
+            from drawcv import get_easing
+            eased = get_easing(step.easing)(progress)
+        elif step.easing is None:
+            eased = 1.0
         # Artwork changes land before emphasis, so attached annotations follow them.
-        previous = self._steps[index - 1] if progress < 1.0 and index else None
-        apply_restyles(objects, step, previous, progress)
+        previous = self._steps[index - 1] if eased < 1.0 and index else None
+        apply_restyles(objects, step, previous, eased)
         apply_attention(working, step)
         layer = overlay_layer(working)
         with typography_errors():
             for highlight in step.highlights:
                 working.add(highlight_artwork(highlight, objects[highlight.target.drawable_id]), layer=layer)
+            elapsed = progress * step.duration
             for label in (*step.labels, *step.callouts):
+                # A delay past the step's duration simply reveals at its end.
+                if min(step.revealed_at(label), step.duration) > elapsed:
+                    continue
                 _, artwork = label_artwork(label, objects[label.target.drawable_id],
                                            working.width, working.height, self.theme, self._font)
                 for obj in artwork:

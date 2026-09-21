@@ -328,3 +328,45 @@ An expected cost turned out not to exist: animated frames measured the same as
 static ones, about 35 ms, because every frame was always rendered from scratch.
 Animation removes a caching opportunity that was never taken, rather than
 adding work. Recorded with numbers in ANIMATION.md instead of guessed at.
+
+## Revealing annotations — development 0.1.0a11 (2026-09-21)
+
+Every label and callout in a step appeared at once, which is wrong for a
+narrated lesson. The caller could already approximate reveals by adding a step
+per reveal, so the bar here was convenience, not capability, and the design is
+deliberately small.
+
+**Extend `show` and `explain` with `at=` rather than adding a concept.** Both
+methods already exist and already mean "this annotation belongs to this step";
+a delay is one more attribute of that, not a new kind of thing. No new class,
+no new verb.
+
+**Seconds from the start of the step, not an ordering index or a stagger.**
+The product drives narration from a language model that knows when each
+sentence will be spoken, so an explicit time is directly usable. An index or a
+stagger would force the caller to convert.
+
+**A delay alone makes the step time-varying.** Requiring `animate()` as well
+would be an unrelated coupling. This generalised the render path: easing moved
+inside `_render`, which now takes raw progress, derives elapsed seconds for
+reveals and applies the curve only to artwork blending.
+
+**`render_step` keeps showing everything**, matching the decision made for
+animation. Still export stays a picture of the beat, not of one instant in it.
+
+**Clamp a delay past the duration to the end** rather than rejecting it or
+letting it never appear. Rejecting would couple validation to `duration` and
+let a later `set_timing` strand an annotation; never appearing would make
+playback and `render_step` disagree. Clamping keeps them consistent with no
+cross-field validation.
+
+**Appear, do not fade.** A fade would mean inventing a duration, and a caption
+landing as the narrator says it is the actual requirement. Recorded as a
+deliberate omission rather than an oversight.
+
+Schema v5 adds a per-step map of annotation id to seconds. That is the fourth
+bump in a day, so the tests were changed to derive the version from
+`SCHEMA_VERSION` and a single `STEP_FIELDS_ADDED` table in `tests/conftest.py`.
+A future bump now updates one table instead of five test files, and one
+parametrised test covers every older version. The churn itself remains a
+reason to let the format settle before publishing.
