@@ -310,14 +310,21 @@ Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 The owner asked whether a11 is ready for PyPI. Preparation is done; the answer
 is "not yet, and here is exactly what is missing".
 
-**A regression was found while checking.** Hosted CI has been red since a9 on
-all three macOS jobs, at the `pip install ".[dev]"` step. Cause: a9 put
+**A regression was found and fixed.** Hosted CI was red from a9 to a11 on all
+three macOS jobs, at `pip install ".[dev]"`. Cause: a9 put
 `pydrawcv[typography]` into the `dev` group, and on macOS DrawCV requires real
 `PyICU`, which publishes no wheels and builds against Homebrew ICU4C. Windows
-and Linux get `pyicu-wheels` instead, which is why local evidence looked fine.
-Fixed here: the extra is out of `dev`, and CI installs it with
-`continue-on-error` so font tests run where they can. **This needs a push and a
-green nine-job run to confirm.**
+and Linux get `pyicu-wheels`, which is why local evidence looked fine. The
+extra is now outside `dev`. **All nine jobs are green on cb8f2d6.**
+
+A follow-up worth understanding: `continue-on-error` reports a step as
+`success` through the API even when it failed, so a green matrix did not prove
+the extra installed anywhere. The workflow now encodes the expectation instead
+of hiding it: the install may fail **only** on macOS, a step imports the five
+engine modules on Windows and Linux, and `TUTORDRAW_REQUIRE_FONT=1` makes
+`tests/test_fonts.py` raise rather than skip on Windows, where Tahoma covers
+both scripts. So a green matrix now proves the font path really ran. Whether
+the extra installs on macOS is still unknown and is documented as such.
 
 A second, latent bug surfaced from the same investigation: a host with a font
 but no engine crashed `examples/multilingual_lesson.py`, because

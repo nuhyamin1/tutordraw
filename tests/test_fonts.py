@@ -58,9 +58,15 @@ def _discover():
 
 
 FONT = _discover()
-pytestmark = pytest.mark.skipif(
-    FONT is None, reason="No font covering Thai and Arabic, or the typography extra is missing. "
-                         "Set TUTORDRAW_TEST_FONT to a .ttf covering both.")
+REASON = ("No font covering Thai and Arabic, or the typography extra is missing. "
+          "Set TUTORDRAW_TEST_FONT to a .ttf covering both.")
+
+if FONT is None and os.environ.get("TUTORDRAW_REQUIRE_FONT"):
+    # CI sets this where the engine and a covering font are expected, so a
+    # silent skip cannot pass for coverage.
+    raise RuntimeError(f"TUTORDRAW_REQUIRE_FONT is set but the font path is unavailable. {REASON}")
+
+pytestmark = pytest.mark.skipif(FONT is None, reason=REASON)
 
 
 def make(font=FONT, width=760):

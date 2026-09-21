@@ -30,11 +30,14 @@ jobs:
       - name: Install development tools and published dependencies
         run: python -m pip install ".[dev]"
       - name: Install optional typography support
-        # Thai and Arabic need a native font engine. On macOS DrawCV requires
-        # PyICU, which has no wheel and builds against Homebrew ICU, so this
-        # is allowed to fail: the font tests skip and the rest still runs.
-        continue-on-error: true
+        # Only macOS may fail here: DrawCV needs source-built PyICU there.
+        # Windows and Linux resolve prebuilt wheels, so a failure is a real
+        # regression and must turn the matrix red rather than be masked.
+        continue-on-error: ${{ runner.os == 'macOS' }}
         run: python -m pip install ".[typography]"
+      - name: Require the font engine where wheels exist
+        if: runner.os != 'macOS'
+        run: python -c "import uharfbuzz, freetype, icu, regex, pythainlp"
       - name: Build source distribution and wheel
         run: python -m build --no-isolation --outdir output/release
       - name: Validate distribution contents and metadata
@@ -51,5 +54,12 @@ jobs:
         run: python -I -m pytest -q
       - name: Verify examples outside the checkout
         run: python -I tools/check_installed.py
+      - name: Require the Thai and Arabic tests to actually run
+        # Windows runners ship Tahoma, which covers both scripts, so the font
+        # path must be exercised rather than silently skipped.
+        if: runner.os == 'Windows'
+        env:
+          TUTORDRAW_REQUIRE_FONT: "1"
+        run: python -m pytest tests/test_fonts.py -q
       - name: Validate documentation and run README example
         run: python tools/check_docs.py

@@ -123,8 +123,8 @@ the `font=` option. Both fail at the earliest point they can.
 
 | Platform | State |
 | --- | --- |
-| Windows, Linux | `pyicu-wheels` supplies a prebuilt ICU binding, so the extra installs from wheels. Verified on Windows 11 / CPython 3.12. |
-| macOS | DrawCV requires real `PyICU` there, which publishes **no wheels** and builds against ICU4C. Expect `brew install icu4c` and a `PKG_CONFIG_PATH` before installing. **Untested**: hosted CI cannot install it, so the job continues without it. |
+| Windows, Linux | `pyicu-wheels` supplies a prebuilt ICU binding, so the extra installs from wheels. Required by CI on both, and the Thai and Arabic tests are required to run on Windows. |
+| macOS | DrawCV requires real `PyICU` there, which publishes **no wheels** and builds against ICU4C. Expect `brew install icu4c` and a `PKG_CONFIG_PATH` before installing. **Untested**: CI is allowed to continue without it, and whether it installed there is not recorded. |
 
 Everything except Thai and Arabic works on macOS with no extra at all.
 
