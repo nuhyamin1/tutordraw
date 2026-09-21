@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a9 (development)
+# Implemented API — 0.1.0a10 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -83,6 +83,19 @@ shape's fill or a Text object's colour and is refused for Line and Group.
 At least one option is required, and repeating the call for a target replaces
 its settings entirely. `step.restyles` exposes the definitions. Restyles persist
 in lesson schema v3. See [RESTYLE.md](RESTYLE.md).
+
+## Animating a step (new in 0.1.0a10)
+
+`step.animate(easing="ease_in_out") -> Step` eases into the step's restyled
+state over its duration, instead of cutting to it. `step.hard_cut()` undoes it
+and `step.easing` reports the curve. Easing names and their validation come
+from DrawCV; they match case-insensitively and store lowercase.
+
+Animation runs from the **previous step's** state, so a target the next step
+leaves alone slides back to the source. `move`, `opacity` and `fill`
+interpolate; `visible` does not. Hard cuts remain the default, and
+`render_step` always shows the finished state. Saved in lesson schema v4.
+See [ANIMATION.md](ANIMATION.md).
 
 ## Theme
 

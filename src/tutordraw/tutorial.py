@@ -128,8 +128,17 @@ class Tutorial:
         return step_at_time(self, time)
 
     def render_at_time(self, time: float, *, alpha: bool = False) -> Canvas:
-        """Seek directly to a static step; pauses hold that step's full image."""
-        return self.render_step(self.step_at_time(time), alpha=alpha)
+        """Seek to a moment. Animated steps interpolate; the rest are hard cuts."""
+        from .timing import position_at_time
+
+        if not isinstance(alpha, bool):
+            raise ValidationError("alpha must be a boolean")
+        index, progress = position_at_time(self, time)
+        easing = self._steps[index].easing
+        if easing is None or progress >= 1.0:
+            return self.render_step(index, alpha=alpha)
+        from drawcv import get_easing
+        return self._render(index, get_easing(easing)(progress), alpha)
 
     def render_frames(self, *, fps: int = 30, alpha: bool = False):
         """Iterate ceil(duration * fps) canvases sampled at k / fps seconds."""
@@ -142,6 +151,9 @@ class Tutorial:
             raise ValidationError(f"Step index must be between 0 and {len(self._steps) - 1}")
         if not isinstance(alpha, bool):
             raise ValidationError("alpha must be a boolean")
+        return self._render(index, 1.0, alpha)
+
+    def _render(self, index: int, progress: float, alpha: bool) -> Canvas:
         source = index_scene(self.scene)
         for target in self._targets.values():
             if target.drawable_id not in source:
@@ -150,7 +162,8 @@ class Tutorial:
         objects = index_scene(working)
         step = self._steps[index]
         # Artwork changes land before emphasis, so attached annotations follow them.
-        apply_restyles(objects, step)
+        previous = self._steps[index - 1] if progress < 1.0 and index else None
+        apply_restyles(objects, step, previous, progress)
         apply_attention(working, step)
         layer = overlay_layer(working)
         with typography_errors():

@@ -287,3 +287,44 @@ Font size is derived as `font_scale * 24`, measured to match the built-in
 renderer's height on this DrawCV release. A `Theme` field would have been
 nicer, but `Theme` is persisted field-by-field with a strict key check, so
 adding one breaks every existing lesson file. Not worth a schema bump.
+
+## Animating between beats — development 0.1.0a10 (2026-09-21)
+
+`restyle` made change expressible but motion was a jump. Animation is the
+remaining gap for a live explainer, and it is the first feature that touches
+the timing contract, so the contract decisions matter more than the code.
+
+**Opt in per step.** Every frame currently equals some `render_step` output,
+and `test_timing.py` and `test_video.py` both depend on it. Animating by
+default would silently change every existing lesson and break that identity
+everywhere. `step.animate()` relaxes it only where asked; hard cuts stay the
+default and untouched lessons render exactly as before.
+
+**`render_step` keeps meaning the finished state.** Static PNG export should
+still read as the lesson's beats, and an author reasoning about "what does
+step 3 look like" wants the destination. Only `render_at_time` interpolates.
+
+**Animate from the previous step's state, not from a declared start.** A
+restyle is already expressed relative to the source, so the previous step's
+restyle is the natural starting point and needs no new data. It also gives the
+right behavior for free in two cases: a step repeating the previous move stays
+put, and a target the next step ignores slides home.
+
+**Reuse DrawCV's easing curves** rather than writing any. It exports
+`get_easing` and 25 named curves with their own validation, so TutorDraw adds a
+name check and nothing else. Names are canonicalised to lowercase because
+DrawCV matches case-insensitively and a lesson file should have one spelling.
+
+**Do not interpolate `visible`.** A boolean has no midpoint. The step's own
+value applies throughout it, and authors pair it with `opacity` to fade.
+Interpolate `fill` in plain RGB: predictable and easy to explain, even though
+it is not perceptually even. Both are documented rather than hidden.
+
+Schema v4 adds a nullable easing string per step. That is the third bump in a
+day; each is honest and older versions still load, but the alpha is moving
+fast and PERSISTENCE.md says so.
+
+An expected cost turned out not to exist: animated frames measured the same as
+static ones, about 35 ms, because every frame was always rendered from scratch.
+Animation removes a caching opportunity that was never taken, rather than
+adding work. Recorded with numbers in ANIMATION.md instead of guessed at.

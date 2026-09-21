@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0a10 — Unreleased
+
+- Add `Step.animate(easing="ease_in_out")` and `Step.hard_cut()`. An animated
+  step eases into its restyled state over its duration instead of cutting to it,
+  so a target slides and recolours rather than jumping.
+- Animation runs from the previous step's state, so a step repeating a move
+  stays put and a target the next step ignores slides back to the source.
+- `move`, `opacity` and `fill` interpolate; `visible` does not.
+- Easing curves and their validation come from DrawCV; names are stored
+  lowercase. `render_at_time`, `render_frames` and `export_video` all follow.
+- **Hard cuts remain the default.** Without `animate()` every frame still equals
+  some `render_step` output, and `render_step` always shows the finished state.
+- Save step easing in lesson schema v4; v1, v2 and v3 still load.
+- Add `docs/ANIMATION.md` and 19 animation tests; the eclipse example now
+  animates its last two beats.
+- Animated frames cost the same as static ones, about 35 ms on the eclipse
+  lesson; frames were always rendered from scratch.
+
 ## 0.1.0a9 — Unreleased
 
 - Support **Thai and Arabic** through DrawCV's font engine, behind a new

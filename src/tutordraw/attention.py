@@ -2,7 +2,7 @@
 
 from drawcv import Color, Drawable, Group, Point, Rectangle, Scene, StrokeStyle
 
-from .adapters.drawcv import set_fill, translate
+from .adapters.drawcv import current_fill, set_fill, translate
 from .errors import ValidationError
 from .model import Highlight, Step
 
@@ -52,18 +52,60 @@ def apply_dimming(scene: Scene, focused_ids: set[str], factor: float) -> None:
         dim(obj)
 
 
-def apply_restyles(objects: dict[str, Drawable], step: Step) -> None:
-    """Apply artwork changes first, so labels, highlights and dimming all see them."""
-    for restyle in step.restyles:
-        obj = objects[restyle.target.drawable_id]
-        if restyle.move is not None:
-            translate(obj, *restyle.move)
-        if restyle.fill is not None:
-            set_fill(obj, restyle.fill)
-        if restyle.opacity is not None:
-            obj.opacity = restyle.opacity
-        if restyle.visible is not None:
-            obj.visible = restyle.visible
+def _lerp(start: float, end: float, progress: float) -> float:
+    return start + (end - start) * progress
+
+
+def _blend(obj: Drawable, start, end, progress: float) -> None:
+    """Move one drawable from the previous step's state toward this step's.
+
+    An unspecified property on either side means "whatever the source says",
+    so a target restyled in one step slides back when the next leaves it alone.
+    """
+    from_move = (0.0, 0.0) if start is None or start.move is None else start.move
+    to_move = (0.0, 0.0) if end is None or end.move is None else end.move
+    dx = _lerp(from_move[0], to_move[0], progress)
+    dy = _lerp(from_move[1], to_move[1], progress)
+    if dx or dy:
+        translate(obj, dx, dy)
+
+    if (start is not None and start.opacity is not None) or             (end is not None and end.opacity is not None):
+        base = obj.opacity
+        obj.opacity = _lerp(
+            start.opacity if start is not None and start.opacity is not None else base,
+            end.opacity if end is not None and end.opacity is not None else base,
+            progress)
+
+    if (start is not None and start.fill is not None) or             (end is not None and end.fill is not None):
+        base = current_fill(obj)
+        from_fill = start.fill if start is not None and start.fill is not None else base
+        to_fill = end.fill if end is not None and end.fill is not None else base
+        from_fill = from_fill if from_fill is not None else to_fill
+        to_fill = to_fill if to_fill is not None else from_fill
+        # Interpolating in plain RGB, which is simple and predictable rather
+        # than perceptually even. Document it rather than pretend otherwise.
+        set_fill(obj, tuple(int(round(_lerp(a, b, progress)))
+                            for a, b in zip(from_fill, to_fill)))
+
+    # Visibility cannot be interpolated, so this step's own value applies
+    # throughout it. Pair visible with opacity to fade something in.
+    if end is not None and end.visible is not None:
+        obj.visible = end.visible
+
+
+def apply_restyles(objects: dict[str, Drawable], step: Step, previous: Step | None = None,
+                   progress: float = 1.0) -> None:
+    """Apply artwork changes first, so labels, highlights and dimming see them.
+
+    `previous` and `progress` are supplied only while animating; at progress 1
+    the result is exactly the step's own restyled state.
+    """
+    current = {r.target.drawable_id: r for r in step.restyles}
+    earlier = {r.target.drawable_id: r
+               for r in (previous.restyles if previous is not None else ())}
+    for drawable_id in {**earlier, **current}:
+        _blend(objects[drawable_id], earlier.get(drawable_id),
+               current.get(drawable_id), progress)
 
 
 def apply_attention(scene: Scene, step: Step) -> None:

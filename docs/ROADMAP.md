@@ -85,7 +85,8 @@ Prioritized after the first release to support continuation across AI sessions.
   with DrawCV, no new dependency; unavailable codecs raise `VideoExportError`.
 - [x] Obtain hosted CI evidence of codec availability beyond Windows/CPython 3.12:
   all nine jobs encode and decode a 120-frame video (188b4d2, d06ceab).
-- [ ] Design and implement transitions; current playback uses hard cuts.
+- [x] Design and implement transitions between beats (a10); whole-image
+  crossfades are still not implemented, only per-target interpolation.
 - [x] Change a target's position, fill, opacity and visibility per step (a8),
   which covers progressive reveal of artwork.
 - [ ] Reveal annotations progressively within a step; today they appear at once.
@@ -95,7 +96,8 @@ Prioritized after the first release to support continuation across AI sessions.
 ## Showing change
 
 - [x] Per-step artwork changes through `Step.restyle`, persisted in schema v3 (a8).
-- [ ] Animate between beats: motion is currently a jump at the hard cut.
+- [x] Animate between beats with `Step.animate` and DrawCV's easing curves,
+  opt-in per step so hard cuts stay the default (a10).
 - [ ] Stroke, scale and rotation overrides; today only move, fill, opacity, visible.
 
 ## Text and languages

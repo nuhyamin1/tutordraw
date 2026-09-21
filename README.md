@@ -8,7 +8,7 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 **Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-**Development checkout: 0.1.0a9 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, per-step artwork changes, and Thai and Arabic. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
+**Development checkout: 0.1.0a10 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, per-step artwork changes, animation between beats, and Thai and Arabic. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
 
 Implemented:
 
@@ -29,8 +29,9 @@ Implemented:
 - Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](docs/TEXT.md).
 - Development only: move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](docs/RESTYLE.md).
 - Development only: teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](docs/TEXT.md).
+- Development only: ease a step into its new state instead of cutting to it; see [Animation](docs/ANIMATION.md).
 
-Transitions, timed captions, progressive reveals, interactive playback, rich typography, and automatic collision avoidance remain planned.
+Timed captions, progressive reveal of annotations, interactive playback, and automatic collision avoidance remain planned.
 
 ## Install the alpha
 
@@ -123,6 +124,7 @@ for codec limits and failure behavior.
 
 - [Practical tutorial](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TUTORIAL.md): build a lesson from a DrawCV scene.
 - [Per-step artwork](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RESTYLE.md): move, recolour, fade and hide targets per step.
+- [Animation](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ANIMATION.md): easing a step into its state instead of cutting.
 - [Video export](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md): encoding contract, codecs, and limits.
 - [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md): which characters annotations accept, and why the rest are refused.
 - [API guide](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md): implemented methods and errors.

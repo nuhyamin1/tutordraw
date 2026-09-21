@@ -28,7 +28,7 @@ def main() -> None:
         names = set(archive.namelist())
         expected = {"tutordraw/" + p.relative_to(root / "src/tutordraw").as_posix()
                     for p in (root / "src/tutordraw").rglob("*.py")}
-        expected.update({f"tutordraw/lesson-v{n}.schema.json" for n in (1, 2, 3)})
+        expected.update({f"tutordraw/lesson-v{n}.schema.json" for n in (1, 2, 3, 4)})
         if not expected <= names:
             raise SystemExit(f"Wheel is missing modules: {expected - names}")
         metadata = BytesParser().parsebytes(archive.read(f"{name}-{version}.dist-info/METADATA"))
@@ -53,7 +53,7 @@ def main() -> None:
                      "docs/AI_AUTHORING.md", "docs/TIMING.md", "examples/timed_lesson.py",
                      "docs/VIDEO.md", "examples/video_lesson.py",
                      "docs/TEXT.md", "examples/symbols_lesson.py",
-                     "docs/RESTYLE.md", "examples/eclipse_lesson.py",
+                     "docs/RESTYLE.md", "examples/eclipse_lesson.py", "docs/ANIMATION.md",
                      "examples/multilingual_lesson.py",
                      "tools/check_installed.py", "tests/test_tutorial.py"):
             if f"{name}-{version}/{file}" not in names:

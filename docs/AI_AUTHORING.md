@@ -66,6 +66,10 @@ beat.restyle(shadow, visible=False)                    # not part of this beat y
 beat.restyle(sun, opacity=0.35)                        # push it back
 ```
 
+Add `.animate()` to the step when the change should slide rather than jump:
+`lesson.step("Entry", duration=6).animate("ease_in_out")`. It eases from the
+previous step's state; see [animation](ANIMATION.md).
+
 Prefer this over editing `target.drawable`. Editing the source is retroactive:
 it changes every step, including ones already rendered. `restyle` applies to a
 working copy, so beats stay independent. Labels and highlights follow a moved

@@ -1,7 +1,8 @@
 """Show change over time: the Moon moves into Earth's shadow and turns red.
 
-Each beat restyles the same source drawing. The scene itself is never edited,
-so the beats stay independent and can be rendered in any order.
+Each beat restyles the same source drawing, and the last two animate into
+their state so the Moon slides rather than jumps. The scene itself is never
+edited, so the beats stay independent and render in any order.
 """
 
 from pathlib import Path
@@ -60,14 +61,14 @@ def build_tutorial() -> Tutorial:
                             "the umbra — roughly 1.4 million km long.",
                    anchor="top", gap=70, max_width=290)
 
-    entry = lesson.step("Entry", duration=6)
+    entry = lesson.step("Entry", duration=6).animate("ease_in_out")
     entry.restyle(t_moon, move=(0, 190))
     entry.show(t_moon.label("Moon", anchor="top", gap=24))
     entry.highlight(t_moon).dim_others(t_moon, t_umbra, opacity=0.35)
     entry.explain(t_moon, "About twice a year the orbit carries the Moon straight "
                           "into that cone.", anchor="bottom", gap=95, max_width=280)
 
-    total = lesson.step("Totality", duration=8)
+    total = lesson.step("Totality", duration=8).animate("ease_in_out")
     total.restyle(t_moon, move=(0, 190), fill=MOON_RED)
     total.restyle(t_sun, opacity=0.35)
     total.show(t_moon.label("≈ 100 min", anchor="top", gap=24))
@@ -82,7 +83,9 @@ def main() -> None:
     output = Path(__file__).resolve().parents[1] / "output" / "eclipse"
     lesson = build_tutorial()
     paths = lesson.export_steps(output, overwrite=True)
-    print(f"Saved {len(paths)} beats of a {lesson.duration:g}-second lesson in {output}")
+    animated = sum(1 for step in lesson.steps if step.easing)
+    print(f"Saved {len(paths)} beats of a {lesson.duration:g}-second lesson "
+          f"({animated} animated) in {output}")
 
 
 if __name__ == "__main__":

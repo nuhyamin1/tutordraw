@@ -113,19 +113,19 @@ def test_overflow_and_unrepresentable_intervals():
 
 def test_timing_roundtrip_and_v1_upgrade(lesson):
     data = lesson.to_dict()
-    assert data["schema_version"] == 3
+    assert data["schema_version"] == 4
     restored = Tutorial.from_dict(data)
     assert restored.to_dict() == data
     assert restored.duration == 2.25
     legacy = deepcopy(data)
     legacy["schema_version"] = 1
     for step in legacy["steps"]:
-        del step["duration"], step["pause"], step["restyles"]
+        del step["duration"], step["pause"], step["restyles"], step["easing"]
     schema = json.loads(files("tutordraw").joinpath("lesson-v1.schema.json").read_text())
     Draft202012Validator(schema).validate(legacy)
     upgraded = Tutorial.from_dict(legacy)
     assert upgraded.duration == 6
-    assert upgraded.to_dict()["schema_version"] == 3
+    assert upgraded.to_dict()["schema_version"] == 4
     assert legacy["schema_version"] == 1
     for i in range(2):
         assert upgraded.steps[i].id == lesson.steps[i].id
@@ -146,7 +146,7 @@ def test_step_fields_are_required_per_version(lesson):
     with pytest.raises(LessonFormatError, match="missing"):
         Tutorial.from_dict(data)
     # A v3 document declared as v1 or v2 carries fields those versions forbid.
-    for version, unexpected in ((1, "duration"), (2, "restyles")):
+    for version, unexpected in ((1, "duration"), (2, "restyles"), (3, "easing")):
         data = lesson.to_dict()
         data["schema_version"] = version
         with pytest.raises(LessonFormatError, match="unknown") as caught:

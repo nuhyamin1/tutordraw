@@ -1,14 +1,14 @@
 # AI handoff — start here
 
-Last updated: **2026-09-21**, Thai and Arabic milestone (Claude Code).
+Last updated: **2026-09-21**, animation milestone (Claude Code).
 
 ## Current state
 
-**Published: 0.1.0a3. Development checkout: 0.1.0a9, NOT published.**
+**Published: 0.1.0a3. Development checkout: 0.1.0a10, NOT published.**
 
-Four milestones landed today: a6 video export, a7 annotation text beyond ASCII,
-a8 per-step artwork changes, a9 Thai and Arabic. a6 through a8 are pushed; a9
-is committed locally only.
+Five milestones landed today: a6 video export, a7 annotation text beyond ASCII,
+a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between beats.
+a6 through a8 are pushed; a9 and a10 are committed locally only.
 
 Owner: Nuh Yamin; package tutordraw; MIT. Origin:
 https://github.com/nuhyamin1/tutordraw.git, branch master.
@@ -49,6 +49,7 @@ Consequences worth remembering:
 - a7: annotation text beyond ASCII. See [TEXT.md](TEXT.md).
 - a8: `Step.restyle` and lesson schema v3. See [RESTYLE.md](RESTYLE.md).
 - a9: Thai and Arabic behind the optional `typography` extra. See [TEXT.md](TEXT.md).
+- a10: `Step.animate` and lesson schema v4. See [ANIMATION.md](ANIMATION.md).
 
 ## What a7 decided and why
 
@@ -128,6 +129,31 @@ Two quality fixes came out of looking at real output: Thai was breaking
 mid-syllable, now segmented with the bundled `pythainlp`; and wrapped
 right-to-left lines were left-aligned, now hung from the panel's right edge.
 
+## What a10 decided and why
+
+This is the first feature to touch the timing contract, so the contract
+decisions matter more than the code. All are in DECISIONS.md.
+
+1. **Opt in per step.** Every frame used to equal some `render_step` output,
+   and `test_timing.py` and `test_video.py` depend on it. Animating by default
+   would silently change every lesson. `step.animate()` relaxes the identity
+   only where asked; hard cuts stay the default.
+2. **`render_step` still means the finished state.** PNG export is unaffected;
+   only `render_at_time` interpolates.
+3. **Animate from the previous step's state.** A restyle is already relative to
+   the source, so no new data is needed, and two behaviors fall out for free: a
+   step repeating a move stays put, and a target the next step ignores slides
+   home.
+4. **Reuse DrawCV's 25 easing curves** via `get_easing`, storing names
+   lowercase because DrawCV matches case-insensitively.
+
+`visible` is not interpolated (a boolean has no midpoint) and `fill`
+interpolates in plain RGB. Both documented rather than hidden.
+
+An expected cost did not materialise: animated frames measure the same as
+static ones, ~35 ms, because every frame was always rendered from scratch.
+Animation removes a caching opportunity that was never taken.
+
 ## Code map and changed files
 
 a7 (text):
@@ -160,6 +186,18 @@ a9 (Thai and Arabic):
 - `tests/test_fonts.py` (11 cases, skipped without a covering font),
   `examples/multilingual_lesson.py`.
 
+a10 (animation):
+- `model.py`: `Step.animate`, `Step.hard_cut`, `Step.easing`.
+- `attention.py`: `_blend` interpolates one drawable between two restyles;
+  `apply_restyles` now takes `previous` and `progress`.
+- `timing.py`: `position_at_time` returns (step index, progress through duration).
+- `tutorial.py`: `_render(index, progress, alpha)`; `render_step` passes 1.0,
+  `render_at_time` applies the easing curve.
+- `adapters/drawcv.py`: `current_fill` for the colour an animation starts from.
+- `serialization.py` + `lesson-v4.schema.json`: nullable easing per step.
+- `tests/test_animation.py` (19 cases), `docs/ANIMATION.md`; the eclipse
+  example animates its last two beats.
+
 Shared: `tools/check_installed.py` runs eight examples and **fails if no video
 was produced**; `tools/check_release.py` requires three schemas plus the new
 docs and examples. Version a8 in `pyproject.toml` and `__init__.py`. README,
@@ -170,7 +208,8 @@ ROADMAP and CHANGELOG updated.
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 
-- `python -m pytest -q`: **243 passed, 1 skipped** (a6 171, a7 200, a8 232). The
+- `python -m pytest -q`: **263 passed, 1 skipped** (a6 171, a7 200, a8 232,
+  a9 243). The
   skip is the symlink-refusal test, needing privileges Windows does not grant by
   default. The text tests also pass under `-W error::UserWarning`.
 - `python examples/multilingual_lesson.py`: three language steps using Tahoma.
@@ -189,10 +228,15 @@ Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
   their panels, with no clipping. Wrapping measures the wide glyphs correctly.
 - Confirmed by hand that Thai, Arabic, Hebrew, Devanagari and emoji each raise
   `ValidationError` naming the character and codepoint.
-- `python tools/check_docs.py`: 19 documents and one README example pass.
-- `python -m build --no-isolation --outdir output/development`: a9 built.
+- `python tools/check_docs.py`: 20 documents and one README example pass.
+- `python examples/eclipse_lesson.py` then `export_video(fps=12)`: 324 frames,
+  11.4 s to generate and 13.5 s to encode, ~35 ms per frame animated or static.
+  **Visually inspected** a mid-slide frame: the Moon is caught partway into the
+  shadow with its label and highlight box tracking it, which is exactly what
+  the static beats could not show.
+- `python -m build --no-isolation --outdir output/development`: a10 built.
 - `python tools/check_release.py --dist-dir output/development --require-metadata`: passes.
-- Installed the a9 wheel, `python -I -m pytest -q`: **243 passed, 1 skipped**.
+- Installed the a10 wheel, `python -I -m pytest -q`: **263 passed, 1 skipped**.
 - `python -I tools/check_installed.py`: eight examples run outside the checkout;
   18 PNGs and one 120-frame video decode, and lessons reload correctly.
 - Restored the editable install; `python -m pip check` clean.
@@ -222,37 +266,35 @@ roadmap item; vendoring a subset Noto font would be the obvious way.
 
 Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 
-## Next concrete task: animate between beats
+## Next concrete task: reveal annotations progressively
 
-`restyle` made change expressible, but motion is still a jump at the hard cut:
-the Moon teleports into the shadow rather than sliding. Interpolating a target's
-move, fill and opacity across a step's duration would make `render_at_time` and
-video export genuinely animated, and it is the largest remaining gap for a
-real-time explainer.
+Artwork reveal already works through `restyle(visible=False)` and animation,
+but every label and callout in a step still appears at once. For a narrated
+explainer that is the last big mismatch: the narrator says one thing at a time
+while the panel shows everything.
 
-1. Read AGENTS.md, then RESTYLE.md, TIMING.md, `timing.py` and `attention.py`.
-2. **Design the contract change before writing code.** Today every frame equals
-   some `render_step` output; `tests/test_timing.py` and `tests/test_video.py`
-   both rely on that, and `render_frames` renders whole steps. Animation breaks
-   the identity. Decide explicitly: does `render_step(i)` show the beginning or
-   the end of the step? Probably the end, with `render_at_time` interpolating,
-   so static export keeps its current meaning.
-3. Interpolate on the working copy in `apply_restyles`, given a progress value.
-   Position and opacity interpolate cleanly; fill needs a colour space decision
-   (linear RGB is fine and honest, document it).
-4. Make it opt-in per step, so existing lessons keep hard cuts and the schema
-   only grows a flag or an easing name. Keep v3 loading.
-5. Caching matters here for the first time: at 30 fps an animated step
-   re-renders the whole scene per frame. Measure before optimising, and record
-   the number — `render_step` was 35–40 ms on the cell lesson.
+1. Read AGENTS.md, then ANIMATION.md, RESTYLE.md and `layout.py`.
+2. **Decide the model first.** Options worth weighing: a per-annotation delay
+   in seconds; an ordering index with the step's duration divided between
+   them; or reusing `animate` so annotations fade in on the same curve. The
+   third is the most consistent with what now exists.
+3. Note the caller can already approximate this by adding one step per reveal,
+   so the bar is convenience and smoothness, not capability. Do not over-build.
+4. `label_artwork` returns a list of drawables per annotation; opacity is the
+   natural lever, and annotations are added to a dedicated overlay layer in
+   `render_step`, so per-annotation opacity is contained.
+5. Keep `render_step` showing the finished state, as animation does, or static
+   export silently loses annotations.
 
-After that, in order: reveal annotations progressively within a step (artwork
-reveal already works via `restyle(visible=False)`; the caller can approximate
-annotation reveal today by adding steps); timed captions, which rank low because
-the owner's product supplies its own voice and text; and Hebrew or Indic
-scripts, which DrawCV's engine rejects and would need upstream work.
+After that, in rough order: timed captions, which rank low because the owner's
+product supplies its own voice and text; whole-image crossfades between beats,
+which are a different mechanism from per-target interpolation; stroke, scale
+and rotation in `restyle`; and getting font-path tests into CI, which needs a
+vendored subset font.
 
-Publishing a4–a9 to PyPI needs an explicit owner request.
+Publishing a4-a10 to PyPI needs an explicit owner request. Note the schema has
+moved v2 to v4 in one day: if publication nears, consider whether the format
+should settle first.
 
 ## Release and environment notes
 
@@ -273,13 +315,13 @@ C:/Projects/DrawCV is context only. Git may need
 ## Copy this into another model
 
 > Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
-> first, then docs/RESTYLE.md, docs/TEXT.md and docs/ROADMAP.md. It is the visual
+> first, then docs/ANIMATION.md, docs/RESTYLE.md and docs/ROADMAP.md. It is the visual
 > engine for a real-time, LLM-driven explainer, not an offline video tool.
-> Development a9 has timing, schema-v3 persistence, video export, per-step
-> artwork changes through Step.restyle, and text covering Latin, Greek,
-> Cyrillic, CJK, symbols, plus Thai and Arabic behind an optional extra; 243
+> Development a10 has timing, schema-v4 persistence, video export, per-step
+> artwork changes, animation between beats, and text covering Latin, Greek,
+> Cyrillic, CJK, symbols, plus Thai and Arabic behind an optional extra; 263
 > tests pass from source and from the installed wheel, and hosted CI is green
-> on nine jobs. The next milestone is animating between beats — design the
-> timing contract change before writing code, as the handoff explains.
+> on nine jobs. The next milestone is revealing annotations progressively —
+> decide the model before writing code, as the handoff explains.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.

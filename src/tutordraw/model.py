@@ -132,6 +132,7 @@ class Step:
         self._callouts: list[Callout] = []
         self._highlights: dict[str, Highlight] = {}
         self._restyles: dict[str, Restyle] = {}
+        self._easing: str | None = None
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._id = str(uuid4())
@@ -212,6 +213,36 @@ class Step:
             raise ValidationError("width must be positive")
         tint = rgb(theme.highlight_color if color is None else color, "color")
         self._highlights[target.id] = Highlight(target, pad, tint, stroke)
+        return self
+
+    @property
+    def easing(self) -> str | None:
+        """The easing curve name when this step animates, otherwise None."""
+        return self._easing
+
+    def animate(self, easing: str = "ease_in_out") -> Step:
+        """Interpolate into this step's restyled state over its duration.
+
+        Without this the step is a hard cut, which stays the default. The
+        animation runs from the previous step's state, holds through any
+        pause, and does not change what `render_step` produces.
+        """
+        from drawcv import get_easing
+
+        if not isinstance(easing, str):
+            raise ValidationError("easing must be a string")
+        try:
+            get_easing(easing)  # DrawCV owns the curve names and their validation.
+        except Exception as exc:
+            raise ValidationError(f"Unknown easing curve: {easing!r}") from exc
+        # DrawCV matches names case-insensitively; store one canonical spelling
+        # so saved lessons and step.easing are predictable.
+        self._easing = easing.lower()
+        return self
+
+    def hard_cut(self) -> Step:
+        """Undo animate(); the step snaps to its state at the cut."""
+        self._easing = None
         return self
 
     @property

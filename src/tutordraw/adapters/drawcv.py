@@ -109,3 +109,10 @@ def typography_errors():
         if translated is not None:
             raise translated from exc
         raise
+
+
+def current_fill(drawable: Drawable) -> tuple[int, int, int] | None:
+    """The colour an animation should start from, or None if it has none."""
+    paint = getattr(drawable, "fill", None)
+    colour = paint.color if paint is not None else getattr(drawable, "color", None)
+    return None if colour is None else (colour.r, colour.g, colour.b)

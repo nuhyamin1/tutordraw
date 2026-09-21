@@ -56,9 +56,9 @@ leave out are cleared, not remembered.
 
 ## Persistence
 
-Restyles are saved in **lesson schema v3**. Schema v1 and v2 still load, with no
-restyles, and saving always writes v3. Readers built for a7 and earlier reject
-v3, which is the intended strict behavior. See [PERSISTENCE.md](PERSISTENCE.md).
+Restyles are saved in lesson schema v3 and later. Older schemas still load with
+no restyles, and saving always writes the current version. Readers built for an
+older alpha reject newer files, which is the intended strict behavior. See [PERSISTENCE.md](PERSISTENCE.md).
 
 ## What this does and does not give you
 
@@ -66,9 +66,8 @@ It covers a large part of progressive reveal: hide artwork in early beats and
 reveal it later with `visible`. It does **not** reveal *annotations*
 progressively — every label and callout in a step still appears at once.
 
-Motion is per step, not animated: the Moon jumps to its new position at the cut
-rather than sliding there. Timed playback and video export sample steps, so a
-video of a restyled lesson shows the same hard cuts.
+Motion is a jump at the cut unless the step opts into animation with
+`step.animate()`; see [ANIMATION.md](ANIMATION.md).
 
 Not supported: stroke colour and width, scale, rotation, text content, z-order,
 and adding or removing objects. Those either need new API or belong in the

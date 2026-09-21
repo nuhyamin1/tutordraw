@@ -157,14 +157,14 @@ def test_foreign_target_is_refused(lesson):
         tutorial.step("Foreign").restyle(other.target(shape))
 
 
-def test_restyles_survive_the_round_trip_and_validate_against_v3(lesson):
+def test_restyles_survive_the_round_trip_and_validate_against_the_schema(lesson):
     tutorial, moon, ray, caption, pair = lesson
     tutorial.step("One").restyle(moon, move=(120, 10), fill=(180, 60, 40), opacity=0.7)
     tutorial.step("Two").restyle(pair, visible=False).restyle(caption, fill=(5, 5, 5))
 
     data = tutorial.to_dict()
-    assert data["schema_version"] == 3
-    schema = json.loads(files("tutordraw").joinpath("lesson-v3.schema.json").read_text(encoding="utf-8"))
+    assert data["schema_version"] == 4
+    schema = json.loads(files("tutordraw").joinpath("lesson-v4.schema.json").read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(data)
 
@@ -177,17 +177,20 @@ def test_restyles_survive_the_round_trip_and_validate_against_v3(lesson):
     assert (first.move, first.fill, first.opacity, first.visible) == ((120, 10), (180, 60, 40), 0.7, None)
 
 
-def test_older_documents_load_without_restyles(lesson):
+@pytest.mark.parametrize("version,drop", [(2, ("restyles", "easing")), (3, ("easing",))])
+def test_older_documents_load_without_the_newer_fields(lesson, version, drop):
     tutorial, moon, *_ = lesson
     tutorial.step("One")
     data = tutorial.to_dict()
     legacy = deepcopy(data)
-    legacy["schema_version"] = 2
+    legacy["schema_version"] = version
     for step in legacy["steps"]:
-        del step["restyles"]
+        for field in drop:
+            del step[field]
     upgraded = Tutorial.from_dict(legacy)
     assert upgraded.steps[0].restyles == ()
-    assert upgraded.to_dict()["schema_version"] == 3
+    assert upgraded.steps[0].easing is None
+    assert upgraded.to_dict()["schema_version"] == 4
     np.testing.assert_array_equal(upgraded.render_step(0).buffer, tutorial.render_step(0).buffer)
 
 

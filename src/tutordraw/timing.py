@@ -38,6 +38,19 @@ def step_at_time(tutorial: Tutorial, time: float) -> int:
     return min(bisect_right(ends, seconds), len(ends) - 1)
 
 
+def position_at_time(tutorial: Tutorial, time: float) -> tuple[int, float]:
+    """Resolve seconds to a step and how far through its duration we are.
+
+    A trailing pause reports progress 1, so it holds the step's final state.
+    """
+    index = step_at_time(tutorial, time)
+    ends = boundaries(tutorial)
+    start = ends[index - 1] if index else 0.0
+    duration = tutorial.steps[index].duration
+    elapsed = float(time) - start
+    return index, 1.0 if duration <= 0 else min(1.0, max(0.0, elapsed / duration))
+
+
 def render_frames(tutorial: Tutorial, *, fps: int, alpha: bool) -> Iterator[Canvas]:
     if isinstance(fps, bool) or not isinstance(fps, int) or fps <= 0:
         raise ValidationError("fps must be a positive integer")

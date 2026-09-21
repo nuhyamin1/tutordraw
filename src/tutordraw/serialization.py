@@ -21,8 +21,8 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 3
-SUPPORTED_VERSIONS = (1, 2, SCHEMA_VERSION)
+SCHEMA_VERSION = 4
+SUPPORTED_VERSIONS = (1, 2, 3, SCHEMA_VERSION)
 ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset", "font_scale", "padding"}
 
 
@@ -85,6 +85,7 @@ def to_dict(tutorial: Tutorial) -> dict:
                                        "color": list(h.color), "width": h.width} for h in step.highlights],
                        "dim": None if step._dim_opacity is None else {
                            "target_ids": [t.id for t in step._focus], "opacity": step._dim_opacity},
+                       "easing": step.easing,
                        "restyles": [{"target_id": r.target.id,
                                      "move": None if r.move is None else list(r.move),
                                      "fill": None if r.fill is None else list(r.fill),
@@ -190,8 +191,9 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             where = f"steps[{i}]"
             timing_fields = {"duration", "pause"} if version >= 2 else set()
             restyle_fields = {"restyles"} if version >= 3 else set()
+            easing_fields = {"easing"} if version >= 4 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
-                    | timing_fields | restyle_fields, where)
+                    | timing_fields | restyle_fields | easing_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -210,6 +212,11 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                 highlighted.add(target.id)
                 step.highlight(target, padding=highlight["padding"], width=highlight["width"],
                                color=tuple(_list(highlight["color"], f"{location}.color")))
+            if item.get("easing") is not None:
+                try:
+                    step.animate(item["easing"])
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.easing: {exc}") from exc
             restyled = set()
             for j, entry in enumerate(_list(item.get("restyles", []), f"{where}.restyles")):
                 location = f"{where}.restyles[{j}]"
