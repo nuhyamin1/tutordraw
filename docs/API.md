@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a6 (development)
+# Implemented API — 0.1.0a7 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -26,7 +26,7 @@ Labels are immutable reusable definitions, absent until explicitly shown. Target
 
 | Option | Behavior |
 | --- | --- |
-| `text` | Nonempty, single-line printable ASCII |
+| `text` | Nonempty, single line; Latin/Greek/Cyrillic/CJK and common symbols ([TEXT.md](TEXT.md)) |
 | `anchor` | `left`, `right`, `top`, `bottom`, or `center` of world-space bounds |
 | `leader` | Boolean, enables a straight leader |
 | `gap` | Nonnegative pixel distance from anchor to panel edge; theme default 32 |
@@ -49,7 +49,7 @@ callout = step.explain(
 
 `step.explain` accepts all label layout options plus `max_width=None` and `line_spacing=None`. It returns a `Callout` and automatically shows it only in this step. Callouts cannot be passed to `show` in another step; call `explain` there instead. `step.callouts` returns a tuple.
 
-`max_width` limits the **text area**, excluding panel padding. Default: theme `callout_width=260`. Words wrap using DrawCV measurements. Oversized words split at characters; a width too narrow for one character raises `ValidationError` when rendered. Explicit newlines preserve paragraph breaks, including blank lines; other spaces normalize. Text remains printable ASCII plus newlines. Line spacing is at least 1, default 1.35 times measured line height.
+`max_width` limits the **text area**, excluding panel padding. Default: theme `callout_width=260`. Words wrap using DrawCV measurements. Oversized words split at characters; a width too narrow for one character raises `ValidationError` when rendered. Explicit newlines preserve paragraph breaks, including blank lines; other spaces normalize. Callout text may use any character labels accept, plus newlines. Line spacing is at least 1, default 1.35 times measured line height.
 
 ## Highlights and dimming
 
@@ -94,7 +94,7 @@ Frames encode in temporary files. Explicit overwrite replaces an existing file o
 ## Errors and warnings
 
 - `TutorDrawError`: base exception.
-- `ValidationError`: invalid options/references/indices, hidden attention targets, or layout that cannot fit a character. Also a ValueError.
+- `ValidationError`: invalid options/references/indices, hidden attention targets, layout that cannot fit a character, or an unsupported character ([TEXT.md](TEXT.md)). Also a ValueError.
 - `SceneCopyError`: failure copying through DrawCV's document API, with chained cause.
 - `VideoExportError`: a video export failed; the destination was not created or
   replaced. Inspect `path`, `fourcc`, `frames_written`, and `__cause__`.

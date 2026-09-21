@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
 
 from .errors import ValidationError
+from .text import validate_annotation_text
 from .validation import finite_number, rgb
 
 if TYPE_CHECKING:
@@ -71,7 +72,7 @@ class Target:
         gap: float | None = None, offset: tuple[float, float] = (0, 0),
         font_scale: float | None = None, padding: float | None = None,
     ) -> Label:
-        """Define a printable-ASCII, single-line label; show it via Step.show()."""
+        """Define a single-line label; show it via Step.show(). See docs/TEXT.md."""
         label = make_annotation(self, text, anchor=anchor, leader=leader,
                                 gap=gap, offset=offset, font_scale=font_scale, padding=padding)
         self._tutorial._labels[label.id] = label
@@ -84,10 +85,7 @@ def make_annotation(target: Target, text: str, *, anchor: Anchor = "right",
                     padding: float | None = None, callout: bool = False,
                     max_width: float | None = None, line_spacing: float | None = None) -> Label:
     theme = target._tutorial.theme
-    if not isinstance(text, str) or not text.strip():
-        raise ValidationError("Annotation text must be a nonempty string")
-    if any((ord(c) < 32 or ord(c) > 126) and not (callout and c == "\n") for c in text):
-        raise ValidationError("Annotations support printable ASCII; only callouts allow newlines")
+    text = validate_annotation_text(text, allow_newlines=callout)
     if anchor not in ("left", "right", "top", "bottom", "center"):
         raise ValidationError(f"Unsupported anchor: {anchor!r}")
     if not isinstance(leader, bool):

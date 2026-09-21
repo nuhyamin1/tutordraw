@@ -8,7 +8,7 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 **Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-**Development checkout: 0.1.0a6 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, and video export. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
+**Development checkout: 0.1.0a7 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, and annotation text beyond ASCII. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
 
 Implemented:
 
@@ -26,6 +26,7 @@ Implemented:
 
 - Development only: step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](docs/TIMING.md).
 - Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](docs/VIDEO.md).
+- Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](docs/TEXT.md).
 
 Transitions, timed captions, progressive reveals, interactive playback, rich typography, and automatic collision avoidance remain planned.
 
@@ -48,7 +49,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe examples/cell_tutorial.py
 ```
 
-On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 171 tests (one symlink test skips without symlink privileges). CI is configured for Windows, Linux, and macOS on Python 3.12–3.14; hosted results are pending. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
+On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 171 tests (one symlink test skips without symlink privileges). Hosted CI passes on Windows, Linux, and macOS for Python 3.12–3.14. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
 
 No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.10.0.post1`, which imports as `drawcv`. A broader compatibility range is future work. Use an explicit version or `--pre` when selecting an alpha release.
 
@@ -106,7 +107,7 @@ for codec limits and failure behavior.
 
 ## Current limits
 
-- Labels support **single-line printable ASCII**; callouts additionally support newlines and measured word wrapping. Other scripts and rich typography are not implemented yet.
+- Labels are **single line**; callouts add newlines and measured word wrapping. Latin, Greek, Cyrillic, CJK and common symbols are supported. Thai, Arabic, Hebrew, Indic scripts and emoji are refused with an error naming the character, because the built-in renderer would draw them wrong; see [Text](docs/TEXT.md).
 - Anchors use transformed axis-aligned `get_bounds()` results, including supported shape strokes but excluding post-processing effect extents.
 - Labels stay upright and spacing uses canvas pixels. Automatic collision avoidance and routed leaders are deferred.
 - Off-canvas annotations issue `LayoutWarning` and may be clipped. Callout widths measure the text area; padding adds to the panel width.
@@ -120,6 +121,7 @@ for codec limits and failure behavior.
 
 - [Practical tutorial](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TUTORIAL.md): build a lesson from a DrawCV scene.
 - [Video export](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md): encoding contract, codecs, and limits.
+- [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md): which characters annotations accept, and why the rest are refused.
 - [API guide](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md): implemented methods and errors.
 - [Compatibility](https://github.com/nuhyamin1/tutordraw/blob/master/docs/COMPATIBILITY.md): evidence, fonts, and alpha API expectations.
 - [Release procedure](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RELEASING.md): exact artifact checks and manual publishing.
@@ -132,7 +134,7 @@ for codec limits and failure behavior.
 - [Decisions](https://github.com/nuhyamin1/tutordraw/blob/master/docs/DECISIONS.md): choices and remaining questions.
 - [Agent instructions](https://github.com/nuhyamin1/tutordraw/blob/master/AGENTS.md): repository conventions.
 
-To continue with another AI model, ask it to read `AGENTS.md` and `docs/HANDOFF.md` first. Hosted CI verification remains pending; see the handoff for the latest release state. DrawCV remains a separate project.
+To continue with another AI model, ask it to read `AGENTS.md` and `docs/HANDOFF.md` first. See the handoff for the latest release state. DrawCV remains a separate project.
 
 ## License
 

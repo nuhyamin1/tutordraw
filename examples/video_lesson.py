@@ -28,7 +28,7 @@ def main():
             continue
         break
     else:
-        print(f"No codec among {[c for c, _ in CANDIDATES]} is available on this host; "
+        print(f"NO VIDEO CODEC AVAILABLE among {[c for c, _ in CANDIDATES]} on this host; "
               "nothing was written. Use export_steps for PNG output instead.")
         return
     capture = cv2.VideoCapture(str(destination))

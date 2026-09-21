@@ -5,7 +5,7 @@
 | Environment | Status |
 | --- | --- |
 | Windows x64, CPython 3.12 | Locally tested: unit tests, examples, wheel install, PNG rendering |
-| Windows, Ubuntu, macOS; CPython 3.12, 3.13, 3.14 | CI matrix configured; hosted results pending |
+| Windows, Ubuntu, macOS; CPython 3.12, 3.13, 3.14 | Hosted CI: all nine jobs passed on commits fd16904 (a5) and c1fbef1 (a6) |
 | Other Python implementations, architectures, or versions | Not verified |
 
 `requires-python >=3.12` is an installation constraint, not a claim that every
@@ -26,9 +26,12 @@ copying raises `SceneCopyError` instead of editing the source in place.
 
 ## Text and layout
 
-- Built-in Hershey text: printable ASCII labels; ASCII/newline callouts.
+- Built-in text: Latin, Greek, Cyrillic, CJK and common symbols; newlines in callouts.
 - No extra font assets or typography dependencies are required for annotations.
-- Thai, other scripts, emoji, rich text, and equations are not supported yet.
+- Character support is probed against the installed OpenCV rather than assumed,
+  so it widens automatically on builds with broader glyph coverage.
+- Thai, Arabic, Hebrew, Indic scripts, emoji, rich text and equations are refused
+  with a `ValidationError` naming the character. See [TEXT.md](TEXT.md).
 - Bounds anchors use transformed axis-aligned bounds, not exact shape outlines.
 - Callouts wrap and split long words; a character that cannot fit raises an error.
 - Authors control placement. No automatic overlap avoidance or leader routing.

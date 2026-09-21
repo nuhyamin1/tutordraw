@@ -1,138 +1,169 @@
 # AI handoff — start here
 
-Last updated: **2026-09-21**, video export milestone (Claude Code continuation).
+Last updated: **2026-09-21**, character-support milestone (Claude Code).
 
 ## Current state
 
-**Published: 0.1.0a3. Development checkout: 0.1.0a6, NOT published.**
+**Published: 0.1.0a3. Development checkout: 0.1.0a7, NOT published.**
 
-The previous session handed off to Antigravity; the owner continued here instead
-and asked for the video-export milestone named in that handoff. It is now
-implemented, tested, and documented. Transitions, progressive reveals, timed
-captions, and audio remain pending.
+Two milestones landed today: a6 added video export, a7 replaced the
+printable-ASCII restriction on annotation text. a6 is committed and pushed;
+a7 is committed locally only.
 
 Owner: Nuh Yamin; package tutordraw; MIT. Origin:
 https://github.com/nuhyamin1/tutordraw.git, branch master.
 Runtime remains published `pydrawcv==0.10.0.post1`. DrawCV is unchanged.
 
-Note for future sessions: the previous handoff said "No Git commit was
-performed", but four commits exist on master through a5. Always inspect Git
-rather than trusting a handoff's Git claims. The owner's standing instruction is
-**commit locally, do not push, do not publish** without an explicit request.
+Standing owner instructions: **commit locally, do not push, do not publish**
+without an explicit request. Inspect Git rather than trusting a handoff's Git
+claims — an earlier handoff wrongly said nothing had been committed.
+
+## What TutorDraw is actually for
+
+The owner clarified the product this session, and it should steer prioritisation.
+TutorDraw is the **visual engine for an interactive, real-time, AI-driven
+explainer**: a user asks "explain a lunar eclipse", an LLM narrates with voice
+and/or text, and TutorDraw renders the visuals live. It is **not** an offline
+video-production tool, and the audience is "everyone" — English first, then Thai
+and Arabic.
+
+Consequences worth remembering:
+
+- **An LLM is a first-class caller.** Error messages must be actionable by a
+  model at runtime, and `docs/AI_AUTHORING.md` is a load-bearing document.
+- **Latency matters, but is not currently a problem.** Measured this session:
+  `render_step` 35–40 ms on the cell lesson, `to_json` 8 ms, `from_json` 1 ms.
+  Do not start performance work without a measurement showing a regression.
+- **Video export is peripheral**, useful for saving and sharing rather than
+  being the product. Do not over-invest in it.
 
 ## Completed functionality
 
 - M1/M2: labels, leader lines, wrapped callouts, highlights, group-aware dimming,
   themes, independent static steps, safe scene copies, collision-aware PNG export.
-- M3: packaging, manual release tools, installed-wheel CI; a3 published previously.
-- a4: complete JSON lesson persistence, stable IDs, target lookup, source drawable
-  access, schema v1, AI editing guide, save/revise example.
-- a5: step `duration`/`pause`, `set_timing`, `tutorial.duration`, `step_at_time`,
-  `render_at_time`, lazy `render_frames(fps=30)`, schema v2 with v1 loading.
-- a6: `Tutorial.export_video(path, *, fps=30, fourcc="mp4v", overwrite=False)`
-  and `VideoExportError(path, fourcc, frames_written)`.
+- M3: packaging, manual release tools, installed-wheel CI; a3 published. **M3 is
+  now complete** — hosted CI passes (see below).
+- a4: JSON lesson persistence, stable IDs, target lookup, AI editing guide.
+- a5: step `duration`/`pause`, seeking, `render_frames`, schema v2 with v1 loading.
+- a6: `Tutorial.export_video(...)` and `VideoExportError`. See [VIDEO.md](VIDEO.md).
+- a7: annotation text beyond ASCII. See [TEXT.md](TEXT.md).
 
-See [VIDEO.md](VIDEO.md), [TIMING.md](TIMING.md), and [PERSISTENCE.md](PERSISTENCE.md)
-for exact contracts.
+## What a7 decided and why
 
-## What a6 decided and why
+The printable-ASCII gate at the old `model.py:89` was **both too strict and
+load-bearing**, which is why it needed replacing rather than deleting:
 
-DrawCV's `VideoRenderer` **cannot** be reused: every entry point is typed
-`scene: Scene`, `render_frames` enforces `isinstance(scene, Scene)`
-(`drawcv/animation/video_renderer.py:30`), and it drives `Scene.render_at_time`.
-DrawCV also exposes no encoder accepting a frame sequence — grepping the whole
-package for `VideoWriter|fourcc|imageio|ffmpeg|mp4|avi|webm` hits only that one
-file. So TutorDraw owns `video.py`, a small `cv2.VideoWriter` adapter, and DrawCV
-stays untouched.
+- Too strict: OpenCV already draws Latin-1, Greek, Cyrillic, CJK and the symbols
+  a science diagram needs (`µ ° × ± ≤ ½ —`). TutorDraw was refusing characters
+  its own renderer handles correctly.
+- Load-bearing: OpenCV substitutes a literal `?` for Thai **without raising**,
+  and draws Arabic unjoined and left to right. Deleting the gate would have
+  traded a visible limitation for silent corruption.
 
-No dependency was added. `pydrawcv==0.10.0.post1` requires `opencv-python>=4.8.0`
-and `numpy` unconditionally, and DrawCV already writes PNGs through `cv2.imwrite`.
-`video.py` is the only TutorDraw module importing `cv2`. Re-check this if the
-DrawCV pin is ever widened. Rationale is recorded in [DECISIONS.md](DECISIONS.md).
+So `src/tutordraw/text.py` validates each character twice, and both must pass:
 
-Behavior worth knowing before changing it: the encoder opens lazily on the first
-rendered frame and is sized from that frame, so a render failure opens no
-encoder; the writer is released in a `finally` on every path; encoding targets a
-temporary file carrying the destination's extension (OpenCV picks the container
-from it) and moves into place only on success, so video export is all-or-nothing
-and an existing destination survives any failure; a codec that opens but writes
-zero bytes is treated as a failure. Output is opaque only — no `alpha` option,
-because `VideoWriter` takes three-channel BGR.
+1. **A script allow list** of Unicode ranges needing no shaping, reordering or
+   mark positioning. An allow list, so an unrecognised script fails loudly.
+2. **A runtime probe** rendering the character through DrawCV's real path and
+   comparing against the placeholder. A probe rather than a table because glyph
+   coverage varies by OpenCV version — the dependency floor is 4.8, this host
+   runs 5.0 and draws CJK. Cached; ASCII skips it, so the common path is free.
+
+Text is normalised to NFC at creation. Errors name the character, its codepoint
+and the fix, and distinguish "unsupported script" from "this build cannot".
+
+**Error messages are deliberately pure ASCII**, using `ascii(char)` rather than
+`repr(char)`. This was found the hard way: a legacy Windows console (cp1252)
+raises `UnicodeEncodeError` when printing the offending character, so an error
+message containing it would hide the very failure the caller needs to read.
+`U+XXXX` carries the identity instead. Keep this property; a test asserts it.
 
 ## Code map and changed files
 
-- `src/tutordraw/video.py`: **new**, the OpenCV writer adapter.
-- `errors.py`: new `VideoExportError`; `__init__.py`: exported, version a6.
-- `tutorial.py`: `export_video` beside `export_steps`, lazily importing `video`.
-- `tests/test_video.py`: **new**, 27 cases (stub-writer failure paths, validation,
-  atomicity, source preservation, and one real encode/decode round trip).
-- `examples/video_lesson.py`: **new**, codec-tolerant; writes `output/video`.
-- `docs/VIDEO.md`: **new** contract document.
-- `tools/check_installed.py`: runs five examples and decodes any produced video.
-- `tools/check_release.py`: requires `docs/VIDEO.md` and the new example in sdist.
-- `pyproject.toml`, README, API, TIMING, ROADMAP, DECISIONS, COMPATIBILITY,
-  ARCHITECTURE, AI_AUTHORING, CHANGELOG updated.
+- `src/tutordraw/text.py`: **new** — ranges, cached probe, one validator.
+- `model.py`: `make_annotation` calls `validate_annotation_text`.
+- `tests/test_text.py`: **new**, 29 cases. `docs/TEXT.md`: **new**.
+- `examples/symbols_lesson.py`: **new**, a three-step diagram using the symbols.
+- `tools/check_installed.py`: six examples; **fails if no video was produced**.
+- `tools/check_release.py`: requires the new doc and example in the sdist.
+- Version a7 in `pyproject.toml` and `__init__.py`. README, API, COMPATIBILITY,
+  AI_AUTHORING, DECISIONS, ROADMAP, CHANGELOG updated.
 
 ## Verification completed this session
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 
-- `python -m pytest -q`: **171 passed, 1 skipped** against editable source
-  (baseline before this work was 145). The skip is the symlink-refusal test,
-  which needs symlink privileges Windows does not grant by default.
-- `python examples/video_lesson.py`: `10 seconds encoded as mp4v at 12 fps:
-  120 frames of 1100x620`, written to `output/video/cell-lesson.mp4` (413,571 bytes).
-- Decoded that file and measured every frame-to-frame change: the only large
-  differences are 5.77 at t=3.0s and 5.34 at t=8.0s — exactly the two step
-  boundaries. Within a held step consecutive frames are identical apart from
-  codec keyframe noise (max 1.06, at the opening keyframe).
-- Worst mean absolute difference between a decoded frame and its `render_step`
-  source was 2.50/255. Encoding is lossy; exact equality must not be asserted.
-- **Visually inspected** decoded frames 35, 36, and 110: labels, leader lines and
-  callout text are legible; the t=3s cut switches from the cell overview to the
-  nucleus with its highlight box and correct dimming; the final review step
-  renders both labels undimmed. No visible compression artifacts.
-- Codec probe on this host (opencv-python 5.0.0.93): `mp4v`/`.mp4`, `MJPG`/`.avi`,
-  `XVID`/`.avi` all opened, encoded and decoded 5/5 frames. `avc1` opened only
-  after OpenCV reported it could not load `openh264-2.5.0-win64.dll`, so H.264 is
-  **not** claimed. `VP80`/`.webm` opened but FFMPEG reported the tag unsupported.
-- `python tools/check_docs.py`: 17 documents and one README Python example pass.
-- `python -m build --no-isolation --outdir output/development`: a6 wheel/sdist built.
-- `python tools/check_release.py --dist-dir output/development --require-metadata`:
-  strict Twine, metadata, schema and source-file checks pass.
-- Installed the a6 wheel with `pip install --no-deps --force-reinstall`, then
-  `python -I -m pytest -q`: **171 passed, 1 skipped against the installed wheel**.
-- `python -I tools/check_installed.py`: five examples run outside the checkout;
-  eight PNGs decode, one video decodes to 120 frames, lessons reload correctly.
-- Restored the editable install; `python -m pip check` reports no broken
-  requirements; `git diff --check` reports no whitespace errors.
+- `python -m pytest -q`: **200 passed, 1 skipped** (a6 was 171). The skip is the
+  symlink-refusal test, needing privileges Windows does not grant by default.
+  The text tests also pass under `-W error::UserWarning`.
+- `python examples/symbols_lesson.py`: three steps written to `output/symbols`.
+  **Visually inspected** steps 1 and 3: `30 µm`, `½`, an em dash, `α = 45°`,
+  `2 ×` and `37 °C ± 0.5 °C` all render as real glyphs, correctly spaced, inside
+  their panels, with no clipping. Wrapping measures the wide glyphs correctly.
+- Confirmed by hand that Thai, Arabic, Hebrew, Devanagari and emoji each raise
+  `ValidationError` naming the character and codepoint.
+- `python tools/check_docs.py`: 18 documents and one README example pass.
+- `python -m build --no-isolation --outdir output/development`: a7 built.
+- `python tools/check_release.py --dist-dir output/development --require-metadata`: passes.
+- Installed the a7 wheel, `python -I -m pytest -q`: **200 passed, 1 skipped**.
+- `python -I tools/check_installed.py`: six examples run outside the checkout;
+  11 PNGs and one 120-frame video decode, and lessons reload correctly.
+- Restored the editable install; `python -m pip check` clean.
 
-Local evidence is Windows 11 x64 and CPython 3.12 only. Hosted nine-job
-OS/Python CI remains unverified, and **no codec claim holds beyond this host**.
+### Hosted CI is green — earlier docs were wrong
 
-Artifacts: `output/development/tutordraw-0.1.0a6-*`. Older a4/a5 artifacts
-coexist; select filenames explicitly. Nothing was uploaded.
+Both `fd16904` (a5) and `c1fbef1` (a6) passed **all nine jobs**
+(Windows/Ubuntu/macOS × CPython 3.12/3.13/3.14). Four documents still claimed
+hosted results were pending; corrected this session. M3's last checkbox is done.
 
-## Next concrete task: transitions or progressive reveal
+**Still unproven: codec availability outside Windows.** CI green did not prove
+video encoded on Linux or macOS, because the example degrades gracefully when no
+codec exists. `tools/check_installed.py` now **fails** when no video is produced,
+so the next push settles it. If a platform turns red, that is the finding — record
+it and relax the check deliberately rather than by accident.
 
-Both are genuine M4 work; pick one and keep it bounded.
+### Thai/Arabic reconnaissance (done, positive)
 
-1. Read AGENTS.md, VIDEO.md, TIMING.md, and `timing.py` before editing.
-2. **Transitions** would change `render_at_time` from selecting one step to
-   blending two, which breaks the current contract that every frame equals some
-   `render_step` output. That contract is asserted in `tests/test_timing.py` and
-   relied on by `tests/test_video.py`. Design the new contract explicitly —
-   probably an opt-in per-step transition with hard cuts remaining the default —
-   and update TIMING.md before implementing.
-3. **Progressive reveal** is more contained: reveal a step's labels/callouts over
-   that step's duration. It also breaks "one image per step", so it needs the
-   same deliberate contract change and equally explicit documentation.
-4. Whichever is chosen, preserve schema v1 loading, add schema v3 only if the
-   data model genuinely grows, and keep `export_video` working unchanged.
-5. Timed captions and audio are separate, later tasks. Do not start them here.
+In a throwaway venv outside the project, `pip install "pydrawcv[typography]"`
+**installed cleanly on Windows 11 / CPython 3.12** — `pyicu-wheels` ships a
+prebuilt binary, so the usual ICU build problem does not arise. With
+`FontAsset.from_file(r"C:\Windows\Fonts\tahoma.ttf")`, `สวัสดี` rendered as
+correct Thai and `مرحبا` rendered correctly joined and right to left; both were
+visually confirmed. The project venv was not modified.
 
-Still open from earlier milestones: hosted CI has never been observed passing,
-and publishing a4/a5/a6 to PyPI needs an explicit owner request.
+Complication: DrawCV's font path has its own hardcoded whitelist of Latin, Thai
+and Arabic and **rejects Greek** (`drawcv/typography/layout.py:209-217`), so the
+two paths have complementary coverage and cannot yet be mixed in one string.
+
+Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
+
+## Next concrete task: Thai and Arabic text
+
+The owner named these as the languages after English, and the reconnaissance
+above shows the work is viable rather than speculative.
+
+1. Read AGENTS.md, TEXT.md, then `src/tutordraw/text.py` and `layout.py`.
+2. **Decide the font story first**, because everything follows from it: does
+   TutorDraw bundle an OFL font (size and licensing commitment), or require the
+   caller to supply one? The owner is not deeply technical — recommend rather
+   than ask them to choose blind. Not bundling is the conventional answer.
+3. Plumb a font through `Theme`/`Tutorial`. **Persistence is the hard part**: a
+   lesson file must stay portable across machines, so store a font *name*, not
+   an absolute path, and resolve it at load. `PERSISTENCE.md` says external
+   assets are out of scope; either honor that or change it deliberately.
+4. `layout.py` will need both measurement paths. They are not equivalent:
+   `measure()` is font-path only and raises on Hershey, `get_line_metrics()`
+   returns different meanings per path, and Hershey hardcodes `line_step = 1.4`
+   while the font path honors `line_spacing`. `get_text_bounds_dimensions()` is
+   the only call that works on both.
+5. Make `pydrawcv[typography]` an **optional** extra. CI must keep testing the
+   default install too, or the zero-dependency promise silently rots.
+6. Keep the a7 validator: it should route supported-but-shaped scripts to the
+   font path when configured, and keep refusing them when it is not.
+
+Other open work, in the owner's rough priority order: timed captions (the
+product needs on-screen explanation), progressive reveal within a step, then
+transitions. Publishing a4–a7 to PyPI needs an explicit owner request.
 
 ## Release and environment notes
 
@@ -141,23 +172,24 @@ Prior recorded public SHA256 hashes (not rechecked this session):
 - Wheel: 0026efa9b7ff6eda5dcc47d623d299eaf8a9da617c29bbc3ab6961aade8d9ea5
 - Sdist: 115ae72b49c5cf55e4c45222ac658b96182f5452b90652a51173c935d4e00577
 
-Do not replace `output/release` a3 artifacts or reuse old upload commands. Any
-new publication requires an explicit owner request. Never print/store credentials.
-ASCII annotations and DrawCV serialization/asset limits still apply. JSON is not a
-sandbox for arbitrary assets. No source editing during rendering; no undo history
-or rendered output in lesson files. See COMPATIBILITY.md and PERSISTENCE.md.
+Do not replace `output/release` a3 artifacts or reuse old upload commands. Never
+print or store credentials. DrawCV serialization/asset limits still apply. JSON
+is not a sandbox for arbitrary assets. No source editing during rendering; no
+undo history or rendered output in lesson files.
 
 Workspace C:/Projects/TutorDraw, Windows PowerShell; Python 3.12 in `.venv`.
 C:/Projects/DrawCV is context only. Git may need
-`git -c safe.directory=C:/Projects/TutorDraw ...`; no global setting was changed.
+`git -c safe.directory=C:/Projects/TutorDraw ...`.
 
 ## Copy this into another model
 
 > Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
-> first, then docs/VIDEO.md, docs/TIMING.md and docs/ROADMAP.md. Development a6
-> has timing, schema-v2 persistence and collision-safe video export; 171 tests
-> pass from source and from the installed wheel on Windows/CPython 3.12. Pick the
-> next bounded milestone from the handoff (transitions or progressive reveal),
-> design its contract change before implementing, preserve existing contracts,
-> keep DrawCV unmodified, and record only verified results. Do not publish or
-> push without my instruction.
+> first, then docs/TEXT.md and docs/ROADMAP.md. It is the visual engine for a
+> real-time, LLM-driven explainer, not an offline video tool. Development a7 has
+> timing, schema-v2 persistence, video export, and annotation text covering
+> Latin, Greek, Cyrillic, CJK and technical symbols; 200 tests pass from source
+> and from the installed wheel, and hosted CI is green on nine jobs. The next
+> milestone is Thai and Arabic via DrawCV's font path — read the reconnaissance
+> in the handoff before planning it, and decide the font-bundling question first.
+> Preserve existing contracts, keep DrawCV unmodified, record only verified
+> results, and do not publish or push without my instruction.

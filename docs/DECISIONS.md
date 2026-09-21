@@ -23,8 +23,9 @@ Revise proposed choices when implementation evidence warrants it and record why.
    range is actually tested?
 2. Can a public scene serialization round trip preserve the first release's
    supported objects, IDs, assets, and hierarchy? What needs explicit rejection?
-3. Which text APIs provide reliable measurement and wrapping? Is the typography
-   extra necessary, and how should missing fonts be reported?
+3. ~~Which text APIs provide reliable measurement and wrapping? Is the typography
+   extra necessary, and how should missing fonts be reported?~~ Answered in the
+   0.1.0a7 section below.
 4. Which bounds method is appropriate for labels and highlights, particularly
    with strokes, effects, rotated objects, and groups?
 5. Does source object lookup include descendants, or must the adapter traverse?
@@ -156,3 +157,49 @@ a failure, since `isOpened()` alone does not prove a codec works.
 
 Codec availability is a host property, not a library guarantee. Report it through
 `VideoExportError` with the fourcc, and claim only what was measured locally.
+
+## Character support — development 0.1.0a7 (2026-09-21)
+
+This answers open question 3 above, and settles the "language/font support"
+owner choice for the alpha: support what the built-in renderer draws correctly
+now, refuse the rest loudly, and treat font rendering as a later milestone.
+
+Replace the printable-ASCII gate. It was simultaneously too strict and
+load-bearing: OpenCV already draws Latin-1, Greek, Cyrillic, CJK and the
+symbols a science diagram needs, all of which TutorDraw was refusing; but it
+substitutes `?` for Thai without raising, and draws Arabic unjoined and left to
+right, so simply deleting the gate would have traded a visible limitation for
+silent corruption.
+
+Validate with two independent checks, both required. A hardcoded allow list of
+Unicode ranges answers "does this script need shaping, reordering or mark
+positioning?", and a runtime probe answers "can this OpenCV build actually draw
+it?". An allow list, not a block list, so an unrecognised script fails loudly.
+A probe, not a table, because glyph coverage varies by OpenCV version and the
+dependency floor is 4.8 while this host runs 5.0.
+
+Probe through DrawCV's real rendering path rather than calling `cv2.putText`
+directly, so no assumption is made about which Hershey face DrawCV selects.
+Cache the results, and skip the probe for ASCII so the common path costs nothing.
+
+Normalize annotation text to NFC at creation. Combining sequences then behave
+like their precomposed forms instead of being refused as stray marks, and NFC
+is idempotent so saved lessons still round trip.
+
+Error messages name the character, its codepoint, and the fix, and distinguish
+"unsupported script" from "this build cannot draw it". This is a product
+requirement, not politeness: a model generating lesson text at runtime is a
+first-class caller and must be able to act on the failure.
+
+Keep those messages pure ASCII, using `ascii(char)` rather than `repr(char)`.
+A legacy Windows console raises UnicodeEncodeError when printing the offending
+character, so the message would hide the error it exists to report. The U+XXXX
+code carries the identity instead, and a test enforces the property.
+
+Defer Thai and Arabic to their own milestone. They need
+`pip install "pydrawcv[typography]"` plus a caller-supplied font file, and a
+decision about whether TutorDraw ships a font. Reconnaissance in a throwaway
+environment confirmed the extra installs cleanly on Windows and that Thai and
+Arabic then render correctly, so the milestone is viable rather than
+speculative. Note DrawCV's font path rejects Greek, so the two paths have
+complementary coverage and cannot yet be mixed in one string.

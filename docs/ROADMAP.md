@@ -44,7 +44,7 @@ project and produce a legible annotated image without modifying the source scene
 **Exit condition:** the full acceptance lesson renders correctly; rerendering
 after an object move updates annotation placement; order does not affect results.
 
-## M3 — First-release preparation (local checks complete; hosted CI pending)
+## M3 — First-release preparation (complete)
 
 - [x] Confirm package name, author, MIT license, and repository metadata.
 - [x] Owner authorized and published 0.1.0a3.
@@ -56,7 +56,8 @@ after an object move updates annotation placement; order does not affect results
   environment outside the repository.
 - [x] Verify packaged imports and the example without relying on the DrawCV checkout.
 - [x] Add installed-wheel CI and document local evidence separately from intended coverage.
-- [ ] Obtain passing hosted Windows/Linux/macOS results for Python 3.12–3.14.
+- [x] Obtain passing hosted Windows/Linux/macOS results for Python 3.12–3.14.
+  All nine jobs passed on fd16904 (a5) and c1fbef1 (a6).
 - [x] Prepare release notes and a manual publishing procedure for owner review.
 - [x] Published 0.1.0a3 after explicit authorization; verified public artifact hashes.
 
@@ -86,6 +87,17 @@ Prioritized after the first release to support continuation across AI sessions.
 - [ ] Design and implement transitions; current playback uses hard cuts.
 - [ ] Add progressive reveal and timed captions.
 - [ ] Sample DrawCV object timelines instead of only selecting static steps.
+
+## Text and languages
+
+- [x] Accept Latin, Greek, Cyrillic, CJK and common technical symbols, validated
+  against what the installed renderer actually draws (a7).
+- [x] Refuse silently-wrong scripts with actionable errors naming the character (a7).
+- [ ] Render Thai and Arabic through DrawCV's font path. Needs
+  `pydrawcv[typography]` plus a caller-supplied font; verified viable on Windows.
+- [ ] Decide whether TutorDraw ships a font or requires one from the caller.
+- [ ] Reconcile the two paths: DrawCV's font path rejects Greek, the built-in
+  path cannot do Thai or Arabic, so neither alone covers a mixed string.
 
 ## Future backlog (not committed scope)
 

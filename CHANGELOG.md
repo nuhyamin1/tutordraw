@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0a7 — Unreleased
+
+- Accept annotation text beyond ASCII: Latin with accents, Greek, Cyrillic, CJK,
+  and technical symbols such as `µm`, `°C`, `α`, `½`, `±`, `≤`, `×`, arrows,
+  em dashes and curly quotes. No new dependency; the renderer always could.
+- Validate each character twice: against an allow list of scripts that need no
+  shaping, and against a cached probe of what the installed OpenCV really draws.
+- Refuse Thai, Arabic, Hebrew, Indic scripts and emoji with a `ValidationError`
+  naming the character and its codepoint, rather than rendering them wrongly.
+  OpenCV substitutes `?` for Thai and draws Arabic unjoined and left to right.
+- Normalize annotation text to NFC, so combining sequences behave as precomposed.
+- Add `docs/TEXT.md`, `examples/symbols_lesson.py`, and 29 text tests.
+- Record that hosted CI passes all nine jobs; earlier docs wrongly said pending.
+- Make `tools/check_installed.py` fail when no video is produced, so a green CI
+  matrix proves codec availability rather than hiding its absence.
+
 ## 0.1.0a6 — Unreleased
 
 - Add `Tutorial.export_video(path, fps=30, fourcc="mp4v", overwrite=False)`,
