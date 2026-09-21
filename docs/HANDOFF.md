@@ -6,10 +6,10 @@ Last updated: **2026-09-21**, annotation reveal milestone (Claude Code).
 
 **Published: 0.1.0a11 (2026-09-21). Working tree matches the release.**
 
-Six milestones landed today: a6 video export, a7 annotation text beyond ASCII,
-a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between beats,
-a11 timed annotation reveals. a6 through a8 are pushed; a9 to a11 are
-committed locally only.
+Six milestones landed on 2026-09-21: a6 video export, a7 annotation text beyond
+ASCII, a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between
+beats, a11 timed annotation reveals. All are pushed, and **0.1.0a11 was
+published to PyPI** by the owner after explicit authorisation.
 
 Owner: Nuh Yamin; package tutordraw; MIT. Origin:
 https://github.com/nuhyamin1/tutordraw.git, branch master.
@@ -305,51 +305,35 @@ roadmap item; vendoring a subset Noto font would be the obvious way.
 
 Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 
-## Next concrete task: get CI green, then decide on release with the owner
+## Next concrete task: let the format settle, and ask before adding more
 
-The owner asked whether a11 is ready for PyPI. Preparation is done; the answer
-is "not yet, and here is exactly what is missing".
+0.1.0a11 is published. The release itself is verified: PyPI hashes match the
+local build, a clean install with no extras runs all eight examples, and
+installing the `typography` extra from PyPI produces Thai and Arabic.
 
-**A regression was found and fixed.** Hosted CI was red from a9 to a11 on all
-three macOS jobs, at `pip install ".[dev]"`. Cause: a9 put
-`pydrawcv[typography]` into the `dev` group, and on macOS DrawCV requires real
-`PyICU`, which publishes no wheels and builds against Homebrew ICU4C. Windows
-and Linux get `pyicu-wheels`, which is why local evidence looked fine. The
-extra is now outside `dev`. **All nine jobs are green on cb8f2d6.**
+**The most valuable next move is probably not a feature.** The lesson format
+went v2 to v5 in a single day, and those versions are now other people's
+files. Before adding more format surface, consider a period with no schema
+change, and use it for work that does not touch persistence.
 
-A follow-up worth understanding: `continue-on-error` reports a step as
-`success` through the API even when it failed, so a green matrix did not prove
-the extra installed anywhere. The workflow now encodes the expectation instead
-of hiding it: the install may fail **only** on macOS, a step imports the five
-engine modules on Windows and Linux, and `TUTORDRAW_REQUIRE_FONT=1` makes
-`tests/test_fonts.py` raise rather than skip on Windows, where Tahoma covers
-both scripts. So a green matrix now proves the font path really ran. Whether
-the extra installs on macOS is still unknown and is documented as such.
+Work that does not move the format:
 
-A second, latent bug surfaced from the same investigation: a host with a font
-but no engine crashed `examples/multilingual_lesson.py`, because
-`export_steps` wraps render failures in `ExportError` and the example only
-caught `ValidationError`. Fixed, with a platform-independent regression test.
+1. **Automatic label collision avoidance.** The oldest deferred item and the
+   biggest authoring irritation: every `gap` in the examples is hand-tuned,
+   and nothing catches an overlap except a person looking at the picture.
+   This is the one the assistant would pick.
+2. **Font-path tests beyond Windows.** CI now proves the Thai and Arabic tests
+   really run on Windows, and skips them elsewhere. A vendored subset Noto
+   font would extend that to Linux.
+3. **macOS typography.** Whether `pip install "tutordraw[typography]"` works
+   there is still unknown; DrawCV needs source-built PyICU. Worth finding out
+   before anyone reports it.
+4. **Layout regression testing.** Rendered output is only checked by eye.
+   Golden-image tests would catch silent layout drift.
 
-Remaining before an upload, in order:
-
-1. Push and confirm all nine CI jobs pass on the release commit.
-2. Owner decides the version. a11 is free on PyPI; a3 is the only published
-   release. a4-a10 were never published.
-3. Owner decides whether the lesson format should settle first. It moved v2 to
-   v5 in one day, and published schema versions become other people's files.
-4. Date the shipped version in CHANGELOG.md, replacing "Unreleased".
-5. Work the gate in [RELEASING.md](RELEASING.md), then ask for authorisation.
-
-Already done during preparation: README links made absolute (relative ones 404
-on PyPI, where the README is the project page), Python 3.12/3.13/3.14
-classifiers added, `Typing :: Typed` deliberately **not** added because there
-is no `py.typed` marker, metadata and all five schemas verified in the wheel.
-
-Candidate features afterwards, none clearly ahead: timed captions, fading
-annotations in, stroke/scale/rotation in `restyle`, whole-image crossfades,
-font-path tests in CI via a vendored subset font, and automatic label
-collision avoidance. Ask rather than guess.
+Format-moving features to hold for later, none clearly ahead: timed captions,
+fading annotations in, stroke/scale/rotation in `restyle`, whole-image
+crossfades. Ask the owner rather than guessing.
 
 ## Release and environment notes
 
@@ -377,8 +361,9 @@ C:/Projects/DrawCV is context only. Git may need
 > artwork changes, animation between beats, timed annotation reveals, and text
 > covering Latin, Greek, Cyrillic, CJK, symbols, plus Thai and Arabic behind an
 > optional extra; 285 tests pass from source and from the installed wheel, and
-> hosted CI needs a green run to confirm a macOS install fix. The owner is
-> weighing a first release since a3: read the handoff's readiness list and
-> docs/RELEASING.md, and do not upload anything without an explicit request.
+> 0.1.0a11 is published on PyPI and verified after upload. Hosted CI is green
+> on nine jobs. There is no obvious next feature: the lesson format moved v2
+> to v5 in one day, so prefer work that does not touch persistence, and read
+> the handoff's list before choosing. Do not publish or push without asking.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.

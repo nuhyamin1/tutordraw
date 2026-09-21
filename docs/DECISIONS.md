@@ -370,3 +370,34 @@ bump in a day, so the tests were changed to derive the version from
 A future bump now updates one table instead of five test files, and one
 parametrised test covers every older version. The churn itself remains a
 reason to let the format settle before publishing.
+
+## Second public release — 0.1.0a11 (2026-09-21)
+
+The owner explicitly authorised publication. TutorDraw does not upload on its
+own initiative, and the upload itself was run by the owner because it needs a
+PyPI API token; no credential was handled or stored by the assistant, and none
+is configured in this checkout.
+
+Released as `a11` rather than a new minor or a beta. It is a large step from
+a3 — persistence, timing, video, non-ASCII text, per-step artwork, animation,
+reveals, optional Thai and Arabic — but the API is still alpha and still
+moving, so the number should not imply otherwise. The changelog and README say
+plainly that a4 through a10 were development milestones and were never
+uploaded, rather than leaving the jump unexplained.
+
+Published artifact SHA256, verified against the local build after upload:
+
+- Wheel: 946c9dfa859ce224677773aaca0e74a4356b6ea2b4e9efc22e0f4b024d7cb20f
+- Sdist: 8027375a9605a5b3c375e4039fa0d590721c2c80979d5e0dcc0bee1fb0537ce7
+
+Post-release verification installed `tutordraw==0.1.0a11` from PyPI into a
+clean virtual environment with no extras, ran all eight examples, decoded
+16 PNGs and a 120-frame video, and reloaded a saved lesson. The multilingual
+example correctly fell back to English with the install instruction, which is
+the graceful-degradation path fixed earlier the same day. Installing
+`tutordraw[typography]` from PyPI then produced all three languages.
+
+Known and accepted at release: the lesson format moved v2 to v5 in one day,
+and published schema versions become other people's files. Older versions all
+load, but the format should now settle. macOS installation of the typography
+extra remains unverified.
