@@ -1,6 +1,6 @@
 # Timed lessons
 
-Implemented in development **0.1.0a5**, not published on PyPI yet.
+Implemented in **0.1.0a5**, released as part of 0.1.0a11.
 Development 0.1.0a6 encodes this playback to a video file; see [VIDEO.md](VIDEO.md).
 This is deterministic playback of static steps with hard cuts.
 

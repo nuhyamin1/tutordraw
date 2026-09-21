@@ -7,9 +7,9 @@ Future publication also requires an explicit owner request. The CI workflow neve
 
 - Distribution/import: `tutordraw` (owner confirmed).
 - License: MIT; copyright holder/author: Nuh Yamin (owner confirmed).
-- Published: `0.1.0a3` on 2026-09-20; still an early alpha.
-- Next candidate: `0.1.0a11`. Versions a4 through a10 were never published and
-  never will be; a11 contains all of their work.
+- Published: `0.1.0a3` on 2026-09-20 and `0.1.0a11` on 2026-09-21; still an early alpha.
+- Versions a4 through a10 were development milestones and were never uploaded;
+  0.1.0a11 contains all of their work.
 - Repository: `https://github.com/nuhyamin1/tutordraw`, read from the configured origin.
 - PyPI accepted both release files under the owner-authorized credential.
 

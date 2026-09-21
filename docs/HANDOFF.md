@@ -4,7 +4,7 @@ Last updated: **2026-09-21**, annotation reveal milestone (Claude Code).
 
 ## Current state
 
-**Published: 0.1.0a3. Development checkout: 0.1.0a11, NOT published.**
+**Published: 0.1.0a11 (2026-09-21). Working tree matches the release.**
 
 Six milestones landed today: a6 video export, a7 annotation text beyond ASCII,
 a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between beats,
@@ -353,7 +353,8 @@ collision avoidance. Ask rather than guess.
 
 ## Release and environment notes
 
-Published a3 is immutable: https://pypi.org/project/tutordraw/0.1.0a3/.
+Published releases are immutable: 0.1.0a3 and 0.1.0a11.
+https://pypi.org/project/tutordraw/
 Prior recorded public SHA256 hashes (not rechecked this session):
 - Wheel: 0026efa9b7ff6eda5dcc47d623d299eaf8a9da617c29bbc3ab6961aade8d9ea5
 - Sdist: 115ae72b49c5cf55e4c45222ac658b96182f5452b90652a51173c935d4e00577

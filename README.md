@@ -6,9 +6,9 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 ## Status
 
-**Published alpha [0.1.0a3](https://pypi.org/project/tutordraw/0.1.0a3/).** TutorDraw provides the static tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
+**Published alpha [0.1.0a11](https://pypi.org/project/tutordraw/0.1.0a11/).** TutorDraw provides the tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-**Development checkout: 0.1.0a11 (not yet published)** adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, per-step artwork changes, animation between beats, timed annotation reveals, and Thai and Arabic. Install from this repository to use those new methods. The PyPI command below still installs the published 0.1.0a3.
+0.1.0a11 is a large step from the previous release 0.1.0a3: it adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, per-step artwork changes, animation between beats, timed annotation reveals, and optional Thai and Arabic. Versions a4 to a10 were development milestones and were never uploaded.
 
 Implemented:
 
@@ -22,22 +22,22 @@ Implemented:
 - Customize shared typography, spacing, and colors through an immutable theme.
 - Export ordered PNGs with collision checks and partial-failure reporting.
 - Validate references/options and warn about off-canvas annotations.
-- Development only: save/reopen complete versioned JSON lessons with stable IDs and validated references.
+- save/reopen complete versioned JSON lessons with stable IDs and validated references.
 
-- Development only: step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TIMING.md).
-- Development only: encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md).
-- Development only: annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
-- Development only: move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RESTYLE.md).
-- Development only: teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
-- Development only: ease a step into its new state instead of cutting to it; see [Animation](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ANIMATION.md).
-- Development only: delay a label or explanation so a narrated beat introduces one thing at a time; see [Reveal](https://github.com/nuhyamin1/tutordraw/blob/master/docs/REVEAL.md).
+- step durations, trailing pauses, direct time seeking, and streaming frames; see [Timing](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TIMING.md).
+- encode a timed lesson to a video file with collision-safe, all-or-nothing replacement; see [Video](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md).
+- annotate in Latin, Greek, Cyrillic or CJK and use technical symbols such as µm, °C, α, ½ and ×; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
+- move, recolour, fade or hide a target for one step, so a lesson can show change rather than describe it; see [Restyle](https://github.com/nuhyamin1/tutordraw/blob/master/docs/RESTYLE.md).
+- teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
+- ease a step into its new state instead of cutting to it; see [Animation](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ANIMATION.md).
+- delay a label or explanation so a narrated beat introduces one thing at a time; see [Reveal](https://github.com/nuhyamin1/tutordraw/blob/master/docs/REVEAL.md).
 
 Timed captions, interactive playback, and automatic collision avoidance remain planned.
 
 ## Install the alpha
 
 ```shell
-python -m pip install tutordraw==0.1.0a3
+python -m pip install tutordraw==0.1.0a11
 ```
 
 The exact version selects this prerelease explicitly. Requires Python 3.12+.

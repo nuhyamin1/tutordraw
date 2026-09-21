@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.1.0a11 — Unreleased
+## 0.1.0a11 — second alpha (published 2026-09-21)
+
+Everything from a4 through a10 ships here; those versions were development
+milestones and were never uploaded. A large jump from a3: lesson persistence,
+timed playback, video export, text beyond ASCII, per-step artwork changes,
+animation, annotation reveals, and optional Thai and Arabic.
+
+### This release
 
 - `Step.show(*labels, at=None)` and `Step.explain(..., at=None)` accept a delay
   in seconds from the start of the step, so a narrated beat introduces one
@@ -17,7 +24,7 @@
 - Tests derive the schema version from one table in `tests/conftest.py`, so a
   future bump updates one place and one test covers every older version.
 
-## 0.1.0a10 — Unreleased
+## 0.1.0a10 — development milestone, shipped inside 0.1.0a11
 
 - Add `Step.animate(easing="ease_in_out")` and `Step.hard_cut()`. An animated
   step eases into its restyled state over its duration instead of cutting to it,
@@ -35,7 +42,7 @@
 - Animated frames cost the same as static ones, about 35 ms on the eclipse
   lesson; frames were always rendered from scratch.
 
-## 0.1.0a9 — Unreleased
+## 0.1.0a9 — development milestone, shipped inside 0.1.0a11
 
 - Support **Thai and Arabic** through DrawCV's font engine, behind a new
   optional extra: `pip install "tutordraw[typography]"`. A default install is
@@ -53,7 +60,7 @@
 - Add `docs/TEXT.md` guidance, `examples/multilingual_lesson.py`, and 11 font
   tests that skip when no covering font is installed.
 
-## 0.1.0a8 — Unreleased
+## 0.1.0a8 — development milestone, shipped inside 0.1.0a11
 
 - Add `Step.restyle(target, move=, fill=, opacity=, visible=)`, changing a
   target's artwork for one step on the working copy. The source drawing is never
@@ -69,7 +76,7 @@
 - Lessons can now show change over time. Annotations within a step still appear
   at once, and motion is a jump at the cut rather than an animation.
 
-## 0.1.0a7 — Unreleased
+## 0.1.0a7 — development milestone, shipped inside 0.1.0a11
 
 - Accept annotation text beyond ASCII: Latin with accents, Greek, Cyrillic, CJK,
   and technical symbols such as `µm`, `°C`, `α`, `½`, `±`, `≤`, `×`, arrows,
@@ -85,7 +92,7 @@
 - Make `tools/check_installed.py` fail when no video is produced, so a green CI
   matrix proves codec availability rather than hiding its absence.
 
-## 0.1.0a6 — Unreleased
+## 0.1.0a6 — development milestone, shipped inside 0.1.0a11
 
 - Add `Tutorial.export_video(path, fps=30, fourcc="mp4v", overwrite=False)`,
   encoding the streaming frame iterator into one video file.
@@ -101,16 +108,16 @@
   only large frame-to-frame changes fall exactly on the two step boundaries.
 - Transitions, progressive reveals, timed captions, and audio remain pending.
 
-## 0.1.0a5 — Unreleased
+## 0.1.0a5 — development milestone, shipped inside 0.1.0a11
 
 - Add step durations and trailing pauses, direct time seeking, and streaming Canvas frames.
 - Save timing in schema v2 and load schema v1 with three-second defaults.
 - Add timing example, boundary/round-trip tests, and Antigravity continuation instructions.
 - Video encoding and transitions remain pending.
 
-The first public release is 0.1.0a3; earlier versions were local development milestones.
+The first public release was 0.1.0a3; earlier versions were local development milestones.
 
-## 0.1.0a4 — lesson persistence (unreleased)
+## 0.1.0a4 — lesson persistence, shipped inside 0.1.0a11
 
 - Save and reopen full lessons through versioned JSON, including drawing and teaching state.
 - Preserve target, label, callout, drawable, and step identities and shared references.

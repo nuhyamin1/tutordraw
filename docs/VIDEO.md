@@ -1,6 +1,6 @@
 # Video export
 
-Implemented in development **0.1.0a6**, not published on PyPI yet.
+Implemented in **0.1.0a6**, released as part of 0.1.0a11.
 This encodes the deterministic hard-cut playback described in [TIMING.md](TIMING.md)
 into a single video file. It adds no new dependency.
 

@@ -1,6 +1,6 @@
 # Saving, loading, and revising lessons
 
-Introduced in **0.1.0a4**. Schema v2 added timing (a5), v3 per-step artwork changes (a8), v4 step easing (a10) and v5 annotation reveal times (a11). Every older version still loads; saving always writes the current one. The alpha moves quickly, so expect further bumps. The published 0.1.0a3 release does not include these methods.
+Introduced in **0.1.0a4**. Schema v2 added timing (a5), v3 per-step artwork changes (a8), v4 step easing (a10) and v5 annotation reveal times (a11). Every older version still loads; saving always writes the current one. The alpha moves quickly, so expect further bumps. The earlier 0.1.0a3 release does not include these methods.
 
 A lesson file contains the DrawCV scene, tutorial title, theme, all registered targets and labels (including hidden definitions), and ordered steps with callouts, highlights, focus sets, and dimming factors. Generated overlay artwork is not inserted into the saved source scene.
 
