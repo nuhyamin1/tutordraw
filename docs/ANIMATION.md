@@ -39,7 +39,7 @@ because the next step's state is the source state.
 | --- | --- |
 | `move` | Interpolated. Attached labels, leaders and highlights follow. |
 | `opacity` | Interpolated from the previous value, or the source's. |
-| `fill` | Interpolated channel by channel in plain RGB. |
+| `fill` | Interpolated channel by channel in plain RGB. A gradient fill blends from the mean of its stops; an image fill cuts. |
 | `visible` | **Not** interpolated. The step's own value applies throughout. |
 
 Plain RGB is simple and predictable rather than perceptually even; a mid-point

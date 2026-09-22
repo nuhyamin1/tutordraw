@@ -212,3 +212,34 @@ def test_malformed_restyles_are_rejected_with_context(lesson, damage, message):
     damage(data["steps"][0])
     with pytest.raises(LessonFormatError, match=message):
         Tutorial.from_dict(data)
+
+
+def test_gradient_fill_can_be_recoloured_and_animated_from_its_average():
+    """A gradient has no single colour, so a blend starts from its mean stop."""
+    from drawcv import GradientStop, ImagePaint, RadialGradient
+    from tutordraw.adapters.drawcv import current_fill
+
+    scene = Scene(300, 200, background=Color.white())
+    sphere = Circle(center=Point(150, 100), radius=50, fill=FillStyle(paint=RadialGradient(
+        center=Point(0.4, 0.4), radius=0.8,
+        stops=(GradientStop(0.0, Color(0, 0, 0)), GradientStop(1.0, Color(100, 200, 40))))))
+    scene.add(sphere)
+    tutorial = Tutorial(scene)
+    target = tutorial.target(sphere, name="sphere")
+    assert current_fill(sphere) == (50, 100, 20)
+
+    tutorial.step("Plain")
+    tutorial.step("Red").restyle(target, fill=(200, 40, 40)).animate()
+    # The bug: this raised ValidationError at progress 1.0, animated or not.
+    solid = tutorial.render_step(1).to_numpy()
+    np.testing.assert_array_equal(solid[100, 150][::-1], (200, 40, 40))
+    midway = tutorial.render_at_time(tutorial.steps[0].duration + tutorial.steps[1].duration / 2)
+    between = midway.to_numpy()[100, 150][::-1]
+    assert all(min(a, b) <= v <= max(a, b) for v, a, b in zip(between, (50, 100, 20), (200, 40, 40)))
+    assert not np.array_equal(between, (200, 40, 40))
+
+    # An image paint has no stops and no colour; it cuts to the new fill instead.
+    sphere.fill = FillStyle(paint=ImagePaint(image=np.zeros((2, 2, 3), dtype=np.uint8)))
+    assert current_fill(sphere) is None
+    np.testing.assert_array_equal(
+        tutorial.render_step(1).to_numpy()[100, 150][::-1], (200, 40, 40))

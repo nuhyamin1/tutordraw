@@ -52,6 +52,11 @@ leave out are cleared, not remembered.
 - `fill` needs something to colour. Shapes have a fill and `Text` has a colour;
   `Line` and `Group` have neither and raise `ValidationError` at authoring time,
   naming the type. Existing fill opacity and enabled flags are preserved.
+- **A gradient or image fill can be recoloured.** `fill` replaces it with the
+  solid colour, so a gradient sphere can still be turned red. When such a step
+  animates, the blend starts from the unweighted mean of the gradient's stop
+  colours; an image paint has no colour to start from, so its fill cuts
+  straight to the new value instead of interpolating.
 - Targets must belong to this tutorial, as everywhere else in the API.
 
 ## Persistence

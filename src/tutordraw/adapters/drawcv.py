@@ -111,8 +111,27 @@ def typography_errors():
         raise
 
 
+def paint_color(paint) -> tuple[int, int, int] | None:
+    """Reduce any DrawCV paint to the one colour a blend can start from.
+
+    A gradient has no single colour, so use the unweighted mean of its stops:
+    simple and predictable, like the RGB interpolation it feeds. Image paints
+    have no stops and no colour, so they report None.
+    """
+    if paint is None:
+        return None
+    if isinstance(paint, Color):
+        return (paint.r, paint.g, paint.b)
+    stops = getattr(paint, "stops", ())
+    if not stops:
+        return None
+    return tuple(int(round(sum(getattr(stop.color, channel) for stop in stops) / len(stops)))
+                 for channel in ("r", "g", "b"))
+
+
 def current_fill(drawable: Drawable) -> tuple[int, int, int] | None:
     """The colour an animation should start from, or None if it has none."""
-    paint = getattr(drawable, "fill", None)
-    colour = paint.color if paint is not None else getattr(drawable, "color", None)
-    return None if colour is None else (colour.r, colour.g, colour.b)
+    fill = getattr(drawable, "fill", None)
+    # fill.paint, not fill.color: the shorthand raises on gradients and images.
+    paint = fill.paint if fill is not None else getattr(drawable, "color", None)
+    return paint_color(paint)
