@@ -1,10 +1,11 @@
 # AI handoff — start here
 
-Last updated: **2026-09-21**, annotation reveal milestone (Claude Code).
+Last updated: **2026-09-23**, collision avoidance milestone (Claude Code).
 
 ## Current state
 
-**Published: 0.1.0a11 (2026-09-21). Working tree matches the release.**
+**Published: 0.1.0a11 (2026-09-21). Development 0.1.0a12 is in the tree,
+unreleased and unpushed.**
 
 Six milestones landed on 2026-09-21: a6 video export, a7 annotation text beyond
 ASCII, a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between
@@ -52,6 +53,8 @@ Consequences worth remembering:
 - a9: Thai and Arabic behind the optional `typography` extra. See [TEXT.md](TEXT.md).
 - a10: `Step.animate` and lesson schema v4. See [ANIMATION.md](ANIMATION.md).
 - a11: `show(at=)` / `explain(at=)` and schema v5. See [REVEAL.md](REVEAL.md).
+- a12: automatic label collision avoidance, on by default, and schema v6. Also
+  fixes `restyle(fill=...)` on gradient fills. See [API.md](API.md).
 
 ## What a7 decided and why
 
@@ -178,6 +181,31 @@ reveal, so the bar was convenience, not capability.
 Annotations appear whole; no fade, because that would mean inventing a
 duration. Recorded as deliberate in DECISIONS.md, not an oversight.
 
+## What a12 decided and why
+
+The owner reported six label panels stacked on top of one another in a real
+lesson, and asked for the plan before any code. Full rationale is in
+[DECISIONS.md](DECISIONS.md); the short version:
+
+- **Ranked candidate placements, not force relaxation.** Rank 0 is exactly what
+  the author wrote and wins whenever it is free; alternatives try the other
+  sides, then slide along a side, then step out. Scoring is lexicographic on
+  `(overlap + off-canvas, artwork coverage, rank)` — no tuned weights.
+- **Greedy in registration order**, so an earlier annotation is never displaced
+  and a lesson always renders identically.
+- **One decision per render, not per frame.** Resolution runs against the state
+  the step ends in and returns an anchor plus a nudge; the panel is still built
+  from live bounds each frame. This is what stops an animated step jittering or
+  swapping sides, and it keeps RESTYLE.md's pixel-identity promise.
+- **Animated steps are resolved over the swept path between their two ends.**
+  End-state resolution alone left a measured 4148 px² overlap when one target
+  slid past another's label. A hard cut has no middle and is not penalised.
+- **Reveal delays are ignored when resolving**, so nothing on screen moves when
+  a delayed annotation appears; its slot simply waits for it.
+- **On by default**, the owner's call, with `Theme(avoid_collisions=False)` as
+  an exact escape hatch. One existing test changed:
+  `test_off_canvas_warning` now pins the legacy path explicitly.
+
 ## Code map and changed files
 
 a7 (text):
@@ -239,9 +267,53 @@ docs and examples. Version a8 in `pyproject.toml` and `__init__.py`. README,
 API, PERSISTENCE, TIMING, COMPATIBILITY, ARCHITECTURE, AI_AUTHORING, DECISIONS,
 ROADMAP and CHANGELOG updated.
 
-## Verification completed this session
+a12 (collision avoidance):
+- `src/tutordraw/collision.py`: **new** — candidate generation, lexicographic
+  scoring, greedy resolution, and `plan_annotations`, which builds the whole
+  step's decision from reference geometry.
+- `layout.py`: split into `measure_label` / `place_panel` / `label_artwork`, plus
+  `Placement`, `Measured`, `anchor_points` and `clamp_panel`. `label_artwork`
+  keeps its old signature and behaviour when no placement is supplied.
+- `attention.py`: `residual_moves` and `final_bounds` give the step's end-state
+  (and start-state) geometry without a second scene copy, by translating through
+  the real transform pipeline and restoring saved translations by assignment.
+- `tutorial.py`: `_render` plans once, then draws; it now passes the planner the
+  real previous step even at progress 1, so every frame plans identically.
+- `themes.py`: `avoid_collisions` and `collision_margin`.
+- `serialization.py`: schema v6 and `THEME_FIELDS_ADDED`, so older documents omit
+  the new theme fields and take the defaults.
+- `lesson-v6.schema.json`: **new**, generated from v5 and packaged.
+- `adapters/drawcv.py`: `paint_color`; `current_fill` reads `fill.paint`.
+- `tests/test_collision.py` (25 cases), `tests/conftest.py` theme-field table.
+
+## Verification completed this session (a12)
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
+
+- `python -m pytest -q`: **314 passed, 1 skipped** — 289 before the milestone
+  plus 25 collision cases. One existing test changed deliberately:
+  `test_off_canvas_warning` now pins the pre-avoidance path with
+  `Theme(avoid_collisions=False)`, because avoidance pulls that label back.
+- **Rebuilt the reported bug and inspected both renders.** Six panels on a
+  physics scene ("box at rest", "puck on smooth table", "A fast (v = 6)",
+  "push", "small ball B", "small ball C"): before, four panels overlap into
+  unreadable mush and two more collide; after, all six are disjoint, on canvas,
+  clear of the artwork, with their leaders correctly re-aimed. Written to
+  `output/collision-before.png` and `output/collision-after.png`.
+- **Measured the mid-animation case that end-state resolution missed.** A ball
+  sliding past another's label overlapped it by 4148 px² at worst across 61
+  sampled frames; with swept-path resolution it is 0 px², and that is now a
+  test rather than a one-off measurement.
+- `python examples/cell_tutorial.py`: **visually inspected** step 2. The
+  "Nucleus" label moved up and right to clear the callout, which previously sat
+  at the same height. Readable, and better than the hand-tuned original.
+- Timing, on the six-panel lesson: 23 ms with avoidance on, 42 ms off — faster,
+  because the resolver short-circuits on the first free candidate and its
+  measurements are reused instead of `label_artwork` measuring again. A
+  90-frame animated `render_frames` is 1.03x.
+- `python tools/check_docs.py`: 21 documents and one README example pass.
+
+### Evidence carried over from the a11 session
 
 - `python -m pytest -q`: **285 passed, 1 skipped** (a6 171, a7 200, a8 232,
   a9 243, a10 263). The
@@ -305,31 +377,40 @@ roadmap item; vendoring a subset Noto font would be the obvious way.
 
 Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 
-## Next concrete task: let the format settle, and ask before adding more
+## Next concrete task
 
-0.1.0a11 is published. The release itself is verified: PyPI hashes match the
-local build, a clean install with no extras runs all eight examples, and
-installing the `typography` extra from PyPI produces Thai and Arabic.
+0.1.0a11 is published and verified. a12 is committed locally, unreleased and
+unpushed: automatic collision avoidance, on by default, plus the gradient-fill
+fix. It moved the format to **schema v6**, which the a11 handoff had hoped to
+avoid; the owner approved that explicitly, because the option has to round-trip
+with a saved lesson.
 
-**The most valuable next move is probably not a feature.** The lesson format
-went v2 to v5 in a single day, and those versions are now other people's
-files. Before adding more format surface, consider a period with no schema
-change, and use it for work that does not touch persistence.
+**The format should now genuinely settle.** It has gone v2 to v6 in three days,
+and those versions are other people's files. Prefer work that does not touch
+persistence until there is a reason.
 
 Work that does not move the format:
 
-1. **Automatic label collision avoidance.** The oldest deferred item and the
-   biggest authoring irritation: every `gap` in the examples is hand-tuned,
-   and nothing catches an overlap except a person looking at the picture.
-   This is the one the assistant would pick.
-2. **Font-path tests beyond Windows.** CI now proves the Thai and Arabic tests
+1. **Layout regression testing.** Now the most valuable item. Collision
+   avoidance makes placement a computed result rather than an authored
+   constant, and it is still only checked by eye plus box-geometry assertions.
+   Golden-image tests would catch silent drift in exactly the code most likely
+   to drift.
+2. **Hand-tuned gaps in the examples.** Every `gap` in `examples/` was chosen to
+   dodge an overlap the library now resolves. Revisiting them would simplify the
+   examples and exercise the resolver on real lessons.
+3. **Font-path tests beyond Windows.** CI now proves the Thai and Arabic tests
    really run on Windows, and skips them elsewhere. A vendored subset Noto
    font would extend that to Linux.
-3. **macOS typography.** Whether `pip install "tutordraw[typography]"` works
+4. **macOS typography.** Whether `pip install "tutordraw[typography]"` works
    there is still unknown; DrawCV needs source-built PyICU. Worth finding out
    before anyone reports it.
-4. **Layout regression testing.** Rendered output is only checked by eye.
-   Golden-image tests would catch silent layout drift.
+
+Known limits of a12, in case one of them is reported as a bug: leaders are still
+straight and may cross a panel they do not belong to (routed leaders are
+deferred); only **registered** targets count as artwork obstacles; a reveal slot
+sits empty until its annotation appears; and a panel larger than the canvas
+still warns and clips, because nothing can be done with it.
 
 Format-moving features to hold for later, none clearly ahead: timed captions,
 fading annotations in, stroke/scale/rotation in `restyle`, whole-image
@@ -355,15 +436,16 @@ C:/Projects/DrawCV is context only. Git may need
 ## Copy this into another model
 
 > Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
-> first, then docs/REVEAL.md, docs/ANIMATION.md and docs/ROADMAP.md. It is the visual
+> first, then docs/API.md, docs/RESTYLE.md and docs/ROADMAP.md. It is the visual
 > engine for a real-time, LLM-driven explainer, not an offline video tool.
-> Development a11 has timing, schema-v5 persistence, video export, per-step
-> artwork changes, animation between beats, timed annotation reveals, and text
-> covering Latin, Greek, Cyrillic, CJK, symbols, plus Thai and Arabic behind an
-> optional extra; 285 tests pass from source and from the installed wheel, and
-> 0.1.0a11 is published on PyPI and verified after upload. Hosted CI is green
-> on nine jobs. There is no obvious next feature: the lesson format moved v2
-> to v5 in one day, so prefer work that does not touch persistence, and read
-> the handoff's list before choosing. Do not publish or push without asking.
+> Development a12 has timing, schema-v6 persistence, video export, per-step
+> artwork changes, animation between beats, timed annotation reveals, automatic
+> label collision avoidance on by default, and text covering Latin, Greek,
+> Cyrillic, CJK, symbols, plus Thai and Arabic behind an optional extra;
+> 314 tests pass from source, and 0.1.0a11 is published on PyPI and verified
+> after upload while a12 is local and unpushed. Hosted CI is green on nine jobs.
+> There is no obvious next feature: the lesson format moved v2 to v6 in three
+> days, so prefer work that does not touch persistence, and read the handoff's
+> list before choosing — layout regression tests are the current top pick.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.

@@ -401,3 +401,93 @@ Known and accepted at release: the lesson format moved v2 to v5 in one day,
 and published schema versions become other people's files. Older versions all
 load, but the format should now settle. macOS installation of the typography
 extra remains unverified.
+
+## Automatic collision avoidance — development 0.1.0a12 (2026-09-23)
+
+The owner reported six label panels landing on top of one another in a real
+lesson. `label_artwork` computed one panel from one target with no knowledge of
+any other, and `_render` called it once per annotation, so nothing shared state.
+
+**Ranked candidate placements, not a force relaxation.** A force-based
+push-apart gives every panel a position that depends on every other panel's, so
+an animated step drifts every frame. A discrete candidate list is stable: a
+panel only moves when a ranking actually flips, and the ordering itself encodes
+author intent. Rank 0 is exactly what the author wrote; alternatives try the
+other sides of the target, then slide along a side, then step further out.
+
+Candidates score lexicographically on `(overlap + off-canvas area, artwork
+coverage, rank)` rather than on tuned weights. Panel-on-panel and off-canvas
+share a tier because both are unreadable and a small sliver of either should
+not lose to a large amount of the other. Covering artwork is a lower tier
+because the owner asked for it "where avoidable". Rank breaks ties, so the
+authored placement wins whenever it is free, and resolution short-circuits on
+the first free candidate — which is the common case.
+
+**Greedy in registration order.** An earlier annotation is never displaced by a
+later one, which makes the result deterministic without inventing a priority
+heuristic, and matches the order `_render` already iterated.
+
+**The decision is taken once per render, not once per frame.** This was the
+hard constraint: `_render` runs at every timeline position and `restyle` moves
+targets during a step, so a naive per-frame solver jitters or swaps sides
+mid-animation. Resolution runs against the state the step *ends* in and returns
+an anchor plus a pixel nudge; the panel itself is still built from live bounds
+each frame. The discrete choice is therefore frame-invariant while the panel
+still tracks its target, which keeps RESTYLE.md's promise that a moved target
+takes its label, leader and highlight with it, pixel-identically.
+
+End-state resolution alone proved insufficient: a target sliding *past* another
+label drags its panel through it in the middle while both ends are clear
+(measured at 4148 px² of overlap before the fix). An animated step is therefore
+resolved over the **swept union** of each panel between the step's two ends. The
+union of two axis-aligned boxes contains the whole translation sweep, so this is
+conservative and cannot leave a mid-flight overlap. A hard cut has no middle and
+is resolved against its end state alone, so it is not penalised for motion it
+never shows. `_render` passes the planner the real previous step even at
+progress 1, so the final frame and `render_step` plan identically.
+
+Reveal delays are ignored when resolving: every annotation holds its slot from
+the first frame. A slot then sits empty until its annotation appears, which is
+accepted in exchange for nothing on screen moving when one does.
+
+Canvas clamping is re-applied per frame rather than frozen with the placement.
+It is continuous, so a panel tracking a moving target slides along the edge
+instead of jumping, and an authored offset chosen against different bounds
+cannot defeat it. This is the one behaviour change to an existing test:
+`test_off_canvas_warning` authored an offset past the edge and asserted
+`LayoutWarning`; avoidance now pulls it back, so that test pins the legacy path
+with `Theme(avoid_collisions=False)` and new tests cover both recoverable and
+unrecoverable cases.
+
+**On by default**, on the owner's decision. Output only changes where panels
+genuinely overlapped, which is where it was already wrong, and a fix that must
+be opted into would not fix the lesson that prompted it.
+`Theme(avoid_collisions=False)` restores verbatim placement exactly.
+
+The option lives on `Theme` rather than a `Tutorial` argument or a render-time
+flag because it must round-trip with a saved lesson and `Theme` already carries
+layout numbers. That costs schema v6; older documents omit the two fields and
+take the defaults, mirroring how older step fields are handled.
+
+Measured cost: none worth naming. The resolver short-circuits, and reusing its
+measurements in `label_artwork` removes a second text-measurement pass, so the
+reported six-label lesson renders *faster* with avoidance on (23 ms vs 42 ms).
+A 90-frame animated export is 1.03x.
+
+Routed leader lines remain deferred. Leaders stay straight and re-aim from the
+moved panel, which the existing panel-edge intersection already handled.
+
+### Gradient fills could not be recoloured (same session, independent)
+
+`restyle(fill=...)` on a gradient-filled object raised `ValidationError:
+Gradient and image fills have no single color`. `current_fill` read
+`FillStyle.color`, the solid-colour shorthand that raises for gradients and
+image paints, and `_blend` calls it whenever either side sets a fill — so it
+fired at progress 1.0 too, animated or not.
+
+Fixed at the root: read `fill.paint` and reduce it. A gradient reports the
+unweighted mean of its stop colours, which is simple and predictable like the
+plain-RGB interpolation it feeds, rather than position-weighted. An image paint
+has no stops and reports None, which `_blend` already handles by cutting to the
+new colour instead of interpolating. Sampling a gradient at a point, or
+interpolating a gradient into another gradient, is out of scope.

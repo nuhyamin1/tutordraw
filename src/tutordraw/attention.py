@@ -108,6 +108,54 @@ def apply_restyles(objects: dict[str, Drawable], step: Step, previous: Step | No
                current.get(drawable_id), progress)
 
 
+def residual_moves(step: Step, previous: Step | None, progress: float,
+                   target: float = 1.0) -> dict[str, tuple[float, float]]:
+    """The translation taking each restyled target from `progress` to `target`.
+
+    Adding it to the current frame puts a target where the step ends, which is
+    the geometry label placement is decided against; `target=0` reaches the
+    other end of an animated step instead. At progress 1 the default is empty,
+    so a static render pays nothing for it.
+    """
+    current = {r.target.drawable_id: r for r in step.restyles}
+    earlier = {r.target.drawable_id: r
+               for r in (previous.restyles if previous is not None else ())}
+    result: dict[str, tuple[float, float]] = {}
+    for drawable_id in {**earlier, **current}:
+        start, end = earlier.get(drawable_id), current.get(drawable_id)
+        from_move = (0.0, 0.0) if start is None or start.move is None else start.move
+        to_move = (0.0, 0.0) if end is None or end.move is None else end.move
+        dx = _lerp(from_move[0], to_move[0], target) - _lerp(from_move[0], to_move[0], progress)
+        dy = _lerp(from_move[1], to_move[1], target) - _lerp(from_move[1], to_move[1], progress)
+        if dx or dy:
+            result[drawable_id] = (dx, dy)
+    return result
+
+
+def final_bounds(objects: dict[str, Drawable], ids, moves: dict[str, tuple[float, float]]
+                 ) -> dict[str, "BoundingBox"]:
+    """Bounds these drawables will have at the end of the step.
+
+    The moves are applied through the real transform pipeline, so a target
+    inside a rotated or scaled group measures correctly, then the saved
+    translations are restored by assignment rather than by subtracting back.
+    Only translation is touched; nothing else here changes a bounding box.
+    """
+    if not moves:
+        return {key: objects[key].get_bounds() for key in ids if key in objects}
+    saved = {key: (objects[key].transform.translation_x, objects[key].transform.translation_y)
+             for key in moves if key in objects}
+    try:
+        for key, (dx, dy) in moves.items():
+            if key in objects:
+                translate(objects[key], dx, dy)
+        return {key: objects[key].get_bounds() for key in ids if key in objects}
+    finally:
+        for key, (x, y) in saved.items():
+            objects[key].transform.translation_x = x
+            objects[key].transform.translation_y = y
+
+
 def apply_attention(scene: Scene, step: Step) -> None:
     requested = [h.target for h in step.highlights] + list(step._focus)
     visible = visible_ids(scene)

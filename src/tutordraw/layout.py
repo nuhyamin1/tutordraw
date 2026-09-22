@@ -31,6 +31,86 @@ class LabelLayout:
     leader_end: Point
 
 
+@dataclass(frozen=True)
+class Placement:
+    """A resolved choice: which anchor to use, and how far to nudge off it.
+
+    The nudge is in canvas pixels and is added to the label's authored offset,
+    so it keeps its meaning against whatever bounds the current frame has.
+    """
+
+    anchor: str
+    dx: float = 0.0
+    dy: float = 0.0
+
+
+@dataclass(frozen=True)
+class Measured:
+    """Panel contents and size: depends on the text, not on where it goes."""
+
+    lines: tuple[str, ...]
+    texts: tuple
+    measures: tuple
+    line_height: float
+    spacing: float
+    width: float
+    height: float
+
+
+def anchor_points(bounds: BoundingBox) -> dict[str, Point]:
+    """The five attachment points of a target's world-space bounds."""
+    cx, cy = bounds.center.x, bounds.center.y
+    return {
+        "left": Point(bounds.left, cy), "right": Point(bounds.right, cy),
+        "top": Point(cx, bounds.top), "bottom": Point(cx, bounds.bottom),
+        "center": Point(cx, cy),
+    }
+
+
+def measure_label(label: Label, theme: Theme | None = None, font=None) -> Measured:
+    """Lay the text out and size its panel, independently of any position."""
+    theme = theme or Theme()
+    lines = (wrap_text(label.text, label.font_scale, label.max_width, theme, font)
+             if isinstance(label, Callout) else [label.text])
+    texts = [annotation_text(line, label.font_scale, theme, font) for line in lines]
+    measures = [text.get_bounds() for text in texts]
+    line_height = max(1, annotation_text("Ag", label.font_scale, theme, font).get_bounds().height,
+                      *(m.height for m in measures))
+    spacing = label.line_spacing if isinstance(label, Callout) else 1
+    return Measured(
+        tuple(lines), tuple(texts), tuple(measures), line_height, spacing,
+        max(1, *(m.width for m in measures)) + 2 * label.padding,
+        line_height * (1 + (len(lines) - 1) * spacing) + 2 * label.padding)
+
+
+def place_panel(point: Point, anchor: str, width: float, height: float, gap: float,
+                offset: tuple[float, float] = (0.0, 0.0)) -> BoundingBox:
+    """Put a panel of this size beside an anchor point. Center sits to the right."""
+    x, y = point.x + gap, point.y - height / 2
+    if anchor == "left":
+        x = point.x - gap - width
+    elif anchor == "top":
+        x, y = point.x - width / 2, point.y - gap - height
+    elif anchor == "bottom":
+        x, y = point.x - width / 2, point.y + gap
+    return BoundingBox(x + offset[0], y + offset[1], width, height)
+
+
+def clamp_panel(panel: BoundingBox, width: float, height: float) -> BoundingBox:
+    """Shift a panel minimally back onto the canvas; one too big is left alone.
+
+    This is re-applied every frame rather than frozen with the placement: it is
+    continuous, so a panel tracking a moving target slides along the edge
+    instead of jumping, and it cannot be defeated by an offset that was chosen
+    against a different frame's bounds.
+    """
+    x = min(max(panel.x, 0.0), width - panel.width) if panel.width <= width else panel.x
+    y = min(max(panel.y, 0.0), height - panel.height) if panel.height <= height else panel.y
+    if (x, y) == (panel.x, panel.y):
+        return panel
+    return BoundingBox(x, y, panel.width, panel.height)
+
+
 def wrap_text(text: str, font_scale: float, max_width: float, theme: Theme | None = None,
               font=None) -> list[str]:
     """Wrap using the renderer's measurements, splitting oversized words."""
@@ -73,36 +153,30 @@ def wrap_text(text: str, font_scale: float, max_width: float, theme: Theme | Non
 
 
 def label_artwork(label: Label, target: Drawable, width: int, height: int,
-                  theme: Theme | None = None, font=None
+                  theme: Theme | None = None, font=None,
+                  placement: Placement | None = None, measured: Measured | None = None
                   ) -> tuple[LabelLayout, list[Drawable]]:
+    """Build one annotation's artwork, optionally at a resolved placement.
+
+    Without a placement this is the authored anchor, gap and offset exactly, so
+    a single label lays out the same as it always has.
+    """
     theme = theme or Theme()
     # get_bounds includes the transformed stroke but not post-processing effects.
-    bounds = target.get_bounds()
-    cx, cy = bounds.center.x, bounds.center.y
-    anchors = {
-        "left": Point(bounds.left, cy), "right": Point(bounds.right, cy),
-        "top": Point(cx, bounds.top), "bottom": Point(cx, bounds.bottom),
-        "center": Point(cx, cy),
-    }
-    anchor = anchors[label.anchor]
-    lines = (wrap_text(label.text, label.font_scale, label.max_width, theme, font)
-             if isinstance(label, Callout) else [label.text])
-    texts = [annotation_text(line, label.font_scale, theme, font) for line in lines]
-    measures = [text.get_bounds() for text in texts]
-    line_height = max(1, annotation_text("Ag", label.font_scale, theme, font).get_bounds().height,
-                      *(m.height for m in measures))
-    spacing = label.line_spacing if isinstance(label, Callout) else 1
-    w = max(1, *(m.width for m in measures)) + 2 * label.padding
-    h = line_height * (1 + (len(lines) - 1) * spacing) + 2 * label.padding
-    x, y = anchor.x + label.gap, anchor.y - h / 2
-    if label.anchor == "left":
-        x = anchor.x - label.gap - w
-    elif label.anchor == "top":
-        x, y = anchor.x - w / 2, anchor.y - label.gap - h
-    elif label.anchor == "bottom":
-        x, y = anchor.x - w / 2, anchor.y + label.gap
-    x, y = x + label.offset[0], y + label.offset[1]
-    panel = BoundingBox(x, y, w, h)
+    points = anchor_points(target.get_bounds())
+    measured = measured if measured is not None else measure_label(label, theme, font)
+    lines, texts, measures = measured.lines, measured.texts, measured.measures
+    line_height, spacing = measured.line_height, measured.spacing
+    side = label.anchor if placement is None else placement.anchor
+    nudge = (0.0, 0.0) if placement is None else (placement.dx, placement.dy)
+    anchor = points[side]
+    w, h = measured.width, measured.height
+    panel = place_panel(anchor, side, w, h, label.gap,
+                        (label.offset[0] + nudge[0], label.offset[1] + nudge[1]))
+    if placement is not None:
+        # Only under collision avoidance; without it the authored offset stands.
+        panel = clamp_panel(panel, width, height)
+    x, y = panel.x, panel.y
     # Intersect the ray from the panel center toward the target with its edge.
     dx, dy = anchor.x - panel.center.x, anchor.y - panel.center.y
     ratio = max(abs(dx) / (w / 2), abs(dy) / (h / 2))
@@ -117,10 +191,10 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
                              stroke=StrokeStyle(color=Color(*theme.border_color), width=theme.border_width), z_index=1))
     # Wrapped right-to-left lines hang from the right edge, not the left.
     rtl = is_rtl(label.text)
-    for i, (text, measured) in enumerate(zip(texts, measures)):
-        left = x + w - label.padding - measured.width if rtl else x + label.padding
-        text.position = Point(left - measured.x,
-                              y + label.padding + i * line_height * spacing - measured.y)
+    for i, (text, measure) in enumerate(zip(texts, measures)):
+        left = x + w - label.padding - measure.width if rtl else x + label.padding
+        text.position = Point(left - measure.x,
+                              y + label.padding + i * line_height * spacing - measure.y)
         text.z_index = 2
         if lines[i]:
             artwork.append(text)

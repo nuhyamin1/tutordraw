@@ -31,8 +31,9 @@ Implemented:
 - teach in Thai or Arabic with `pip install "tutordraw[typography]"` and a font you supply; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
 - ease a step into its new state instead of cutting to it; see [Animation](https://github.com/nuhyamin1/tutordraw/blob/master/docs/ANIMATION.md).
 - delay a label or explanation so a narrated beat introduces one thing at a time; see [Reveal](https://github.com/nuhyamin1/tutordraw/blob/master/docs/REVEAL.md).
+- keep label and callout panels from overlapping each other, the highlight boxes, the artwork or the canvas edges, automatically and on by default; see [API](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md).
 
-Timed captions, interactive playback, and automatic collision avoidance remain planned.
+Timed captions, interactive playback, and routed leader lines remain planned.
 
 ## Install the alpha
 
@@ -113,8 +114,8 @@ for codec limits and failure behavior.
 
 - Labels are **single line**; callouts add newlines and measured word wrapping. Latin, Greek, Cyrillic, CJK and common symbols work out of the box. Thai and Arabic need the optional `typography` extra and a font you supply. Hebrew, Indic scripts and emoji are refused with an error naming the character; see [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md).
 - Anchors use transformed axis-aligned `get_bounds()` results, including supported shape strokes but excluding post-processing effect extents.
-- Labels stay upright and spacing uses canvas pixels. Automatic collision avoidance and routed leaders are deferred.
-- Off-canvas annotations issue `LayoutWarning` and may be clipped. Callout widths measure the text area; padding adds to the panel width.
+- Labels stay upright and spacing uses canvas pixels. Panels are moved apart automatically when they collide, keeping the authored anchor and offset wherever it is free; `Theme(avoid_collisions=False)` restores verbatim placement. Routed leaders are deferred.
+- Annotations that cannot be placed on canvas or clear of the others issue `LayoutWarning` and may be clipped or overlap. Callout widths measure the text area; padding adds to the panel width.
 - Dimming multiplies artwork opacity, not the background. Complex masks, blend modes, and occlusion are not pixel-level spotlight isolation. Hidden or zero-opacity attention targets are rejected; clipping and masks are not used to infer visibility.
 - Scenes must round-trip through DrawCV serialization; unsupported copying raises `SceneCopyError`. Arbitrary custom drawables/assets are not guaranteed supported.
 - Rendering uses authored scene state without sampling a timeline. Concurrent source edits during rendering are unsupported.

@@ -145,4 +145,4 @@ can never silently lose its script. No schema change was needed.
 
 Bidirectional text mixing, vertical CJK layout, ruby annotations, emoji,
 per-character font fallback, and font selection through the theme. Automatic
-label collision avoidance is unrelated but still absent; see [API.md](API.md).
+label collision avoidance is unrelated and now automatic; see [API.md](API.md).

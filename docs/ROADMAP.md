@@ -121,7 +121,8 @@ Prioritized after the first release to support continuation across AI sessions.
 
 - Measurements, angles, braces, and relationship annotations.
 - Multi-object targets outside an existing DrawCV group.
-- Automatic label collision reduction and routed leader lines.
+- Routed leader lines that bend around artwork; panels already avoid
+  collisions automatically (a12).
 - Before-and-after comparisons, zoom, and pan.
 - Narration and subtitle alignment.
 - Interactive lesson players, exercises, and quizzes.

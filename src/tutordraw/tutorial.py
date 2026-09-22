@@ -9,6 +9,7 @@ from .errors import ValidationError
 from .layout import label_artwork
 from .model import Label, Step, Target
 from .attention import apply_attention, apply_restyles, highlight_artwork
+from .collision import plan_annotations
 from .export import export_steps
 from .themes import Theme
 
@@ -168,20 +169,32 @@ class Tutorial:
         elif step.easing is None:
             eased = 1.0
         # Artwork changes land before emphasis, so attached annotations follow them.
-        previous = self._steps[index - 1] if eased < 1.0 and index else None
-        apply_restyles(objects, step, previous, eased)
+        # The planner always needs the real previous step, even at progress 1:
+        # that is the other end of the sweep, so every frame plans identically.
+        prior = self._steps[index - 1] if index else None
+        apply_restyles(objects, step, prior if eased < 1.0 else None, eased)
         apply_attention(working, step)
         layer = overlay_layer(working)
         with typography_errors():
             for highlight in step.highlights:
                 working.add(highlight_artwork(highlight, objects[highlight.target.drawable_id]), layer=layer)
             elapsed = progress * step.duration
+            # Placement is decided once from the step's end state, so it is the
+            # same for every frame of it; only the panels track live bounds.
+            plan = {}
+            if self.theme.avoid_collisions:
+                plan = plan_annotations(
+                    step, objects, [t.drawable_id for t in self._targets.values()],
+                    width=working.width, height=working.height, theme=self.theme,
+                    font=self._font, previous=prior, progress=eased)
             for label in (*step.labels, *step.callouts):
                 # A delay past the step's duration simply reveals at its end.
                 if min(step.revealed_at(label), step.duration) > elapsed:
                     continue
+                placement, measured = plan.get(label.id, (None, None))
                 _, artwork = label_artwork(label, objects[label.target.drawable_id],
-                                           working.width, working.height, self.theme, self._font)
+                                           working.width, working.height, self.theme,
+                                           self._font, placement, measured)
                 for obj in artwork:
                     working.add(obj, layer=layer)
             return OpenCVRenderer().render(working, alpha=alpha)

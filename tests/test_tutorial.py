@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from drawcv import Circle, Color, FillStyle, Group, OpenCVRenderer, Point, Scene, Transform
 
-from tutordraw import LayoutWarning, SceneCopyError, Tutorial, ValidationError
+from tutordraw import LayoutWarning, SceneCopyError, Theme, Tutorial, ValidationError
 from tutordraw.adapters.drawcv import copy_scene
 from tutordraw.layout import label_artwork
 
@@ -131,7 +131,9 @@ def test_invalid_labels(lesson, options):
 
 
 def test_off_canvas_warning(lesson):
+    """Without avoidance an authored offset stands, even off the canvas."""
     scene, _, tutorial, target, _ = lesson
+    tutorial.theme = Theme(avoid_collisions=False)
     label = target.label("Outside", offset=(1000, 0))
     tutorial.steps[0].show(label)
     before = scene.to_dict()

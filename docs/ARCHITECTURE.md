@@ -94,7 +94,17 @@ transform inheritance or bounds feedback problems.
 
 Default labels can use the requested side with a theme-defined gap. Callouts need
 a maximum width, wrapping, padding, and an explicit placement override. Provide
-diagnostics for off-canvas panels. Automatic collision avoidance is deferred.
+diagnostics for off-canvas panels.
+
+Collision avoidance lives in `collision.py` and runs between layout and artwork
+generation. It is a ranked candidate search, not a force relaxation: a panel
+picks the first free placement from a list ordered by nearness to the author's
+intent, scored lexicographically on overlap, then artwork coverage, then rank.
+The decision is taken once per render from the step's own end state (and, when
+the step animates, the swept path between its two ends), then applied to live
+bounds each frame, so an animated step cannot jitter or swap sides. Nothing is
+cached between renders and nothing is stored on the annotation definitions,
+which keeps steps independent and renderable in any order.
 
 ## Attention and group dimming
 

@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a11 (development)
+# Implemented API — 0.1.0a12 (development)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -109,6 +109,59 @@ interpolate; `visible` does not. Hard cuts remain the default, and
 `render_step` always shows the finished state. Saved in lesson schema v4.
 See [ANIMATION.md](ANIMATION.md).
 
+## Automatic collision avoidance (new in 0.1.0a12)
+
+Label and callout panels no longer overlap each other. Before drawing a step,
+TutorDraw resolves every annotation's panel against the other panels, the
+highlight boxes, the registered targets' artwork, and the canvas edges.
+
+**It is on by default.** Turn it off with `Theme(avoid_collisions=False)`, which
+restores the earlier behaviour exactly: the authored anchor, gap and offset are
+used verbatim, whatever they collide with.
+
+| Option | Behavior |
+| --- | --- |
+| `avoid_collisions` | Boolean, default `True`. Off restores verbatim authored placement. |
+| `collision_margin` | Nonnegative pixels kept clear between panels; default 6. |
+
+Author intent stays primary. A panel is only moved when it genuinely collides:
+
+- The authored `anchor`, `gap` and `offset` are tried first and kept whenever
+  they are free, so a lesson that never overlapped renders exactly as before.
+- A panel that must move tries the other sides of its target first, then slides
+  along a side, then steps further out. Several labels on one small target fan
+  around it rather than stacking.
+- Annotations are resolved in registration order — `step.labels` then
+  `step.callouts` — so an earlier one is never displaced by a later one and the
+  same lesson always renders identically.
+- A panel is kept off other **registered** targets' artwork where it can be.
+  Unregistered artwork is not considered. A `center`-anchored label is allowed
+  to sit on its own target, because that is what `center` asks for.
+- A panel is shifted back onto the canvas when it fits. One wider or taller than
+  the canvas cannot be, and still raises `LayoutWarning`.
+
+Placement is **per render**, never stored on the `Label` or `Callout`, so the
+same reusable label can be placed differently in different steps.
+
+### Across frames
+
+A step is resolved **once per render, from the state the step ends in**, and
+that one decision is used for every frame of it. Panels are still built from
+live bounds each frame, so a moved target keeps its label, leader and highlight,
+and `restyle(move=...)` stays pixel-identical to moving the source object.
+
+Two consequences worth knowing:
+
+- An animated step is resolved against both of its ends, and a panel is judged
+  over the whole path it sweeps between them. A label dragged past another one
+  therefore clears it in the middle too, not only at the end.
+- Reveal delays are ignored when resolving. Every annotation holds its slot from
+  the first frame, so nothing already on screen moves when a delayed one
+  appears; the slot simply stays empty until it does.
+
+When even the best candidate still overlaps, rendering proceeds and issues a
+`LayoutWarning` naming the label, rather than failing or silently overlapping.
+
 ## Theme
 
 `Theme(...)` is an immutable set of validated defaults:
@@ -125,6 +178,7 @@ See [ANIMATION.md](ANIMATION.md).
 | `highlight_padding` | `8` |
 | `callout_width`, `line_spacing` | `260`, `1.35` |
 | `dim_opacity` | `0.25` |
+| `avoid_collisions`, `collision_margin` | `True`, `6` |
 
 Colors are immutable RGB tuples, channels 0–255. Numeric annotation defaults and highlight settings resolve at creation time. Panel/text/leader colors and border/leader widths come from the tutorial's current theme at render time. Supply a theme when constructing the tutorial for consistent styling.
 
@@ -144,12 +198,15 @@ Frames encode in temporary files. Explicit overwrite replaces an existing file o
 - `VideoExportError`: a video export failed; the destination was not created or
   replaced. Inspect `path`, `fourcc`, `frames_written`, and `__cause__`.
 - `ExportError`: failure after export starts. Inspect zero-based `step_index`, `path`, `completed_paths` (tuple), and `__cause__`.
-- `LayoutWarning`: an annotation extends outside the canvas. Rendering proceeds and may clip it.
+- `LayoutWarning`: an annotation extends outside the canvas, or could not be placed clear of the others. Rendering proceeds and may clip or overlap it.
 
-Direct render/save errors from DrawCV propagate; batch export wraps per-step failures in ExportError. Rendering preserves source content and history even on failure. Automatic label collision avoidance, rich fonts, timeline sampling, and concurrent source editing are not supported.
+Direct render/save errors from DrawCV propagate; batch export wraps per-step failures in ExportError. Rendering preserves source content and history even on failure. Routed leader lines, rich fonts, timeline sampling, and concurrent source editing are not supported.
 
 
 ## Lesson persistence and revision (new in 0.1.0a4)
+
+Saved in lesson schema v6; lessons written by an older alpha load with the
+default `True`.
 
 `Tutorial.to_dict`, `from_dict`, `to_json`, `from_json`, `save_json(path, overwrite=False)`,
 and `load_json(path)` preserve the complete scene and lesson model. The three loaders also take `font=` for lessons using Thai or Arabic. `save_json`

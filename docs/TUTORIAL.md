@@ -53,7 +53,7 @@ numbered in step order. Rendering a step in a different order changes nothing.
 
 Move a source object and render again: its label, callout, and highlight follow
 its current bounds. Review layout warnings and inspect the images; automatic
-collision avoidance is not implemented. Use a Theme for consistent spacing and
+panels are moved apart automatically when they collide. Use a Theme for consistent spacing and
 colors rather than repeating options throughout a lesson.
 
 See [API.md](API.md) for signatures and [COMPATIBILITY.md](COMPATIBILITY.md) for

@@ -23,6 +23,8 @@ class Theme:
     callout_width: float = 260
     line_spacing: float = 1.35
     dim_opacity: float = 0.25
+    avoid_collisions: bool = True
+    collision_margin: float = 6
 
     def __post_init__(self) -> None:
         for name in ("text_color", "panel_color", "border_color", "leader_color", "highlight_color"):
@@ -38,3 +40,6 @@ class Theme:
         finite_number(self.line_spacing, "line_spacing", minimum=1)
         if not 0 <= finite_number(self.dim_opacity, "dim_opacity") <= 1:
             raise ValidationError("dim_opacity must be between 0 and 1")
+        if not isinstance(self.avoid_collisions, bool):
+            raise ValidationError("avoid_collisions must be a boolean")
+        finite_number(self.collision_margin, "collision_margin", minimum=0)

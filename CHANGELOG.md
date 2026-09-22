@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.1.0a12 — development milestone (unreleased)
+
+- **Automatic collision avoidance for label and callout panels, on by default.**
+  A step's annotations are resolved against each other, the highlight boxes, the
+  registered targets' artwork and the canvas edges before anything is drawn.
+- The authored `anchor`, `gap` and `offset` are tried first and kept whenever
+  they are free, so a lesson whose panels never overlapped renders as before.
+  A panel that must move tries the other sides of its target, then slides along
+  one, then steps further out; several labels on one target fan around it.
+- Annotations resolve in registration order, so an earlier one is never
+  displaced by a later one and a lesson always renders identically.
+- A panel is shifted back onto the canvas when it fits. One too big to fit, or
+  one that could not be placed clear of the others, still raises `LayoutWarning`.
+- **Stable across frames.** A step is resolved once per render from the state it
+  ends in, and an animated step is judged over the path its panels sweep between
+  its two ends, so nothing jitters, swaps sides, or collides mid-move. Panels
+  are still built from live bounds each frame, so a moved target keeps its
+  label, leader and highlight, and `restyle(move=...)` stays pixel-identical to
+  moving the source object.
+- Reveal delays do not affect resolution: an annotation holds its slot from the
+  first frame, so nothing on screen moves when a delayed one appears.
+- Placement is per render and never stored on the frozen `Label`/`Callout`, so a
+  reusable label can be placed differently in different steps.
+- Add `Theme(avoid_collisions=True, collision_margin=6)`; `avoid_collisions=False`
+  restores verbatim authored placement. Saved in lesson schema v6; v1 through v5
+  still load and take the defaults.
+- Fix `restyle(fill=...)` on a gradient- or image-filled object, which raised
+  `ValidationError: Gradient and image fills have no single color`. It fired on
+  any fill change of such an object, animated or not. A gradient now blends from
+  the unweighted mean of its stops; an image paint has no colour to blend from
+  and cuts to the new fill.
+- Add `src/tutordraw/collision.py` and 25 collision tests covering colliding
+  panels, off-canvas recovery, crowding one small target, frame stability, and
+  the animated sweep.
+
 ## 0.1.0a11 — second alpha (published 2026-09-21)
 
 Everything from a4 through a10 ships here; those versions were development

@@ -22,8 +22,11 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 5
-SUPPORTED_VERSIONS = (1, 2, 3, 4, SCHEMA_VERSION)
+SCHEMA_VERSION = 6
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, SCHEMA_VERSION)
+# Theme fields each schema version introduced; older documents omit them and
+# load with the Theme default, exactly as older step fields do.
+THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin")}
 ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset", "font_scale", "padding"}
 
 
@@ -120,7 +123,10 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             raise LessonFormatError(
                 f"Unsupported lesson schema version: {version!r}; expected "
                 + " or ".join((", ".join(map(str, SUPPORTED_VERSIONS[:-1])), str(SUPPORTED_VERSIONS[-1]))))
-        theme_data = _object(data["theme"], {f.name for f in fields(Theme)}, "theme")
+        expected = {f.name for f in fields(Theme)} - {
+            name for newer, names in THEME_FIELDS_ADDED.items() if newer > version
+            for name in names}
+        theme_data = _object(data["theme"], expected, "theme")
         for key in theme_data:
             if key.endswith("_color"):
                 theme_data[key] = tuple(_list(theme_data[key], f"theme.{key}"))
