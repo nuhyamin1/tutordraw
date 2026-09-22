@@ -14,7 +14,7 @@ Implemented:
 
 - Register existing DrawCV objects or groups as teaching targets.
 - Attach labels with optional straight leader lines.
-- Configure bounds anchors, gap, offset, padding, and font scale.
+- Configure bounds anchors, gap, offset, padding, font scale, and whether a label is drawn in a panel or as bare text.
 - Keep labels attached when targets move, including through group transforms.
 - Define independent steps and render them to DrawCV canvases and PNG images.
 - Preserve source content and undo history, including on rendering failure.

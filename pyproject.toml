@@ -43,7 +43,7 @@ Documentation = "https://github.com/nuhyamin1/tutordraw#readme"
 where = ["src"]
 
 [tool.setuptools.package-data]
-tutordraw = ["lesson-v1.schema.json", "lesson-v2.schema.json", "lesson-v3.schema.json", "lesson-v4.schema.json", "lesson-v5.schema.json", "lesson-v6.schema.json"]
+tutordraw = ["lesson-v1.schema.json", "lesson-v2.schema.json", "lesson-v3.schema.json", "lesson-v4.schema.json", "lesson-v5.schema.json", "lesson-v6.schema.json", "lesson-v7.schema.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

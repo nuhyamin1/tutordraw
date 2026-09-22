@@ -24,8 +24,17 @@
 - Placement is per render and never stored on the frozen `Label`/`Callout`, so a
   reusable label can be placed differently in different steps.
 - Add `Theme(avoid_collisions=True, collision_margin=6)`; `avoid_collisions=False`
-  restores verbatim authored placement. Saved in lesson schema v6; v1 through v5
-  still load and take the defaults.
+  restores verbatim authored placement.
+- **`label(..., box=False)` and `explain(..., box=False)` draw bare text** with
+  no panel behind it, for a caption on empty canvas or a value beside an axis.
+  Previously every annotation was boxed and the theme could not fake otherwise:
+  `panel_color` takes no alpha and `border_width` must be positive, so the only
+  workaround was a background-coloured panel, which is opaque and punches a hole
+  through any artwork behind it. The panel is still measured when it is not
+  drawn, so an unboxed label sits where a boxed one would and collision
+  avoidance still keeps it clear.
+- Both settings are saved in lesson schema v7; v1 through v6 still load and take
+  the defaults, `True` for each.
 - Fix `restyle(fill=...)` on a gradient- or image-filled object, which raised
   `ValidationError: Gradient and image fills have no single color`. It fired on
   any fill change of such an object, animated or not. A gradient now blends from

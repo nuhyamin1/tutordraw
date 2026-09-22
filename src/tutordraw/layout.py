@@ -186,9 +186,10 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
     artwork: list[Drawable] = []
     if label.leader and ratio > 1:
         artwork.append(Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0))
-    artwork.append(Rectangle(position=Point(x, y), width=w, height=h,
-                             fill=FillStyle(color=Color(*theme.panel_color)),
-                             stroke=StrokeStyle(color=Color(*theme.border_color), width=theme.border_width), z_index=1))
+    if label.box:
+        artwork.append(Rectangle(position=Point(x, y), width=w, height=h,
+                                 fill=FillStyle(color=Color(*theme.panel_color)),
+                                 stroke=StrokeStyle(color=Color(*theme.border_color), width=theme.border_width), z_index=1))
     # Wrapped right-to-left lines hang from the right edge, not the left.
     rtl = is_rtl(label.text)
     for i, (text, measure) in enumerate(zip(texts, measures)):

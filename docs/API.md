@@ -16,7 +16,7 @@ Public symbols import from `tutordraw`. Create targets/annotations/steps through
 
 ```python
 label = target.label(
-    "Nucleus", anchor="right", leader=True,
+    "Nucleus", anchor="right", leader=True, box=True,
     gap=None, offset=(0, 0), font_scale=None, padding=None,
 )
 step.show(label)
@@ -29,10 +29,19 @@ Labels are immutable reusable definitions, absent until explicitly shown. Target
 | `text` | Nonempty, single line; Latin/Greek/Cyrillic/CJK and common symbols ([TEXT.md](TEXT.md)) |
 | `anchor` | `left`, `right`, `top`, `bottom`, or `center` of world-space bounds |
 | `leader` | Boolean, enables a straight leader |
+| `box` | Boolean, default `True`. `False` draws bare text with no panel behind it |
 | `gap` | Nonnegative pixel distance from anchor to panel edge; theme default 32 |
 | `offset` | Additional `(x, y)` pixels, either sign |
 | `font_scale` | Hershey scale, >0 and <=10; theme default 0.7 |
 | `padding` | Nonnegative pixels around text; theme default 10 |
+
+`box=False` omits only the panel rectangle. The text, the leader and the panel's
+measured area are unchanged, so an unboxed label sits exactly where a boxed one
+would and collision avoidance still keeps it clear of everything else — which
+bare text needs more than a panelled label does, not less. Without a panel the
+text draws straight onto whatever is behind it, so `padding` then only affects
+spacing, and `Theme.panel_color`, `border_color` and `border_width` are unused
+for that annotation.
 
 `None` uses the theme default at authoring time. Center-anchored labels are placed to the right of the target center. Text remains upright. Leaders terminate on panel edges; if the target lies within the panel, its leader is omitted. Spacing uses canvas pixels and does not inherit object scaling.
 
@@ -47,7 +56,7 @@ callout = step.explain(
 )
 ```
 
-`step.explain` accepts all label layout options plus `max_width=None` and `line_spacing=None`. It returns a `Callout` and automatically shows it only in this step. Callouts cannot be passed to `show` in another step; call `explain` there instead. `step.callouts` returns a tuple.
+`step.explain` accepts all label layout options, including `box`, plus `max_width=None` and `line_spacing=None`. It returns a `Callout` and automatically shows it only in this step. Callouts cannot be passed to `show` in another step; call `explain` there instead. `step.callouts` returns a tuple.
 
 `max_width` limits the **text area**, excluding panel padding. Default: theme `callout_width=260`. Words wrap using DrawCV measurements. Oversized words split at characters; a width too narrow for one character raises `ValidationError` when rendered. Explicit newlines preserve paragraph breaks, including blank lines; other spaces normalize. Callout text may use any character labels accept, plus newlines. Line spacing is at least 1, default 1.35 times measured line height.
 
@@ -205,8 +214,8 @@ Direct render/save errors from DrawCV propagate; batch export wraps per-step fai
 
 ## Lesson persistence and revision (new in 0.1.0a4)
 
-Saved in lesson schema v6; lessons written by an older alpha load with the
-default `True`.
+Both `avoid_collisions` and a label's `box` are saved in lesson schema v7;
+lessons written by an older alpha load with their defaults, both `True`.
 
 `Tutorial.to_dict`, `from_dict`, `to_json`, `from_json`, `save_json(path, overwrite=False)`,
 and `load_json(path)` preserve the complete scene and lesson model. The three loaders also take `font=` for lessons using Thai or Arabic. `save_json`

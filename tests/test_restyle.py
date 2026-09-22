@@ -189,6 +189,7 @@ def test_every_older_schema_version_still_loads(lesson, version):
     assert upgraded.steps[0].restyles == ()
     assert upgraded.steps[0].easing is None
     assert upgraded.steps[0].reveals == {}
+    assert all(label.box for label in upgraded.labels)
     assert upgraded.to_dict()["schema_version"] == SCHEMA_VERSION
     np.testing.assert_array_equal(upgraded.render_step(0).buffer, tutorial.render_step(0).buffer)
 

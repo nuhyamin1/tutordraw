@@ -477,6 +477,28 @@ A 90-frame animated export is 1.03x.
 Routed leader lines remain deferred. Leaders stay straight and re-aim from the
 moved panel, which the existing panel-edge intersection already handled.
 
+### Labels without a panel — schema v7
+
+The owner asked whether a label could be drawn as bare text. It could not: the
+panel `Rectangle` was unconditional, and the theme could not fake its absence,
+because `panel_color` takes no alpha and `border_width` must be positive. A
+background-coloured panel is still opaque and cuts a hole through any artwork
+behind it, so there was no workaround at all on a non-flat background.
+
+Added as a per-label `box=True`, mirroring `leader`, rather than a `Theme`
+field: it is annotation-level styling, and a lesson will usually want most
+labels boxed with a few bare. A lesson-wide default can be added later without
+breaking this. The panel is still **measured** when it is not drawn, so an
+unboxed label lands exactly where a boxed one would, the leader still terminates
+on the panel edge, and collision avoidance still keeps bare text clear — which
+matters more without a panel to separate it from the artwork, not less.
+
+The cost is schema v7, the third format move in four days, taken on the owner's
+explicit decision after the cost was stated. `ANNOTATION_FIELDS` is an exact key
+set, so any per-label option needs a bump; the `*_FIELDS_ADDED` tables now cover
+step, theme and annotation fields alike, and one parameterised test still covers
+every older version.
+
 ### Gradient fills could not be recoloured (same session, independent)
 
 `restyle(fill=...)` on a gradient-filled object raised `ValidationError:

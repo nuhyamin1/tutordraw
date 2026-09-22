@@ -29,6 +29,9 @@ class Label:
     offset: tuple[float, float]
     font_scale: float
     padding: float
+    # False draws the text and leader with no panel behind them. The panel is
+    # still measured, so collision avoidance keeps bare text clear of the rest.
+    box: bool
     id: str = field(default_factory=lambda: str(uuid4()))
 
 
@@ -82,10 +85,12 @@ class Target:
         self, text: str, *, anchor: Anchor = "right", leader: bool = True,
         gap: float | None = None, offset: tuple[float, float] = (0, 0),
         font_scale: float | None = None, padding: float | None = None,
+        box: bool = True,
     ) -> Label:
         """Define a single-line label; show it via Step.show(). See docs/TEXT.md."""
         label = make_annotation(self, text, anchor=anchor, leader=leader,
-                                gap=gap, offset=offset, font_scale=font_scale, padding=padding)
+                                gap=gap, offset=offset, font_scale=font_scale,
+                                padding=padding, box=box)
         self._tutorial._labels[label.id] = label
         return label
 
@@ -93,7 +98,7 @@ class Target:
 def make_annotation(target: Target, text: str, *, anchor: Anchor = "right",
                     leader: bool = True, gap: float | None = None,
                     offset: tuple[float, float] = (0, 0), font_scale: float | None = None,
-                    padding: float | None = None, callout: bool = False,
+                    padding: float | None = None, box: bool = True, callout: bool = False,
                     max_width: float | None = None, line_spacing: float | None = None) -> Label:
     theme = target._tutorial.theme
     text = validate_annotation_text(text, allow_newlines=callout,
@@ -102,6 +107,8 @@ def make_annotation(target: Target, text: str, *, anchor: Anchor = "right",
         raise ValidationError(f"Unsupported anchor: {anchor!r}")
     if not isinstance(leader, bool):
         raise ValidationError("leader must be a boolean")
+    if not isinstance(box, bool):
+        raise ValidationError("box must be a boolean")
     if not isinstance(offset, (tuple, list)) or len(offset) != 2:
         raise ValidationError("offset must contain two finite numbers")
     xy = tuple(finite_number(v, "offset") for v in offset)
@@ -111,7 +118,8 @@ def make_annotation(target: Target, text: str, *, anchor: Anchor = "right",
     options = dict(target=target, text=text, anchor=anchor, leader=leader,
                    gap=finite_number(theme.gap if gap is None else gap, "gap", minimum=0),
                    offset=xy, font_scale=scale,
-                   padding=finite_number(theme.padding if padding is None else padding, "padding", minimum=0))
+                   padding=finite_number(theme.padding if padding is None else padding, "padding", minimum=0),
+                   box=box)
     if not callout:
         return Label(**options)
     width = finite_number(theme.callout_width if max_width is None else max_width, "max_width", minimum=0)
@@ -210,15 +218,16 @@ class Step:
     def explain(self, target: Target, text: str, *, anchor: Anchor = "right",
                 leader: bool = True, gap: float | None = None,
                 offset: tuple[float, float] = (0, 0), font_scale: float | None = None,
-                padding: float | None = None, max_width: float | None = None,
+                padding: float | None = None, box: bool = True,
+                max_width: float | None = None,
                 line_spacing: float | None = None, at: float | None = None) -> Callout:
         """Add a wrapped explanation only to this step; return its definition."""
         self._check_target(target)
         seconds = None if at is None else finite_number(at, "at", minimum=0)
         annotation = make_annotation(target, text, anchor=anchor, leader=leader,
                                      gap=gap, offset=offset, font_scale=font_scale,
-                                     padding=padding, callout=True, max_width=max_width,
-                                     line_spacing=line_spacing)
+                                     padding=padding, box=box, callout=True,
+                                     max_width=max_width, line_spacing=line_spacing)
         self._callouts.append(annotation)
         if seconds is not None:
             self._reveals[annotation.id] = seconds

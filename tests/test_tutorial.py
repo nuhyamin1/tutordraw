@@ -124,10 +124,73 @@ def test_invalid_step_index(lesson, index):
     {"anchor": "diagonal"}, {"gap": -1}, {"gap": float("nan")},
     {"offset": (1,)}, {"offset": (0, float("inf"))},
     {"font_scale": 0}, {"padding": -1}, {"leader": 1},
+    {"box": 1}, {"box": "no"}, {"box": None},
 ])
 def test_invalid_labels(lesson, options):
     with pytest.raises(ValidationError):
         lesson[3].label(**({"text": "Label"} | options))
+
+
+def test_box_false_draws_the_text_without_a_panel(lesson):
+    """The panel is still measured, so only the rectangle disappears."""
+    from drawcv import Rectangle, Text
+
+    _, shape, _, target, _ = lesson
+    boxed = target.label("Boxed")
+    bare = target.label("Boxed", box=False)
+    assert boxed.box is True and bare.box is False
+
+    framed_layout, framed = label_artwork(boxed, shape, 640, 360)
+    plain_layout, plain = label_artwork(bare, shape, 640, 360)
+    assert sum(isinstance(obj, Rectangle) for obj in framed) == 1
+    assert sum(isinstance(obj, Rectangle) for obj in plain) == 0
+    # Same text, same leader, same geometry: only the panel is gone.
+    assert framed_layout == plain_layout
+    assert ([type(obj) for obj in plain]
+            == [type(obj) for obj in framed if not isinstance(obj, Rectangle)])
+    assert [obj.text for obj in plain if isinstance(obj, Text)] == ["Boxed"]
+
+
+def test_unboxed_labels_are_still_kept_apart(lesson, monkeypatch):
+    """Bare text needs collision avoidance more than a panel does, not less."""
+    import tutordraw.tutorial as module
+    from tutordraw.collision import overlap_area
+
+    _, _, tutorial, target, _ = lesson
+    tutorial.steps[0].show(*(target.label(f"bare {i}", box=False) for i in range(4)))
+    seen = []
+    real = module.label_artwork
+
+    def record(*args, **kwargs):
+        layout, artwork = real(*args, **kwargs)
+        seen.append(layout.panel)
+        return layout, artwork
+
+    monkeypatch.setattr(module, "label_artwork", record)
+    tutorial.render_step(0)
+    assert len(seen) == 5  # The fixture's own label plus four bare ones.
+    assert all(overlap_area(a, b) == 0
+               for i, a in enumerate(seen) for b in seen[i + 1:])
+
+
+def test_box_survives_the_round_trip_and_defaults_true(lesson):
+    _, _, tutorial, target, _ = lesson
+    tutorial.steps[0].show(target.label("Bare", box=False))
+    tutorial.steps[0].explain(target, "Also bare.", box=False)
+    document = tutorial.to_dict()
+    assert document["schema_version"] == 7
+    restored = Tutorial.from_dict(document)
+    assert [label.box for label in restored.labels] == [True, False]
+    assert [callout.box for callout in restored.steps[0].callouts] == [False]
+
+    # A v6 document has no box field at all, and loads fully boxed.
+    legacy = deepcopy(document)
+    legacy["schema_version"] = 6
+    for annotation in [*legacy["labels"], *legacy["steps"][0]["callouts"]]:
+        del annotation["box"]
+    older = Tutorial.from_dict(legacy)
+    assert all(label.box for label in older.labels)
+    assert all(callout.box for callout in older.steps[0].callouts)
 
 
 def test_off_canvas_warning(lesson):

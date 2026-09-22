@@ -22,12 +22,15 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 6
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, SCHEMA_VERSION)
+SCHEMA_VERSION = 7
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, SCHEMA_VERSION)
 # Theme fields each schema version introduced; older documents omit them and
 # load with the Theme default, exactly as older step fields do.
 THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin")}
-ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset", "font_scale", "padding"}
+# The same, for label and callout fields.
+ANNOTATION_FIELDS_ADDED = {7: ("box",)}
+ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset",
+                     "font_scale", "padding", "box"}
 
 
 def _object(value, keys: set[str], where: str) -> dict:
@@ -64,7 +67,8 @@ def _json_copy(document: dict) -> dict:
 def _annotation(label: Label) -> dict:
     value = {"id": label.id, "target_id": label.target.id, "text": label.text,
              "anchor": label.anchor, "leader": label.leader, "gap": label.gap,
-             "offset": list(label.offset), "font_scale": label.font_scale, "padding": label.padding}
+             "offset": list(label.offset), "font_scale": label.font_scale,
+             "padding": label.padding, "box": label.box}
     if isinstance(label, Callout):
         value.update(max_width=label.max_width, line_spacing=label.line_spacing)
     return value
@@ -164,8 +168,12 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                 raise LessonFormatError(f"{where}: unknown reference {value!r}")
             return mapping[value]
 
+        annotation_fields = ANNOTATION_FIELDS - {
+            name for newer, names in ANNOTATION_FIELDS_ADDED.items() if newer > version
+            for name in names}
+
         def annotation(item, where, *, callout=False):
-            required = ANNOTATION_FIELDS | ({"max_width", "line_spacing"} if callout else set())
+            required = annotation_fields | ({"max_width", "line_spacing"} if callout else set())
             _object(item, required, where)
             aid = identity(item["id"], f"{where}.id")
             target = reference(item["target_id"], targets, f"{where}.target_id")

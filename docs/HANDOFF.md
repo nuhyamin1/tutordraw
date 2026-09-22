@@ -53,8 +53,9 @@ Consequences worth remembering:
 - a9: Thai and Arabic behind the optional `typography` extra. See [TEXT.md](TEXT.md).
 - a10: `Step.animate` and lesson schema v4. See [ANIMATION.md](ANIMATION.md).
 - a11: `show(at=)` / `explain(at=)` and schema v5. See [REVEAL.md](REVEAL.md).
-- a12: automatic label collision avoidance, on by default, and schema v6. Also
-  fixes `restyle(fill=...)` on gradient fills. See [API.md](API.md).
+- a12: automatic label collision avoidance, on by default; `label(box=False)`
+  for bare text; schema v7. Also fixes `restyle(fill=...)` on gradient fills.
+  See [API.md](API.md).
 
 ## What a7 decided and why
 
@@ -205,6 +206,11 @@ lesson, and asked for the plan before any code. Full rationale is in
 - **On by default**, the owner's call, with `Theme(avoid_collisions=False)` as
   an exact escape hatch. One existing test changed:
   `test_off_canvas_warning` now pins the legacy path explicitly.
+- **`label(box=False)` draws bare text**, added after the owner asked whether a
+  label had to be boxed. It did — the panel `Rectangle` was unconditional and
+  the theme could not fake its absence. Per-label rather than theme-wide, to
+  mirror `leader`. The panel is still measured, so placement and collision
+  avoidance are unchanged. This is what took the format to v7.
 
 ## Code map and changed files
 
@@ -280,9 +286,14 @@ a12 (collision avoidance):
 - `tutorial.py`: `_render` plans once, then draws; it now passes the planner the
   real previous step even at progress 1, so every frame plans identically.
 - `themes.py`: `avoid_collisions` and `collision_margin`.
-- `serialization.py`: schema v6 and `THEME_FIELDS_ADDED`, so older documents omit
-  the new theme fields and take the defaults.
-- `lesson-v6.schema.json`: **new**, generated from v5 and packaged.
+- `model.py`: `Label.box`, and a `box` argument on `Target.label`,
+  `Step.explain` and `make_annotation`. `layout.py` skips the panel when it is
+  false, after measuring it as usual.
+- `serialization.py`: schema v7, `THEME_FIELDS_ADDED` and
+  `ANNOTATION_FIELDS_ADDED`, so older documents omit the new fields and take
+  the defaults.
+- `lesson-v6.schema.json` and `lesson-v7.schema.json`: **new**, generated from
+  their predecessors and packaged.
 - `adapters/drawcv.py`: `paint_color`; `current_fill` reads `fill.paint`.
 - `tests/test_collision.py` (25 cases), `tests/conftest.py` theme-field table.
 
@@ -290,8 +301,8 @@ a12 (collision avoidance):
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 
-- `python -m pytest -q`: **314 passed, 1 skipped** — 289 before the milestone
-  plus 25 collision cases. One existing test changed deliberately:
+- `python -m pytest -q`: **321 passed, 1 skipped** — 289 before the milestone,
+  plus 25 collision cases, 6 for `box`, and one more legacy-version case. One existing test changed deliberately:
   `test_off_canvas_warning` now pins the pre-avoidance path with
   `Theme(avoid_collisions=False)`, because avoidance pulls that label back.
 - **Rebuilt the reported bug and inspected both renders.** Six panels on a
@@ -311,6 +322,11 @@ Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
   because the resolver short-circuits on the first free candidate and its
   measurements are reused instead of `label_artwork` measuring again. A
   90-frame animated `render_frames` is 1.03x.
+- **Inspected `box=False` over artwork.** A label and a wrapped callout drawn
+  across a coloured band: the text sits directly on it with no hole punched,
+  and both leaders still terminate correctly on the invisible panel edge.
+  Written to `output/nobox.png`; `output/nobox-workaround.png` shows what the
+  old background-coloured-panel workaround did to the same band.
 - `python tools/check_docs.py`: 21 documents and one README example pass.
 
 ### Evidence carried over from the a11 session
@@ -335,6 +351,11 @@ Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
   their panels, with no clipping. Wrapping measures the wide glyphs correctly.
 - Confirmed by hand that Thai, Arabic, Hebrew, Devanagari and emoji each raise
   `ValidationError` naming the character and codepoint.
+- **Inspected `box=False` over artwork.** A label and a wrapped callout drawn
+  across a coloured band: the text sits directly on it with no hole punched,
+  and both leaders still terminate correctly on the invisible panel edge.
+  Written to `output/nobox.png`; `output/nobox-workaround.png` shows what the
+  old background-coloured-panel workaround did to the same band.
 - `python tools/check_docs.py`: 21 documents and one README example pass.
 - Measured the eclipse beat by beat: light-panel pixels hold at 13,773 until
   t=1.5s then jump to 33,964 as the explanation lands, and `render_step(0)`
@@ -381,11 +402,11 @@ Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 
 0.1.0a11 is published and verified. a12 is committed locally, unreleased and
 unpushed: automatic collision avoidance, on by default, plus the gradient-fill
-fix. It moved the format to **schema v6**, which the a11 handoff had hoped to
-avoid; the owner approved that explicitly, because the option has to round-trip
-with a saved lesson.
+fix. It moved the format to **schema v7** across two decisions — v6 for the
+avoidance theme fields, v7 for the per-label `box` — and the owner approved each
+explicitly, because both have to round-trip with a saved lesson.
 
-**The format should now genuinely settle.** It has gone v2 to v6 in three days,
+**The format should now genuinely settle.** It has gone v2 to v7 in four days,
 and those versions are other people's files. Prefer work that does not touch
 persistence until there is a reason.
 
@@ -438,14 +459,14 @@ C:/Projects/DrawCV is context only. Git may need
 > Continue TutorDraw in C:/Projects/TutorDraw. Read AGENTS.md and docs/HANDOFF.md
 > first, then docs/API.md, docs/RESTYLE.md and docs/ROADMAP.md. It is the visual
 > engine for a real-time, LLM-driven explainer, not an offline video tool.
-> Development a12 has timing, schema-v6 persistence, video export, per-step
+> Development a12 has timing, schema-v7 persistence, video export, per-step
 > artwork changes, animation between beats, timed annotation reveals, automatic
-> label collision avoidance on by default, and text covering Latin, Greek,
-> Cyrillic, CJK, symbols, plus Thai and Arabic behind an optional extra;
-> 314 tests pass from source, and 0.1.0a11 is published on PyPI and verified
-> after upload while a12 is local and unpushed. Hosted CI is green on nine jobs.
-> There is no obvious next feature: the lesson format moved v2 to v6 in three
-> days, so prefer work that does not touch persistence, and read the handoff's
-> list before choosing — layout regression tests are the current top pick.
+> label collision avoidance on by default, optional unboxed labels, and text
+> covering Latin, Greek, Cyrillic, CJK, symbols, plus Thai and Arabic behind an
+> optional extra; 321 tests pass from source, and 0.1.0a11 is published on PyPI
+> and verified after upload while a12 is local and unpushed. Hosted CI is green
+> on nine jobs. There is no obvious next feature: the lesson format moved v2 to
+> v7 in four days, so prefer work that does not touch persistence, and read the
+> handoff's list before choosing — layout regression tests are the top pick.
 > Preserve existing contracts, keep DrawCV unmodified, record only verified
 > results, and do not publish or push without my instruction.

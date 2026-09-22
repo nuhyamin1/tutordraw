@@ -19,6 +19,11 @@ THEME_FIELDS_ADDED = {
     6: ("avoid_collisions", "collision_margin"),
 }
 
+# The same, for label and callout fields, which appear in two places.
+ANNOTATION_FIELDS_ADDED = {
+    7: ("box",),
+}
+
 LEGACY_VERSIONS = tuple(v for v in SUPPORTED_VERSIONS if v != SCHEMA_VERSION)
 
 
@@ -32,19 +37,26 @@ def downgrade(document: dict, version: int) -> dict:
     """Rewrite a current document the way an older version would have saved it."""
     legacy = deepcopy(document)
     legacy["schema_version"] = version
-    for newer in range(version + 1, SCHEMA_VERSION + 1):
+    newer_versions = range(version + 1, SCHEMA_VERSION + 1)
+    for newer in newer_versions:
         for field in THEME_FIELDS_ADDED.get(newer, ()):
             legacy["theme"].pop(field, None)
+    annotations = list(legacy["labels"])
     for step in legacy["steps"]:
-        for newer in range(version + 1, SCHEMA_VERSION + 1):
+        annotations.extend(step["callouts"])
+        for newer in newer_versions:
             for field in STEP_FIELDS_ADDED.get(newer, ()):
                 step.pop(field, None)
+    for annotation in annotations:
+        for newer in newer_versions:
+            for field in ANNOTATION_FIELDS_ADDED.get(newer, ()):
+                annotation.pop(field, None)
     return legacy
 
 
 def fields_after(version: int) -> tuple[str, ...]:
-    """Step and theme fields that exist now but did not at the given version."""
+    """Every field that exists now but did not at the given version."""
     return tuple(field
                  for newer in range(version + 1, SCHEMA_VERSION + 1)
-                 for table in (STEP_FIELDS_ADDED, THEME_FIELDS_ADDED)
+                 for table in (STEP_FIELDS_ADDED, THEME_FIELDS_ADDED, ANNOTATION_FIELDS_ADDED)
                  for field in table.get(newer, ()))
