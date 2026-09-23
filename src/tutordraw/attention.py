@@ -182,10 +182,12 @@ def highlight_artwork(highlight: Highlight, obj: Drawable, progress: float = 1.0
         x, y, w, h = crisp_rect(bounds.x - pad, bounds.y - pad,
                                 bounds.width + 2 * pad, bounds.height + 2 * pad, highlight.width)
         if progress >= 1:
-            return Rectangle(position=Point(x, y), width=w, height=h, stroke=stroke, z_index=-1)
+            return Rectangle(position=Point(x, y), width=w, height=h, stroke=stroke, z_index=-1,
+                             id=f"td-hl-{highlight.target.id}")
         shape = rect_path(x, y, w, h)
         shape.stroke = stroke
     shape.z_index = -1
+    shape.id = f"td-hl-{highlight.target.id}"
     if progress < 1:
         shape.render_progress = progress
     return shape

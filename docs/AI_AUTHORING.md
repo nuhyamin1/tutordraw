@@ -114,6 +114,15 @@ working copy, so beats stay independent. Labels and highlights follow a moved
 target automatically. Repeating `restyle` for a target replaces its settings, so
 pass every option you still want. See [restyle](RESTYLE.md).
 
+## Show it live: stream steps to the browser
+
+In a live explainer, send each step to the viewer the moment it is authored:
+`payload = tutorial.web_step(i)` is plain JSON; a page running
+`TutorDrawPlayer` plays it with `player.append(payload)` and waits for the
+next. Author a step, `lint(i)` it, fix, then send it, so a viewer never sees a
+step that fails lint. `tutorial.export_web(path)` writes a whole lesson as one
+HTML file. See [web](WEB.md).
+
 ## Point, connect and measure — don't just label
 
 A good explainer points at things the way a teacher's hand would. Reach for:

@@ -28,7 +28,9 @@ def main() -> None:
         names = set(archive.namelist())
         expected = {"tutordraw/" + p.relative_to(root / "src/tutordraw").as_posix()
                     for p in (root / "src/tutordraw").rglob("*.py")}
-        expected.update({f"tutordraw/lesson-v{n}.schema.json" for n in (1, 2, 3, 4, 5)})
+        # Every packaged data file, so a schema or the player cannot silently go missing.
+        expected.update({"tutordraw/" + p.name for p in (root / "src/tutordraw").iterdir()
+                         if p.suffix in (".json", ".js")})
         if not expected <= names:
             raise SystemExit(f"Wheel is missing modules: {expected - names}")
         metadata = BytesParser().parsebytes(archive.read(f"{name}-{version}.dist-info/METADATA"))
@@ -55,7 +57,7 @@ def main() -> None:
                      "docs/TEXT.md", "examples/symbols_lesson.py",
                      "docs/RESTYLE.md", "examples/eclipse_lesson.py", "docs/ANIMATION.md", "docs/REVEAL.md",
                      "examples/multilingual_lesson.py", "examples/lever_lesson.py",
-                     "docs/VOCABULARY.md",
+                     "docs/VOCABULARY.md", "examples/web_lesson.py", "docs/WEB.md",
                      "tools/check_installed.py", "tests/test_tutorial.py"):
             if f"{name}-{version}/{file}" not in names:
                 raise SystemExit(f"Source distribution missing: {file}")

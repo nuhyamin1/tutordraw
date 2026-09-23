@@ -315,8 +315,32 @@ a12 (DrawCV 0.11.0 upgrade, 2026-09-24):
 On 2026-09-24 the owner approved a five-milestone program (ROADMAP "The
 explainer program"): P1 golden tests, P2 `lint()`, P3 a visual vocabulary in
 **one** schema v8, P4 SVG browser playback with streaming, P5 kits, equations,
-narration timing, prompts and alt text. **P1, P2 and P3 are done (P1 awaits
-hosted-CI confirmation). P4 is next.**
+narration timing, prompts and alt text. **P1-P4 are done (P1 and the player
+await hosted CI / other browsers). P5 is next.**
+
+P4 added `src/tutordraw/svg.py` (native text, halo stroke, timing stamps),
+`web.py` (`web_step`, bundle, `export_web`, easing table, camera keyframes),
+`player.js` (packaged; `TutorDrawPlayer`), `Tutorial.to_svg/web_step/
+export_web`, `_compose(complete=)`, stable `td-` IDs in layout/attention/marks/
+camera, `replace_in_place` in the adapter, `tests/test_web.py` (9),
+`examples/web_lesson.py` (run by check_installed), `docs/WEB.md`.
+check_release now requires every packaged .json/.js file in the wheel.
+
+P4 verification: `.venv` **395 passed, 1 skipped**; wheel built,
+`check_release` passes, installed wheel 395 passed, `check_installed` ran ten
+examples (22 PNGs, 1 video, web page + NDJSON). In the Chromium browser pane:
+camera mid-zoom and end, draw-on at 0.4/0.8/1.5 s, motion and lever steps
+matched their Python renders; a simulated stream showed "waiting for the next
+step" and resumed exactly when the step arrived (5.0 s). The script-injection
+test was mutation-checked. web_step: 34/96/290 ms on the lever steps.
+
+**Next concrete task — P5, one item at a time.** Suggested order: (1) per-step
+alt text (`tutorial.describe(i)` from targets, annotations and marks; cheap,
+useful to screen readers and to the LLM as a check), (2) narration timing:
+accept word timestamps and set `at=` from them, (3) teaching kits, starting
+with axes/graphs, (4) interactive prompts in the player (hit-test by
+`data-drawcv-id`), (5) equations (TeX -> SVG path -> `Path.from_svg_path`; needs
+a TeX-to-SVG route that is not a new heavy dependency: investigate first).
 
 P3 (schema v8) added `src/tutordraw/marks.py` (arrow/brace/measure/angle/
 number geometry), `camera.py` (fit, blend, install-as-group), `Mark`/`Camera`

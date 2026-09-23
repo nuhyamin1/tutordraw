@@ -162,6 +162,33 @@ class Tutorial:
             raise ValidationError(f"time must be between 0 and the step's duration ({step.duration:g})")
         return self._compose(index, time / step.duration if step.duration else 1.0)
 
+    def to_svg(self, index: int, *, time: float | None = None) -> str:
+        """One frame as standalone SVG: vector artwork and native, selectable text.
+
+        `time` is seconds into the step, as for layout(); None is the finished
+        step. Text uses the browser's sans-serif stretched to TutorDraw's
+        measured widths, so it fits its panels but is not pixel-identical to
+        render_step. See docs/WEB.md.
+        """
+        from .web import frame_svg
+        composition = self.layout(index, time=time)
+        return frame_svg(self, index, composition)
+
+    def web_step(self, index: int) -> dict:
+        """Everything a browser player needs for one step, as JSON-ready data.
+
+        Send each step as soon as it is authored to stream a lesson; the
+        player plays what it has and waits for the rest. See docs/WEB.md.
+        """
+        from .web import web_step
+        self._check_index(index)
+        return web_step(self, index)
+
+    def export_web(self, path: str | Path, *, overwrite: bool = False) -> Path:
+        """Write one self-contained HTML file that plays the whole lesson."""
+        from .web import export_web
+        return export_web(self, path, overwrite=overwrite)
+
     def lint(self, index: int | None = None) -> list[Issue]:
         """Report readability problems in one step, or in every step.
 
@@ -189,8 +216,13 @@ class Tutorial:
     def _render(self, index: int, progress: float, alpha: bool) -> Canvas:
         return OpenCVRenderer().render(self._compose(index, progress).scene, alpha=alpha)
 
-    def _compose(self, index: int, progress: float, *, draw_annotations: bool = True) -> Composition:
-        """Build the working scene for one frame and record every layout decision."""
+    def _compose(self, index: int, progress: float, *, draw_annotations: bool = True,
+                 complete: bool = False) -> Composition:
+        """Build the working scene for one frame and record every layout decision.
+
+        `complete` shows every annotation fully drawn whatever the time, which
+        is the start frame a browser player tweens from.
+        """
         from . import camera as cam
         from .marks import mark_drawing
 
@@ -240,7 +272,7 @@ class Tutorial:
 
         apply_attention(working, step)
         layer = overlay_layer(working)
-        elapsed = progress * step.duration
+        elapsed = step.duration if complete else progress * step.duration
         highlights, annotations, marks = [], [], []
         canvas = (width, height)
         with typography_errors():

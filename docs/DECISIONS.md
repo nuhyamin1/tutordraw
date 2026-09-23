@@ -676,3 +676,41 @@ busy count).
   moved; lint reports their collisions. Automatic mark placement is roadmap.
 - Old golden references were untouched by P3 except `bare-step1` (the halo,
   intended and inspected). Eleven new frames pin marks, camera and draw-on.
+
+## Browser playback — development 0.1.0a12 (2026-09-24), program P4
+
+Evidence first. DrawCV 0.11.0's SVG export already slices `render_progress`
+strokes and tags every element `data-drawcv-id`, but it writes built-in text as
+embedded PNGs (137 KB and 600 ms for the bare golden frame, blurry when
+scaled) and bakes the camera into world coordinates (a zoomed camera group has
+no transform attribute). That shaped every choice:
+
+- **Native text, placed in world space.** TutorDraw swaps each built-in text
+  for an empty placeholder with the same ID *in the same draw position*
+  (`replace_in_place`, public add/remove only), exports, then fills the group
+  with `<text>`: world bounds, font size = font_scale x 28.7 x world scale
+  (measured: baseline at 79.5% of the line box, cap height 20.1 px per unit
+  scale), and `textLength` = TutorDraw's measured width so it always fits its
+  panel. Swapping before export instead of replacing after it cut web_step
+  8-10x (2.4 s -> 290 ms): DrawCV spent ~40 ms rasterising each text. Rotated
+  or skewed text keeps DrawCV's raster. The first version placed text in
+  parent space; the browser showed the title un-zoomed mid-zoom, which is how
+  the baked camera was found.
+- **Stable IDs** `td-<owner>-<role>` on everything TutorDraw draws, so the
+  player can match elements across frames and read timing from the role.
+- **Start and end frames, not a flipbook.** Per-frame SVG at 12 fps would be
+  ~36 exports per 3 s animation. Restyles blend linearly in eased time, so one
+  start frame plus DrawCV's easing sampled at 65 points is exact. A camera
+  zooms geometrically, which linear coordinate blending does not reproduce
+  (scale 1.6 vs 1.5 mid-zoom, measured), so a camera change sends 6 evenly
+  timed keyframes with easing applied and the player blends neighbours.
+- **The player tweens generically**: any attribute whose non-numeric skeleton
+  matches across frames has its numbers interpolated. No per-shape logic.
+- **Native size + CSS transform scaling**: DrawCV strokes are
+  `non-scaling-stroke`, so viewBox scaling fattened every line on a small
+  screen; a CSS transform on the wrapper keeps PNG proportions (compared by eye).
+- **Self-contained HTML** with the bundle as inline JSON; `</` is escaped (a
+  test fails without it) and placeholders are filled in one regex pass so a
+  title containing `@DATA@` cannot inject.
+- Streaming is transport-agnostic: `web_step` is plain JSON and the player's
+  `append` works mid-playback, holding on the last frame until the next step.

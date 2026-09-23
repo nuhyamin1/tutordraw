@@ -2,6 +2,15 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Browser playback and streaming.** `Tutorial.to_svg(index, time=None)`
+  returns a frame as SVG with native, selectable text; `Tutorial.web_step(i)`
+  returns a step's player payload; `Tutorial.export_web(path)` writes a
+  self-contained HTML player. The packaged `player.js` (`TutorDrawPlayer`)
+  plays reveals, draw-on, animated restyles and camera moves, and accepts
+  steps while it plays, waiting for the next one. See docs/WEB.md.
+- Everything TutorDraw draws now has a stable drawable ID (`td-<owner>-<role>`),
+  so the same annotation matches itself across frames and steps.
+- New example: `examples/web_lesson.py`.
 - **Marks** (lesson schema v8): `step.connect` (arrows between targets or from
   a point, curved with `bend`), `step.brace`, `step.measure` (dimension lines),
   `step.angle` and `step.number` (numbered badges). See docs/VOCABULARY.md.

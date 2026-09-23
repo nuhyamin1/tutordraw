@@ -156,9 +156,14 @@ Design the whole batch before coding; persist it together.
 - [ ] Pan without zoom; a camera that follows a moving target.
 
 ### P4 — Browser playback and streaming
-- [ ] SVG export of a composition (DrawCV 0.11 SVG export), per beat.
-- [ ] A small web player that animates between beats from SVG + a change list.
-- [ ] Streaming authoring: render beat N while beat N+1 is still being written.
+- [x] SVG export of a frame (`to_svg`), with native text replacing DrawCV's
+  raster text and stable element IDs.
+- [x] A dependency-free web player (`player.js`) tweening between start/end
+  frames (camera: 6 keyframes), with reveals and draw-on.
+- [x] Streaming: `web_step` payloads appended while playing; the player waits.
+- [ ] Hosted CI or a headless-browser test for `player.js` (today: verified by
+  eye in Chromium only).
+- [ ] Arrowheads riding the tip while drawing on, in the browser.
 
 ### P5 — Content and interaction
 - [ ] Teaching kits: axes/graphs, number lines, flowcharts, timelines, cycles,

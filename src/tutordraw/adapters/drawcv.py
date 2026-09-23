@@ -245,3 +245,27 @@ def rect_path(x: float, y: float, width: float, height: float):
     path = Rectangle(position=Point(x, y), width=width, height=height).to_path()
     path.fill = None
     return path
+
+
+def replace_in_place(old: Drawable, new: Drawable) -> None:
+    """Put `new` exactly where `old` is in its group or layer, keeping draw order.
+
+    Only public add/remove exist, which append, so the objects after `old` are
+    taken off and put back behind `new`. Used on working copies only.
+    """
+    parent = old.parent
+    if isinstance(parent, Group):
+        siblings = list(parent.children)
+        tail = siblings[siblings.index(old) + 1:]
+        for obj in (old, *tail):
+            parent.remove(obj, preserve_world_transform=False)
+        for obj in (new, *tail):
+            parent.add(obj, preserve_world_transform=False)
+        return
+    layer = old.layer
+    siblings = list(layer.objects)
+    tail = siblings[siblings.index(old) + 1:]
+    for obj in (old, *tail):
+        layer.remove(obj)
+    for obj in (new, *tail):
+        layer.add(obj)

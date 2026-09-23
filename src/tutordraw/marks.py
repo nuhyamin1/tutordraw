@@ -115,19 +115,24 @@ def mark_drawing(mark: Mark, bounds: dict[str, BoundingBox], camera: State | Non
     builder = {"arrow": _arrow, "brace": _brace, "measure": _measure,
                "angle": _angle, "number": _number}[mark.kind]
     strokes, heads, anchor_panel, extent = builder(mark, bounds, camera, theme, font)
-    for stroke in strokes:
+    # Stable IDs: s = strokes that draw on, h = heads/badges, then the caption.
+    for k, stroke in enumerate(strokes):
         stroke.render_progress = progress
+        stroke.id = f"td-{mark.id}-s{k}"
     artwork: list[Drawable] = list(strokes) if progress > 0 else []
-    for head in heads:
+    for k, head in enumerate(heads):
         tip = head(progress)
         if tip is not None and progress > 0:
+            tip.id = f"td-{mark.id}-h{k}"
             artwork.append(tip)
     panel = None
     if anchor_panel is not None:
         panel, parts, pad = anchor_panel
         panel = clamp_panel(panel, *canvas)
         if progress >= 1:
-            artwork.extend(_caption_artwork(panel, parts, pad, theme))
+            box, line = _caption_artwork(panel, parts, pad, theme)
+            box.id, line.id = f"td-{mark.id}-panel", f"td-{mark.id}-text"
+            artwork.extend((box, line))
     stroke_boxes = [s.get_bounds() for s in strokes] if strokes else []
     return MarkDrawing(tuple(artwork), _union([*stroke_boxes, *extent, panel]), panel)
 

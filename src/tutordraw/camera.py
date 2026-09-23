@@ -64,7 +64,8 @@ def install(scene: Scene) -> list[Group]:
             continue
         for obj in objects:
             layer.remove(obj)
-        group = Group(children=objects, transform=Transform(pivot=Point(0, 0)))
+        group = Group(children=objects, transform=Transform(pivot=Point(0, 0)),
+                      id=f"td-camera-{len(groups)}")
         layer.add(group)
         groups.append(group)
     return groups

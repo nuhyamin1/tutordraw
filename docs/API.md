@@ -211,6 +211,14 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 `Composition.marks` lists each finished mark as a `MarkLayout` (`kind`, `text`,
 `targets`, `bounds`, `panel`); `Composition.camera` is `(scale, tx, ty)` or None.
 
+## Browser playback (new in 0.1.0a12)
+
+`tutorial.to_svg(index, *, time=None)` returns one frame as SVG with native
+text. `tutorial.web_step(index)` returns one step's player payload, and
+`tutorial.export_web(path, *, overwrite=False)` writes a self-contained HTML
+player. Stream a lesson by sending each `web_step` as it is authored to a page
+running `TutorDrawPlayer`. See [WEB.md](WEB.md).
+
 ## Layout and lint (new in 0.1.0a12)
 
 `tutorial.layout(index, *, time=None) -> Composition` reports where everything

@@ -188,7 +188,8 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
         warnings.warn(f"Label {label.text!r} extends outside the canvas", LayoutWarning, stacklevel=3)
     artwork: list[Drawable] = []
     if label.leader and ratio > 1:
-        leader = Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0)
+        leader = Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0,
+                      id=f"td-{label.id}-leader")
         if progress < 1:
             leader.render_progress = progress
         artwork.append(leader)
@@ -196,7 +197,7 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
         return LabelLayout(anchor, panel, end), artwork
     if label.box:
         bx, by, bw, bh = crisp_rect(x, y, w, h, theme.border_width)
-        artwork.append(Rectangle(position=Point(bx, by), width=bw, height=bh,
+        artwork.append(Rectangle(position=Point(bx, by), width=bw, height=bh, id=f"td-{label.id}-panel",
                                  fill=FillStyle(color=Color(*theme.panel_color)),
                                  stroke=StrokeStyle(color=Color(*theme.border_color), width=theme.border_width), z_index=1))
     # Wrapped right-to-left lines hang from the right edge, not the left.
@@ -206,14 +207,17 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
         text.position = Point(left - measure.x,
                               y + label.padding + i * line_height * spacing - measure.y)
         text.z_index = 2
+        # Stable IDs, so the same annotation matches itself across frames and
+        # steps in SVG output; td-<owner>-<role> also tells a player its timing.
+        text.id = f"td-{label.id}-t{i}"
         if lines[i]:
             if not label.box and theme.halo_width > 0:
-                artwork.extend(_halo(lines[i], text.position, label, theme, font))
+                artwork.extend(_halo(lines[i], text.position, label, theme, font, text.id))
             artwork.append(text)
     return LabelLayout(anchor, panel, end), artwork
 
 
-def _halo(line: str, position: Point, label: Label, theme: Theme, font) -> list[Text]:
+def _halo(line: str, position: Point, label: Label, theme: Theme, font, owner: str) -> list[Text]:
     """Copies of a line in panel_color around it, so bare text reads on any art.
 
     DrawCV text has no stroke, so the outline is eight offset copies beneath
@@ -221,12 +225,13 @@ def _halo(line: str, position: Point, label: Label, theme: Theme, font) -> list[
     """
     copies = []
     r = theme.halo_width
-    for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r),
+    for k, (dx, dy) in enumerate(((r, 0), (-r, 0), (0, r), (0, -r),
                    (r * 0.7071, r * 0.7071), (-r * 0.7071, r * 0.7071),
-                   (r * 0.7071, -r * 0.7071), (-r * 0.7071, -r * 0.7071)):
+                   (r * 0.7071, -r * 0.7071), (-r * 0.7071, -r * 0.7071))):
         copy = annotation_text(line, label.font_scale, theme, font)
         copy.color = Color(*theme.panel_color)
         copy.position = Point(position.x + dx, position.y + dy)
         copy.z_index = 1
+        copy.id = f"{owner}-halo{k}"
         copies.append(copy)
     return copies
