@@ -549,3 +549,25 @@ exact pin makes this a release-note item rather than a bug.
 Found by the installed-wheel gate in the same session: `tutordraw.__version__`
 still read `0.1.0a11` while `pyproject.toml` said `0.1.0a12`, so
 `tools/check_installed.py` failed. Fixed in `__init__.py`.
+
+## Golden regression tests — development 0.1.0a12 (2026-09-24)
+
+First milestone of the owner-approved explainer program (ROADMAP "P1"–"P5").
+Format-neutral work goes first and every new visual lands in a single schema
+v8, because the format already moved v2 -> v7 in four days.
+
+`Tutorial._render` is now `_compose` + rasterize. `_compose` returns a
+`Composition`: the working scene plus each drawn annotation's panel, leader,
+side and each highlight's box. Behaviour is unchanged (the suite passed before
+references existed). Lint and SVG export need exactly this, and golden tests
+need it now. It stays private until P2 names the public API.
+
+Each golden frame is checked twice. Geometry to 0.05 px is platform-neutral and
+names what moved (`annotations[1].panel[0]: 401.5 != 402.5`). Pixels use a
+tolerance — a channel moving more than 24, on more than 0.02% of the frame —
+to absorb antialiasing noise while still failing on a 1 px panel shift (~800
+pixels). The canonical lessons live in `tests/`, not `examples/`, so examples
+can be simplified without churning references. They use built-in text only.
+The references pin current behaviour including known flaws (a leader crossing
+in cell step 3, an unclearable label in motion-end); P2's lint should flag
+those rather than the references hiding them.

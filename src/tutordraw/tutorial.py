@@ -2,14 +2,15 @@
 
 from pathlib import Path
 
-from drawcv import Canvas, Drawable, OpenCVRenderer, Scene
+from drawcv import Canvas, Drawable, Line, OpenCVRenderer, Scene
 
 from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, typography_errors
 from .errors import ValidationError
 from .layout import label_artwork
-from .model import Label, Step, Target
+from .model import Callout, Label, Step, Target
 from .attention import apply_attention, apply_restyles, highlight_artwork
 from .collision import plan_annotations
+from .composition import AnnotationLayout, Composition, HighlightLayout
 from .export import export_steps
 from .themes import Theme
 
@@ -154,6 +155,10 @@ class Tutorial:
         return self._render(index, 1.0, alpha)
 
     def _render(self, index: int, progress: float, alpha: bool) -> Canvas:
+        return OpenCVRenderer().render(self._compose(index, progress).scene, alpha=alpha)
+
+    def _compose(self, index: int, progress: float) -> Composition:
+        """Build the working scene for one frame and record every layout decision."""
         source = index_scene(self.scene)
         for target in self._targets.values():
             if target.drawable_id not in source:
@@ -175,9 +180,13 @@ class Tutorial:
         apply_restyles(objects, step, prior if eased < 1.0 else None, eased)
         apply_attention(working, step)
         layer = overlay_layer(working)
+        highlights, annotations = [], []
         with typography_errors():
             for highlight in step.highlights:
-                working.add(highlight_artwork(highlight, objects[highlight.target.drawable_id]), layer=layer)
+                rect = highlight_artwork(highlight, objects[highlight.target.drawable_id])
+                working.add(rect, layer=layer)
+                highlights.append(HighlightLayout(_name(highlight.target), rect.get_bounds(),
+                                                  highlight.width))
             elapsed = progress * step.duration
             # Placement is decided once from the step's end state, so it is the
             # same for every frame of it; only the panels track live bounds.
@@ -192,12 +201,20 @@ class Tutorial:
                 if min(step.revealed_at(label), step.duration) > elapsed:
                     continue
                 placement, measured = plan.get(label.id, (None, None))
-                _, artwork = label_artwork(label, objects[label.target.drawable_id],
-                                           working.width, working.height, self.theme,
-                                           self._font, placement, measured)
+                layout, artwork = label_artwork(label, objects[label.target.drawable_id],
+                                                working.width, working.height, self.theme,
+                                                self._font, placement, measured)
                 for obj in artwork:
                     working.add(obj, layer=layer)
-            return OpenCVRenderer().render(working, alpha=alpha)
+                drew_leader = any(isinstance(obj, Line) for obj in artwork)
+                annotations.append(AnnotationLayout(
+                    id=label.id, kind="callout" if isinstance(label, Callout) else "label",
+                    text=label.text, target=_name(label.target),
+                    anchor=label.anchor if placement is None else placement.anchor,
+                    panel=layout.panel, boxed=label.box,
+                    leader=(layout.anchor, layout.leader_end) if drew_leader else None))
+        bounds = {_name(t): objects[t.drawable_id].get_bounds() for t in self._targets.values()}
+        return Composition(working, index, progress, tuple(annotations), tuple(highlights), bounds)
 
     def export_steps(self, directory: str | Path, *, overwrite: bool = False,
                      alpha: bool = False) -> list[Path]:
@@ -209,3 +226,7 @@ class Tutorial:
         """Encode the timed lesson to one video file. Opaque only; no alpha channel."""
         from .video import export_video
         return export_video(self, path, fps=fps, fourcc=fourcc, overwrite=overwrite)
+
+
+def _name(target: Target) -> str:
+    return target.name or target.id

@@ -1,0 +1,192 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  420
+ ],
+ "targets": {
+  "ball_a": [
+   362.0,
+   202.0,
+   36.0,
+   36.0
+  ],
+  "ball_b": [
+   416.0,
+   236.0,
+   28.0,
+   28.0
+  ],
+  "ball_c": [
+   456.0,
+   201.0,
+   28.0,
+   28.0
+  ],
+  "box": [
+   120.0,
+   200.0,
+   90.0,
+   60.0
+  ],
+  "puck": [
+   276.0,
+   206.0,
+   48.0,
+   48.0
+  ]
+ },
+ "highlights": [
+  {
+   "target": "ball_a",
+   "box": [
+    353.0,
+    193.0,
+    54.0,
+    54.0
+   ],
+   "width": 3.0
+  }
+ ],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "box at rest",
+   "target": "box",
+   "anchor": "bottom",
+   "panel": [
+    106.5,
+    292.0,
+    117.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     165.0,
+     260.0
+    ],
+    [
+     165.0,
+     292.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "puck on smooth table",
+   "target": "puck",
+   "anchor": "top",
+   "panel": [
+    191.0,
+    130.0,
+    218.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     300.0,
+     206.0
+    ],
+    [
+     300.0,
+     174.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "A fast (v = 6)",
+   "target": "ball_a",
+   "anchor": "bottom",
+   "panel": [
+    306.5,
+    270.0,
+    147.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     380.0,
+     238.0
+    ],
+    [
+     380.0,
+     270.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "small ball B",
+   "target": "ball_b",
+   "anchor": "top",
+   "panel": [
+    497.0,
+    160.0,
+    122.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     430.0,
+     236.0
+    ],
+    [
+     505.85,
+     204.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "small ball C",
+   "target": "ball_c",
+   "anchor": "right",
+   "panel": [
+    516.0,
+    243.0,
+    122.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     484.0,
+     215.0
+    ],
+    [
+     536.08,
+     243.0
+    ]
+   ]
+  },
+  {
+   "kind": "callout",
+   "text": "push",
+   "target": "puck",
+   "anchor": "right",
+   "panel": [
+    356.0,
+    358.0,
+    67.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     324.0,
+     230.0
+    ],
+    [
+     379.89,
+     358.0
+    ]
+   ]
+  }
+ ]
+}

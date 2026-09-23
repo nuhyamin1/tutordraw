@@ -1,0 +1,111 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  320
+ ],
+ "targets": {
+  "left": [
+   110.0,
+   130.0,
+   80.0,
+   80.0
+  ],
+  "middle": [
+   320.0,
+   130.0,
+   80.0,
+   80.0
+  ],
+  "right": [
+   530.0,
+   130.0,
+   80.0,
+   80.0
+  ]
+ },
+ "highlights": [
+  {
+   "target": "left",
+   "box": [
+    101.0,
+    121.0,
+    98.0,
+    98.0
+   ],
+   "width": 3.0
+  }
+ ],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Focused child",
+   "target": "left",
+   "anchor": "bottom",
+   "panel": [
+    76.5,
+    242.0,
+    147.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     150.0,
+     210.0
+    ],
+    [
+     150.0,
+     242.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "Sibling dimmed",
+   "target": "middle",
+   "anchor": "bottom",
+   "panel": [
+    279.5,
+    242.0,
+    161.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     360.0,
+     210.0
+    ],
+    [
+     360.0,
+     242.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "Other branch dimmed",
+   "target": "right",
+   "anchor": "bottom",
+   "panel": [
+    459.5,
+    242.0,
+    221.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     570.0,
+     210.0
+    ],
+    [
+     570.0,
+     242.0
+    ]
+   ]
+  }
+ ]
+}

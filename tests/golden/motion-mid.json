@@ -1,0 +1,82 @@
+{
+ "step": 1,
+ "progress": 0.4,
+ "canvas": [
+  720,
+  360
+ ],
+ "targets": {
+  "body": [
+   253.6,
+   120.4,
+   56.0,
+   56.0
+  ],
+  "track": [
+   99.0,
+   259.0,
+   542.0,
+   2.0
+  ]
+ },
+ "highlights": [
+  {
+   "target": "body",
+   "box": [
+    245.0,
+    111.0,
+    74.0,
+    74.0
+   ],
+   "width": 3.0
+  }
+ ],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Body",
+   "target": "body",
+   "anchor": "right",
+   "panel": [
+    381.6,
+    0.0,
+    68.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     309.6,
+     148.4
+    ],
+    [
+     397.15,
+     44.0
+    ]
+   ]
+  },
+  {
+   "kind": "callout",
+   "text": "It lands on the track.",
+   "target": "track",
+   "anchor": "bottom",
+   "panel": [
+    267.0,
+    293.0,
+    206.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     370.0,
+     261.0
+    ],
+    [
+     370.0,
+     293.0
+    ]
+   ]
+  }
+ ]
+}

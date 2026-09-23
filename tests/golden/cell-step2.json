@@ -1,0 +1,88 @@
+{
+ "step": 1,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  420
+ ],
+ "targets": {
+  "cell": [
+   78.5,
+   98.5,
+   283.0,
+   283.0
+  ],
+  "mitochondrion": [
+   116.0,
+   304.0,
+   68.0,
+   32.0
+  ],
+  "nucleus": [
+   193.0,
+   183.0,
+   94.0,
+   94.0
+  ]
+ },
+ "highlights": [
+  {
+   "target": "nucleus",
+   "box": [
+    184.0,
+    174.0,
+    112.0,
+    112.0
+   ],
+   "width": 3.0
+  }
+ ],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Nucleus",
+   "target": "nucleus",
+   "anchor": "bottom",
+   "panel": [
+    394.5,
+    337.0,
+    95.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     240.0,
+     277.0
+    ],
+    [
+     394.5,
+     339.72
+    ]
+   ]
+  },
+  {
+   "kind": "callout",
+   "text": "The nucleus holds the cell's DNA.",
+   "target": "nucleus",
+   "anchor": "right",
+   "panel": [
+    319.0,
+    191.8,
+    186.0,
+    76.4
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     287.0,
+     230.0
+    ],
+    [
+     319.0,
+     230.0
+    ]
+   ]
+  }
+ ]
+}

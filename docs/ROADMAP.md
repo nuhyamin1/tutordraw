@@ -118,6 +118,53 @@ Prioritized after the first release to support continuation across AI sessions.
   covering both scripts, so those tests currently skip outside Windows.
 - [ ] Support Hebrew and Indic scripts, which DrawCV's engine rejects today.
 
+## The explainer program (owner-approved 2026-09-24)
+
+The owner approved every item below. Order is deliberate: format-neutral work
+first, then **one** lesson-format bump (v8) for all new visuals, instead of a
+bump per feature. Each milestone ends with golden references regenerated and
+inspected. Design notes live in DECISIONS.md.
+
+### P1 — Golden regression tests (no format change)
+- [x] Split rendering into `_compose` (working scene + `Composition` geometry)
+  and rasterization; the foundation for P2 and P4.
+- [x] Six canonical lessons, 10 frames, pinned by geometry (0.05 px) and pixels
+  (tolerant): `tests/golden_lessons.py`, `tests/test_golden.py`, `tests/golden/`.
+- [x] Shown to fail on a border-snapping change and on a 1 px gap change.
+- [ ] Confirm the pixel tolerance holds on hosted CI (Linux/macOS); only
+  Windows has been run.
+
+### P2 — `lint()` for LLM self-correction (no format change)
+- [ ] Public read-only layout API over `Composition` (step, time) -> geometry.
+- [ ] `Tutorial.lint(...)`: machine-readable issues with codes, targets and
+  suggested fixes — overlaps, off-canvas, leader crossings, low contrast, text
+  too small, too many annotations in a beat, unresolvable placement.
+- [ ] Document it in AI_AUTHORING.md as the author -> lint -> fix loop.
+
+### P3 — Visual vocabulary, one schema bump (v8)
+Design the whole batch before coding; persist it together.
+- [ ] Draw-on animation for leaders, highlights and new strokes (path trim 0->1).
+- [ ] Camera: zoom/pan to a target per step, animated with the step easing.
+- [ ] Relation arrows between two targets, with a label.
+- [ ] Braces/brackets grouping several targets.
+- [ ] Measurement (dimension) lines and angle marks.
+- [ ] Numbered markers tied to reveal order.
+- [ ] Shape-following highlights via DrawCV `stroke_to_path`/`to_path`.
+- [ ] Halo text for `box=False` via DrawCV `paint_order`.
+
+### P4 — Browser playback and streaming
+- [ ] SVG export of a composition (DrawCV 0.11 SVG export), per beat.
+- [ ] A small web player that animates between beats from SVG + a change list.
+- [ ] Streaming authoring: render beat N while beat N+1 is still being written.
+
+### P5 — Content and interaction
+- [ ] Teaching kits: axes/graphs, number lines, flowcharts, timelines, cycles,
+  force diagrams, labelled cross-sections — emitting registered targets.
+- [ ] Equations: TeX -> SVG path data -> `Path.from_svg_path`.
+- [ ] Narration-driven timing from TTS word timestamps (feeds reveals; timed captions).
+- [ ] Interactive prompts ("tap the nucleus") via DrawCV hit testing.
+- [ ] Automatic per-beat alt text from targets and annotations.
+
 ## Future backlog (not committed scope)
 
 - Measurements, angles, braces, and relationship annotations.

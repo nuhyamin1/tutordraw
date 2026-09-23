@@ -1,0 +1,94 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  300
+ ],
+ "targets": {
+  "bar": [
+   420.0,
+   140.0,
+   140.0,
+   50.0
+  ],
+  "dot": [
+   180.0,
+   145.0,
+   40.0,
+   40.0
+  ]
+ },
+ "highlights": [],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "no panel here",
+   "target": "dot",
+   "anchor": "right",
+   "panel": [
+    252.0,
+    143.0,
+    145.0,
+    44.0
+   ],
+   "boxed": false,
+   "leader": [
+    [
+     220.0,
+     165.0
+    ],
+    [
+     252.0,
+     165.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "boxed",
+   "target": "bar",
+   "anchor": "top",
+   "panel": [
+    451.5,
+    64.0,
+    77.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     490.0,
+     140.0
+    ],
+    [
+     490.0,
+     108.0
+    ]
+   ]
+  },
+  {
+   "kind": "callout",
+   "text": "A wrapped caption drawn straight onto the band.",
+   "target": "bar",
+   "anchor": "bottom",
+   "panel": [
+    485.0,
+    191.2,
+    235.0,
+    108.8
+   ],
+   "boxed": false,
+   "leader": [
+    [
+     490.0,
+     190.0
+    ],
+    [
+     492.43,
+     191.2
+    ]
+   ]
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  420
+ ],
+ "targets": {
+  "cell": [
+   78.5,
+   98.5,
+   283.0,
+   283.0
+  ],
+  "mitochondrion": [
+   116.0,
+   304.0,
+   68.0,
+   32.0
+  ],
+  "nucleus": [
+   193.0,
+   183.0,
+   94.0,
+   94.0
+  ]
+ },
+ "highlights": [],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Cell",
+   "target": "cell",
+   "anchor": "top",
+   "panel": [
+    193.5,
+    22.5,
+    53.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     220.0,
+     98.5
+    ],
+    [
+     220.0,
+     66.5
+    ]
+   ]
+  },
+  {
+   "kind": "callout",
+   "text": "Every living thing is made of cells.",
+   "target": "cell",
+   "anchor": "right",
+   "panel": [
+    401.5,
+    201.8,
+    196.0,
+    76.4
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     361.5,
+     240.0
+    ],
+    [
+     401.5,
+     240.0
+    ]
+   ]
+  }
+ ]
+}

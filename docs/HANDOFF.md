@@ -1,6 +1,6 @@
 # AI handoff — start here
 
-Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade (Claude Code).
+Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade and P1 golden tests (Claude Code).
 
 ## Current state
 
@@ -309,6 +309,38 @@ a12 (DrawCV 0.11.0 upgrade, 2026-09-24):
 - `tests/test_drawcv_compatibility.py`: 5 cases for `crisp_rect` and a render
   test asserting a solid 1 px border and a solid 3 px highlight edge.
 - README, COMPATIBILITY, VIDEO, ARCHITECTURE, DECISIONS, ROADMAP, CHANGELOG.
+
+## The explainer program — read ROADMAP.md first
+
+On 2026-09-24 the owner approved a five-milestone program (ROADMAP "The
+explainer program"): P1 golden tests, P2 `lint()`, P3 a visual vocabulary in
+**one** schema v8, P4 SVG browser playback with streaming, P5 kits, equations,
+narration timing, prompts and alt text. **P1 is done except hosted-CI
+confirmation. P2 is next.**
+
+P1 changed files:
+- `src/tutordraw/composition.py`: **new** — `Composition`, `AnnotationLayout`,
+  `HighlightLayout`, `to_dict()` geometry snapshot.
+- `tutorial.py`: `_render` = `_compose` + rasterize; `_compose` records geometry.
+- `tests/golden_lessons.py`, `tests/test_golden.py`, `tests/golden/` (10 frames
+  x PNG + JSON). `MANIFEST.in` ships them in the sdist.
+- CONTRIBUTING (regeneration procedure), ROADMAP, DECISIONS.
+
+P1 verification: suite **338 passed, 1 skipped** in `.venv` (published DrawCV
+0.11.0). All 10 reference frames inspected on a contact sheet. Disabling border
+snapping fails 3 frames by pixels; widening every gap by 1 px fails by geometry
+with exact field paths. sdist built, `check_release --require-metadata` passes,
+and all 20 reference files are inside it. **Not run:** hosted CI — the pixel
+tolerance is unproven on Linux/macOS; if it fails there, loosen
+`CHANNEL_TOLERANCE`/`CHANGED_FRACTION`, never regenerate on CI.
+
+**Next concrete task — P2.** Make a public, read-only layout view over
+`Composition` (suggested `Tutorial.layout(step, *, time=None)`), then
+`Tutorial.lint()` returning issue objects with a stable `code`, the targets
+involved, a message an LLM can act on, and a suggested fix. The golden lessons
+already contain real cases to flag: leader crossings in `cell` step 3 and the
+unclearable "Body" label in `motion` end. Lint must not change rendering, so the
+golden tests must stay green untouched.
 
 ## Verification completed this session (DrawCV 0.11.0, 2026-09-24)
 

@@ -13,7 +13,12 @@ Before submitting:
 1. Test meaningful behavior, especially independent steps, source preservation,
    group transforms/dimming, and export failures.
 2. Run `python tools/check_docs.py` to verify links and the README example.
-3. Run examples and inspect images after visual changes.
+3. Run examples and inspect images after visual changes. `tests/test_golden.py`
+   pins the canonical lessons' geometry and pixels; after an *intended* visual
+   change, regenerate with `TUTORDRAW_UPDATE_GOLDEN=1 python -m pytest
+   tests/test_golden.py` and look at every changed file in `tests/golden/`
+   before committing. Failures write actual and diff images to
+   `output/golden-failures/`.
 4. Update the changelog and documentation for public API changes.
 5. Update [the handoff](docs/HANDOFF.md) with verification and remaining work.
 

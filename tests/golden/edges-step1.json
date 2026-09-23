@@ -1,0 +1,92 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  600,
+  320
+ ],
+ "targets": {
+  "corner": [
+   540.0,
+   10.0,
+   50.0,
+   40.0
+  ],
+  "floor": [
+   10.0,
+   280.0,
+   120.0,
+   30.0
+  ]
+ },
+ "highlights": [
+  {
+   "target": "corner",
+   "box": [
+    531.0,
+    1.0,
+    68.0,
+    58.0
+   ],
+   "width": 3.0
+  },
+  {
+   "target": "floor",
+   "box": [
+    1.0,
+    271.0,
+    138.0,
+    48.0
+   ],
+   "width": 3.0
+  }
+ ],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Top-right corner",
+   "target": "corner",
+   "anchor": "bottom",
+   "panel": [
+    430.0,
+    82.0,
+    170.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     565.0,
+     50.0
+    ],
+    [
+     535.37,
+     82.0
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "Bottom-left floor",
+   "target": "floor",
+   "anchor": "top",
+   "panel": [
+    0.0,
+    204.0,
+    171.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     70.0,
+     280.0
+    ],
+    [
+     79.19,
+     248.0
+    ]
+   ]
+  }
+ ]
+}

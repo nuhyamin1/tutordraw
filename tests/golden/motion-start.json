@@ -1,0 +1,48 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  360
+ ],
+ "targets": {
+  "body": [
+   132.0,
+   82.0,
+   56.0,
+   56.0
+  ],
+  "track": [
+   99.0,
+   259.0,
+   542.0,
+   2.0
+  ]
+ },
+ "highlights": [],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Body",
+   "target": "body",
+   "anchor": "right",
+   "panel": [
+    220.0,
+    88.0,
+    68.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     188.0,
+     110.0
+    ],
+    [
+     220.0,
+     110.0
+    ]
+   ]
+  }
+ ]
+}

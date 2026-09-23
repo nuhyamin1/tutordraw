@@ -1,0 +1,100 @@
+{
+ "step": 2,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  420
+ ],
+ "targets": {
+  "cell": [
+   78.5,
+   98.5,
+   283.0,
+   283.0
+  ],
+  "mitochondrion": [
+   116.0,
+   304.0,
+   68.0,
+   32.0
+  ],
+  "nucleus": [
+   193.0,
+   183.0,
+   94.0,
+   94.0
+  ]
+ },
+ "highlights": [],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Cell",
+   "target": "cell",
+   "anchor": "top",
+   "panel": [
+    193.5,
+    22.5,
+    53.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     220.0,
+     98.5
+    ],
+    [
+     220.0,
+     66.5
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "Nucleus",
+   "target": "nucleus",
+   "anchor": "bottom",
+   "panel": [
+    394.5,
+    337.0,
+    95.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     240.0,
+     277.0
+    ],
+    [
+     394.5,
+     339.72
+    ]
+   ]
+  },
+  {
+   "kind": "label",
+   "text": "Mitochondrion",
+   "target": "mitochondrion",
+   "anchor": "top",
+   "panel": [
+    388.5,
+    228.0,
+    151.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     150.0,
+     304.0
+    ],
+    [
+     388.5,
+     262.98
+    ]
+   ]
+  }
+ ]
+}
