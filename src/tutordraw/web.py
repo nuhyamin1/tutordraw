@@ -79,7 +79,8 @@ def web_step(tutorial, index: int) -> dict:
     return {"index": index, "id": step.id, "title": step.title,
             "duration": step.duration, "pause": step.pause,
             "easing": easing, "frames": frames, "svg": end,
-            "description": tutorial.describe(index)}
+            "description": tutorial.describe(index),
+            "narration": [[w.text, w.start, w.end] for w in step.narration] or None}
 
 
 def web_bundle(tutorial) -> dict:

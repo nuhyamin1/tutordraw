@@ -41,6 +41,7 @@ class MarkLayout:
     targets: tuple[str, ...]  # names (or IDs) of the targets it refers to
     bounds: BoundingBox  # everything it draws, caption included
     panel: BoundingBox | None  # its caption panel, if it has text
+    empty: bool = False  # it had nothing to draw (lint reports EMPTY_MARK)
 
 
 @dataclass(frozen=True)

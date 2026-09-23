@@ -735,3 +735,24 @@ cheap and never wrong about what was authored.
   changes how an HTML parser looks for the end of a script block, so `<`, `>`
   and `&` are now escaped as JSON `\u` sequences; the test text includes
   `<!--<script`.
+
+## Narration timing — development 0.1.0a12 (2026-09-24), program P5
+
+`Step.narrate(words, cues)` maps each on-screen item to the phrase that
+introduces it and sets its existing `at=` from the word timings. Cues by
+phrase, not by word index: an LLM writes the narration and the picture
+together and knows which words introduce which thing, but not what a TTS
+engine will do to the timing.
+
+- **Format-neutral on purpose.** Reveal times and durations already persist
+  in v8, so narrate needs no format change. The words themselves (captions)
+  are kept in memory and sent in `web_step`, but not saved; saving them waits
+  for the next format bump rather than forcing v9 now for one field.
+- Phrase matching is case-, accent- and punctuation-insensitive and skips
+  punctuation-only tokens (a spoken "—"), first occurrence wins. Every cue is
+  resolved before anything is changed.
+- `lead` 0.15 s: the picture should land with the word, and a reveal that
+  trails speech reads as lag.
+- Found while testing: `connect()` between concentric targets gave a
+  zero-length path, and DrawCV's tangent raised, failing the whole frame. Such
+  an arrow now draws nothing and lint reports EMPTY_MARK.

@@ -2,6 +2,14 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **`Step.narrate(words, cues)`**: reveal labels, callouts, marks and highlights
+  as the narration speaks their phrases, from TTS word timings (tuples, dicts,
+  per-character timings via `narration.words_from_characters`, or a plain
+  string timed at an even pace), and fit the step to the narration. The player
+  shows live captions. Narration text is not yet saved in lesson files.
+- An arrow between two targets that share a centre now draws nothing instead
+  of failing the whole frame, and lint reports it as `EMPTY_MARK`.
+- `examples/lever_lesson.py` is now narrated with cues instead of `at=`.
 - **`Tutorial.describe(index=None)`**: plain-English step descriptions from the
   lesson's structure, in the order things appear, with artwork changes told
   relative to the previous step. Included in `web_step` payloads; the player

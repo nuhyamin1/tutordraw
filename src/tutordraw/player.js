@@ -157,6 +157,9 @@
         .td-dot i{position:absolute;left:0;top:0;bottom:0;background:#e8a53a}
         .td-dot.pending{background:#2a303b;cursor:default}
         .td-status{color:#9aa6b8;font-size:12px}
+        .td-caption{min-height:1.5em;padding:8px 4px 0;font-size:17px;line-height:1.5;color:#7d889a}
+        .td-caption .said{color:#e8ecf3}
+        .td-caption .now{color:#e8a53a}
         .td-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}`;
       const wrap = document.createElement("div");
       wrap.className = "td-player";
@@ -173,6 +176,10 @@
       this.live = document.createElement("div");
       this.live.className = "td-sr";
       this.live.setAttribute("aria-live", "polite");
+      // Captions from the step's narration word timings, when it has them.
+      this.caption = document.createElement("div");
+      this.caption.className = "td-caption";
+      this.caption.setAttribute("aria-hidden", "true");
       this.dots = document.createElement("div");
       this.dots.className = "td-dots";
       const bar = document.createElement("div");
@@ -194,7 +201,7 @@
       this.statusEl = document.createElement("div");
       this.statusEl.className = "td-status";
       bar.appendChild(this.statusEl);
-      wrap.append(style, this.frame, this.dots, bar, this.live);
+      wrap.append(style, this.frame, this.caption, this.dots, bar, this.live);
       this.root.appendChild(wrap);
       const resize = () => {
         const scale = this.frame.clientWidth / this.width;
@@ -234,6 +241,7 @@
         };
       });
       this.titleEl.textContent = `${index + 1}. ${step.title}`;
+      this._buildCaption(step);
       const description = step.description || step.title;
       this.stage.setAttribute("aria-label", description);
       this.live.textContent = description;
@@ -277,6 +285,7 @@
           }
         }
       }
+      this._updateCaption(t);
       [...this.dots.children].forEach((dot, i) => {
         const s = this.steps[i];
         const fillBar = dot.firstChild;
@@ -284,6 +293,36 @@
         fillBar.style.width = i < this.index ? "100%" : i > this.index ? "0" :
           Math.min(100, (t / total) * 100) + "%";
       });
+    }
+
+    /* Captions show the sentence being spoken, word by word: said words
+     * bright, the current word highlighted, the rest of the sentence dim. */
+    _buildCaption(step) {
+      this.caption.replaceChildren();
+      this.sentences = [];
+      const words = step.narration || [];
+      let sentence = [];
+      words.forEach(([text, start, end]) => {
+        const span = document.createElement("span");
+        span.textContent = text + " ";
+        sentence.push({span, start, end});
+        if (/[.!?]["')\]]*$/.test(text)) { this.sentences.push(sentence); sentence = []; }
+      });
+      if (sentence.length) this.sentences.push(sentence);
+      this.shownSentence = -1;
+    }
+
+    _updateCaption(t) {
+      if (!this.sentences || !this.sentences.length) return;
+      let index = 0;
+      this.sentences.forEach((s, i) => { if (s[0].start <= t) index = i; });
+      if (index !== this.shownSentence) {
+        this.caption.replaceChildren(...this.sentences[index].map(w => w.span));
+        this.shownSentence = index;
+      }
+      for (const w of this.sentences[index]) {
+        w.span.className = t >= w.end ? "said" : t >= w.start ? "now" : "";
+      }
     }
 
     _status() {

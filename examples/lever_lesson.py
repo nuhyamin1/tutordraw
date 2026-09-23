@@ -36,27 +36,40 @@ def build_tutorial() -> Tutorial:
     t_load = lesson.target(load, name="load")
     t_effort = lesson.target(effort, name="effort")
 
-    parts = lesson.step("The parts", duration=5)
+    # Each step is narrated, and things appear as the voice mentions them.
+    # These strings are timed at an even speaking pace; with a TTS engine,
+    # pass its word timings instead: [(word, start, end), ...].
+    parts = lesson.step("The parts")
     parts.number(t_load)
     parts.number(t_fulcrum, corner="top_right")
     parts.number(t_effort, corner="top_right")
-    parts.show(t_load.label("Load", anchor="top"), draw=True)
-    parts.show(t_fulcrum.label("Fulcrum", anchor="bottom"), at=1.0, draw=True)
-    parts.show(t_effort.label("Effort", anchor="top"), at=2.0, draw=True)
+    load = t_load.label("Load", anchor="top")
+    fulcrum = t_fulcrum.label("Fulcrum", anchor="bottom")
+    effort = t_effort.label("Effort", anchor="top")
+    parts.show(load, fulcrum, effort, draw=True)
+    parts.narrate("A lever has three parts: the load we want to lift, the fulcrum "
+                  "it pivots on, and the effort we apply.",
+                  {load: "the load", fulcrum: "the fulcrum", effort: "the effort"})
 
-    pivot = lesson.step("The pivot", duration=3).animate().zoom_to(t_fulcrum, padding=90, max_scale=3)
+    pivot = lesson.step("The pivot").animate().zoom_to(t_fulcrum, padding=90, max_scale=3)
     pivot.highlight(t_fulcrum, shape="outline", padding=6, draw=True)
-    pivot.explain(t_fulcrum, "The beam turns about this point.", anchor="right", max_width=220,
-                  at=1.2)
+    turns = pivot.explain(t_fulcrum, "The beam turns about this point.", anchor="right",
+                          max_width=220)
+    pivot.narrate("Look closely at the fulcrum. The whole beam turns about this single point.",
+                  {t_fulcrum: "fulcrum", turns: "the whole beam"})
 
-    arms = lesson.step("Arms and forces", duration=6).animate()
-    arms.measure(t_load, t_fulcrum, "short arm", axis="x", offset=40, draw=True)
-    arms.measure(t_fulcrum, t_effort, "long arm", axis="x", offset=40, at=1.0, draw=True)
+    arms = lesson.step("Arms and forces").animate()
+    short = arms.measure(t_load, t_fulcrum, "short arm", axis="x", offset=40, draw=True)
+    long = arms.measure(t_fulcrum, t_effort, "long arm", axis="x", offset=40, draw=True)
     # A force arrow: from a fixed point above, pressing down on the effort end.
-    arms.connect((780, 240), t_effort, "small push", at=2.5, draw=True)
-    arms.brace(t_load, text="heavy", side="left", at=3.5, draw=True)
-    arms.explain(t_effort, "A long arm lets a small force lift a heavy load.",
-                 anchor="top", max_width=240, at=4.0)
+    push = arms.connect((780, 240), t_effort, "small push", draw=True)
+    heavy = arms.brace(t_load, text="heavy", side="left", draw=True)
+    moral = arms.explain(t_effort, "A long arm lets a small force lift a heavy load.",
+                         anchor="top", max_width=240)
+    arms.narrate("The load sits on a short arm, and we push on a long arm. So a small "
+                 "push lifts a heavy load. That is the trade a lever makes.",
+                 {short: "short arm", long: "long arm", push: "small push",
+                  heavy: "heavy load", moral: "that is the trade"})
     return lesson
 
 
@@ -69,7 +82,8 @@ def main() -> None:
     output = Path("output/lever")
     lesson.export_steps(output, overwrite=True)
     # A mid-draw frame, to show strokes arriving rather than popping in.
-    lesson.render_at_time(8 + 1.5).save(str(output / "drawing-on.png"))
+    arms_start = lesson.steps[0].duration + lesson.steps[1].duration
+    lesson.render_at_time(arms_start + 1.5).save(str(output / "drawing-on.png"))
     print(f"Saved {len(lesson.steps)} steps and a mid-draw frame in {output.resolve()}; lint is clean")
 
 

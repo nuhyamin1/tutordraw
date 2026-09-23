@@ -348,7 +348,7 @@ class Tutorial:
                         marks.append(MarkLayout(
                             mark.id, mark.kind, mark.text,
                             tuple(_name(t) for t in mark.refs if isinstance(t, Target)),
-                            drawing.bounds, drawing.panel))
+                            drawing.bounds, drawing.panel, drawing.empty))
         bounds = {_name(t): objects[t.drawable_id].get_bounds() for t in self._targets.values()}
         ids = {_name(t): t.drawable_id for t in self._targets.values()}
         return Composition(working, index, progress, tuple(annotations), tuple(highlights),

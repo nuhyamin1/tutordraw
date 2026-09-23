@@ -173,6 +173,12 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 [a.target], [a.text])
 
     for m in composition.marks:
+        if m.empty:
+            add("EMPTY_MARK", "warning",
+                f"The {m.kind} {_mark_name(m)} has nothing to draw: its ends share a centre.",
+                "Connect targets that sit apart, or start the arrow from a point outside "
+                "the shape, e.g. connect((x, y), target).", m.targets, [m.text] if m.text else [])
+            continue
         if outside_area(m.bounds, width, height) > AREA_EPSILON:
             add("OFF_CANVAS", "error",
                 f"The {m.kind} {_mark_name(m)} extends past the canvas edge.",

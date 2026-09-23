@@ -346,7 +346,15 @@ escaping in `export_web`. Suite **407 passed, 1 skipped**; in the browser pane
 the eclipse page exposes each step's description as the image label and live
 region (accessibility tree checked).
 
-**Next concrete task — P5, one item at a time.** Remaining order: (2) narration timing:
+P5 (2) done: `Step.narrate` (`src/tutordraw/narration.py`), `narration` in
+`web_step`, captions in the player, `EMPTY_MARK` for zero-length arrows,
+`tests/test_narration.py` (15), `docs/NARRATION.md`; the lever example is now
+narrated. Suite **423 passed, 1 skipped**. In the browser pane the narrated
+lever page showed the caption on the right word at 4.5 s with only the cued
+labels revealed. Narration text is not persisted (deferred to the next format
+bump, see DECISIONS).
+
+**Next concrete task — P5, one item at a time.** Remaining order: (2, done) narration timing:
 accept word timestamps and set `at=` from them, (3) teaching kits, starting
 with axes/graphs, (4) interactive prompts in the player (hit-test by
 `data-drawcv-id`), (5) equations (TeX -> SVG path -> `Path.from_svg_path`; needs

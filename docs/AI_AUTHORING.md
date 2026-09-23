@@ -35,6 +35,7 @@ steps exactly as rendering does and never changes the lesson or its output.
 | `LOW_CONTRAST` | warning | Text below 4.5:1 against its panel, or against the artwork for `box=False` |
 | `TEXT_TOO_SMALL` | warning | A line is under 12 px tall |
 | `LONG_CALLOUT` | info | A callout over 40 words |
+| `EMPTY_MARK` | warning | A mark has nothing to draw, e.g. an arrow between two shapes that share a centre |
 | `BUSY_STEP` | info | More than 6 annotations visible at once |
 
 A typical loop: author the steps, `issues = tutorial.lint()`, apply each `fix`
@@ -114,6 +115,14 @@ it changes every step, including ones already rendered. `restyle` applies to a
 working copy, so beats stay independent. Labels and highlights follow a moved
 target automatically. Repeating `restyle` for a target replaces its settings, so
 pass every option you still want. See [restyle](RESTYLE.md).
+
+## Time the picture to the voice
+
+When you narrate, don't hand-tune `at=`. Build the step, then call
+`step.narrate(word_timings, {label: "phrase that introduces it", ...})`: each
+cue appears as its phrase is spoken and the step fits the narration. Without
+audio yet, pass the narration as a plain string to preview at an even pace.
+See [narration](NARRATION.md).
 
 ## Show it live: stream steps to the browser
 

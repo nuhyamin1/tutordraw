@@ -305,3 +305,19 @@ def test_a_force_arrow_lands_exactly_on_a_point_and_stops_short_of_a_target(less
     pull = drawing(tutorial, step.connect(a, (150, 400)))
     end = next(o for o in pull.artwork if isinstance(o, Path)).point_at(1)
     assert (end.x, end.y) == pytest.approx((150, 400))
+
+
+def test_an_arrow_between_shared_centres_draws_nothing_and_lint_says_why():
+    scene = Scene(400, 300, background=Color.white())
+    outer = Circle(center=Point(200, 150), radius=100, fill=FillStyle(color=Color(220, 230, 240)))
+    inner = Circle(center=Point(200, 150), radius=30, fill=FillStyle(color=Color(120, 140, 200)))
+    scene.add(outer)
+    scene.add(inner)
+    tutorial = Tutorial(scene)
+    a, b = tutorial.target(outer, name="cell"), tutorial.target(inner, name="nucleus")
+    tutorial.step("Nested").connect(a, b, "inside")
+    tutorial.render_step(0)  # must not raise
+    assert tutorial.layout(0).marks[0].empty
+    assert [i.code for i in tutorial.lint()] == ["EMPTY_MARK"]
+    assert "data-drawcv-raster" not in tutorial.to_svg(0)
+

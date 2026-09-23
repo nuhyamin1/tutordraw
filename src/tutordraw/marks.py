@@ -27,6 +27,7 @@ class MarkDrawing:
     artwork: tuple[Drawable, ...]
     bounds: BoundingBox  # everything drawn, text included, at full progress
     panel: BoundingBox | None  # the caption's panel, if any
+    empty: bool = False  # nothing to draw, e.g. an arrow between shared centres
 
 
 def _union(boxes) -> BoundingBox:
@@ -114,7 +115,11 @@ def mark_drawing(mark: Mark, bounds: dict[str, BoundingBox], camera: State | Non
     """Build a mark at `progress` (0..1). Bounds and panel are its full extent."""
     builder = {"arrow": _arrow, "brace": _brace, "measure": _measure,
                "angle": _angle, "number": _number}[mark.kind]
-    strokes, heads, anchor_panel, extent = builder(mark, bounds, camera, theme, font)
+    built = builder(mark, bounds, camera, theme, font)
+    if built is None:
+        centre = ref_box(mark.refs[0], bounds, camera).center
+        return MarkDrawing((), BoundingBox(centre.x, centre.y, 0, 0), None, empty=True)
+    strokes, heads, anchor_panel, extent = built
     # Stable IDs: s = strokes that draw on, h = heads/badges, then the caption.
     for k, stroke in enumerate(strokes):
         stroke.render_progress = progress
@@ -142,6 +147,10 @@ def _arrow(mark, bounds, camera, theme, font):
     # A fixed point is an exact end; only a target's end keeps a gap from it.
     start = _exit(a, b.center, GAP) if isinstance(mark.refs[0], Target) else a.center
     end = _exit(b, a.center, GAP) if isinstance(mark.refs[1], Target) else b.center
+    if math.hypot(end.x - start.x, end.y - start.y) < 1.0:
+        # Shared centres (a shape inside another, concentric) leave no arrow
+        # to draw. Drawing nothing beats failing the whole frame; lint says why.
+        return None
     dx, dy = end.x - start.x, end.y - start.y
     length = math.hypot(dx, dy) or 1.0
     bend = mark.options["bend"]

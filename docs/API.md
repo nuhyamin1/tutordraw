@@ -211,6 +211,14 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 `Composition.marks` lists each finished mark as a `MarkLayout` (`kind`, `text`,
 `targets`, `bounds`, `panel`); `Composition.camera` is `(scale, tx, ty)` or None.
 
+## Narration timing (new in 0.1.0a12)
+
+`step.narrate(words, cues=None, *, lead=0.15, tail=0.5, fit=True, rate=None)`
+reveals each cued label, callout, mark or highlighted target as its phrase is
+spoken, from TTS word timings, and fits the step to the narration.
+`step.narration` holds the parsed words; `web_step` carries them for captions.
+See [NARRATION.md](NARRATION.md).
+
 ## Describing steps (new in 0.1.0a12)
 
 `tutorial.describe(index=None)` returns a plain-English description of one

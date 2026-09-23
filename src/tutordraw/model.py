@@ -176,6 +176,7 @@ class Step:
         self._marks: list[Mark] = []
         self._draw: set[str] = set()
         self._camera: Camera | None = None
+        self._narration: tuple = ()
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._id = str(uuid4())
@@ -428,6 +429,58 @@ class Step:
         if isinstance(n, bool) or not isinstance(n, int) or not 0 < n < 1000:
             raise ValidationError("n must be an integer from 1 to 999")
         return self._mark("number", (target,), None, {"n": n, "corner": corner}, at, False)
+
+    @property
+    def narration(self) -> tuple:
+        """The narration's word timings (Word objects), or () if not narrated."""
+        return self._narration
+
+    def narrate(self, words, cues: dict | None = None, *, lead: float = 0.15,
+                tail: float = 0.5, fit: bool = True, rate: float | None = None) -> Step:
+        """Time reveals to a voice: each cue appears as its phrase is spoken.
+
+        `words` are the TTS word timings, (word, start, end) in seconds from the
+        start of the step, or dicts; a plain string is timed at `rate` words per
+        second for previews. `cues` maps a label or callout shown in this step,
+        a mark of this step, or a highlighted target, to the phrase that
+        introduces it; it appears `lead` seconds before the phrase starts.
+        With `fit`, the step lasts at least until the narration ends plus
+        `tail`. Draw-on still applies from the new reveal time. See
+        docs/NARRATION.md.
+        """
+        from .narration import DEFAULT_RATE, find_phrase, parse_words
+
+        spoken = parse_words(words, DEFAULT_RATE if rate is None else rate)
+        lead = finite_number(lead, "lead", minimum=0)
+        tail = finite_number(tail, "tail", minimum=0)
+        _check_bool(fit, "fit")
+        cues = {} if cues is None else cues
+        if not isinstance(cues, dict):
+            raise ValidationError("cues must map annotations, marks or targets to phrases")
+        shown = {item.id for item in (*self._labels, *self._callouts, *self._marks)}
+        # Resolve everything before changing anything, so a bad cue leaves the step as it was.
+        times = []
+        for item, phrase in cues.items():
+            at = max(0.0, spoken[find_phrase(spoken, phrase)].start - lead)
+            if isinstance(item, Target):
+                if item.id not in self._highlights:
+                    raise ValidationError(
+                        f"Target {item.name or item.id!r} has no highlight in this step; "
+                        "call highlight() before narrate()")
+            elif not isinstance(item, (Label, Mark)) or item.id not in shown:
+                raise ValidationError("Each cue must be a label or callout shown in this step, "
+                                      "a mark of this step, or a highlighted target")
+            times.append((item, at))
+        for item, at in times:
+            if isinstance(item, Target):
+                from dataclasses import replace
+                self._highlights[item.id] = replace(self._highlights[item.id], at=at)
+            else:
+                self._reveals[item.id] = at
+        self._narration = spoken
+        if fit and spoken[-1].end + tail > self._duration:
+            self.set_timing(duration=spoken[-1].end + tail, pause=self._pause)
+        return self
 
     @property
     def camera(self) -> Camera | None:

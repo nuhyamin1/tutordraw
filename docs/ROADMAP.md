@@ -169,7 +169,9 @@ Design the whole batch before coding; persist it together.
 - [ ] Teaching kits: axes/graphs, number lines, flowcharts, timelines, cycles,
   force diagrams, labelled cross-sections — emitting registered targets.
 - [ ] Equations: TeX -> SVG path data -> `Path.from_svg_path`.
-- [ ] Narration-driven timing from TTS word timestamps (feeds reveals; timed captions).
+- [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
+  live captions in the player.
+- [ ] Save narration text and timings in the lesson file (next format change).
 - [ ] Interactive prompts ("tap the nucleus") via DrawCV hit testing.
 - [x] Per-step descriptions (`Tutorial.describe`), announced by the player.
 
