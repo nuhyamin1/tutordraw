@@ -315,8 +315,13 @@ a12 (DrawCV 0.11.0 upgrade, 2026-09-24):
 On 2026-09-24 the owner approved a five-milestone program (ROADMAP "The
 explainer program"): P1 golden tests, P2 `lint()`, P3 a visual vocabulary in
 **one** schema v8, P4 SVG browser playback with streaming, P5 kits, equations,
-narration timing, prompts and alt text. **P1-P4 are done (P1 and the player
-await hosted CI / other browsers). P5 is next.**
+narration timing, prompts and alt text. **P1-P4 are done and pushed. P5 is next.**
+
+Hosted CI on c0ce0cc (pushed 2026-09-24, run 35933989412): **all nine jobs
+green**, Windows/Ubuntu/macOS x CPython 3.12-3.14, including the golden image
+tests, the v8 schema, the lever and web examples from the installed wheel, and
+the packaged player.js. The player itself is still verified only by eye in
+Chromium; CI does not run JavaScript.
 
 P4 added `src/tutordraw/svg.py` (native text, halo stroke, timing stamps),
 `web.py` (`web_step`, bundle, `export_web`, easing table, camera keyframes),

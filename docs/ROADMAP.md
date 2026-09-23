@@ -131,8 +131,8 @@ inspected. Design notes live in DECISIONS.md.
 - [x] Six canonical lessons, 10 frames, pinned by geometry (0.05 px) and pixels
   (tolerant): `tests/golden_lessons.py`, `tests/test_golden.py`, `tests/golden/`.
 - [x] Shown to fail on a border-snapping change and on a 1 px gap change.
-- [ ] Confirm the pixel tolerance holds on hosted CI (Linux/macOS); only
-  Windows has been run.
+- [x] Confirm the pixel tolerance holds on hosted CI: all nine jobs
+  (Windows/Ubuntu/macOS x CPython 3.12-3.14) passed on c0ce0cc, 2026-09-24.
 
 ### P2 — `lint()` for LLM self-correction (no format change)
 - [x] Public read-only layout API: `Tutorial.layout(index, time=None)`.
