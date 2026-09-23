@@ -162,6 +162,19 @@ class Tutorial:
             raise ValidationError(f"time must be between 0 and the step's duration ({step.duration:g})")
         return self._compose(index, time / step.duration if step.duration else 1.0)
 
+    def describe(self, index: int | None = None) -> str:
+        """Say in plain English what a step shows, or the whole lesson with None.
+
+        Built from the lesson's structure in the order things appear, for alt
+        text and screen readers, and for a model to check that a step shows
+        what it meant to say. See docs/DESCRIBE.md.
+        """
+        from .describe import describe_lesson, describe_step
+        if index is None:
+            return describe_lesson(self)
+        self._check_index(index)
+        return describe_step(self, index)
+
     def to_svg(self, index: int, *, time: float | None = None) -> str:
         """One frame as standalone SVG: vector artwork and native, selectable text.
 

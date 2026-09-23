@@ -131,7 +131,7 @@ def test_payload_frames_match_what_moves(lesson):
 def test_export_web_writes_a_safe_self_contained_page(lesson, tmp_path):
     tutorial, a, b = lesson
     tutorial.title = "Levers @DATA@ </script><b>"
-    tutorial.step("One").explain(a, "Ends a script? </script><script>alert(1)</script>")
+    tutorial.step("One").explain(a, "Ends a script? <!--<script></script><script>alert(1)</script>")
     path = tutorial.export_web(tmp_path / "lesson.html")
     page = path.read_text(encoding="utf-8")
     assert page.count("<script") == 3 and page.count("</script>") == 3

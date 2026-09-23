@@ -714,3 +714,24 @@ no transform attribute). That shaped every choice:
   title containing `@DATA@` cannot inject.
 - Streaming is transport-agnostic: `web_step` is plain JSON and the player's
   `append` works mid-playback, holding on the last frame until the next step.
+
+## Step descriptions — development 0.1.0a12 (2026-09-24), program P5
+
+`Tutorial.describe` builds sentences only from structure: targets, annotations,
+marks, restyles, camera, dimming. No pixel analysis, so it is deterministic,
+cheap and never wrong about what was authored.
+
+- **Changes are relative to the previous step.** The first version described
+  restyles against the source drawing; on the eclipse lesson it missed "the
+  umbra appears" in beat 2 and claimed the Moon slid again in beat 4, when it
+  had not moved since beat 3. Viewers see step-to-step changes, so that is
+  what is described, including going "back" to the drawing's state.
+- Reveal order, not authoring order, with "Then" for later reveals: it reads
+  like the narration it should match.
+- Colours use 18 everyday names by weighted RGB distance. A name is the point
+  ("turns red"), not a measurement.
+- Found while wiring it into the page: descriptions repeat lesson text, which
+  exposed that the inline JSON escaped only `</`. `<!--` followed by `<script`
+  changes how an HTML parser looks for the end of a script block, so `<`, `>`
+  and `&` are now escaped as JSON `\u` sequences; the test text includes
+  `<!--<script`.

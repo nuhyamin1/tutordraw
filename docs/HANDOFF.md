@@ -339,9 +339,14 @@ matched their Python renders; a simulated stream showed "waiting for the next
 step" and resumed exactly when the step arrived (5.0 s). The script-injection
 test was mutation-checked. web_step: 34/96/290 ms on the lever steps.
 
-**Next concrete task — P5, one item at a time.** Suggested order: (1) per-step
-alt text (`tutorial.describe(i)` from targets, annotations and marks; cheap,
-useful to screen readers and to the LLM as a check), (2) narration timing:
+P5 (1) done: `Tutorial.describe` in `src/tutordraw/describe.py`, the
+`description` payload field, the player's live region and image label,
+`tests/test_describe.py` (12), `docs/DESCRIBE.md`, and stricter inline-JSON
+escaping in `export_web`. Suite **407 passed, 1 skipped**; in the browser pane
+the eclipse page exposes each step's description as the image label and live
+region (accessibility tree checked).
+
+**Next concrete task — P5, one item at a time.** Remaining order: (2) narration timing:
 accept word timestamps and set `at=` from them, (3) teaching kits, starting
 with axes/graphs, (4) interactive prompts in the player (hit-test by
 `data-drawcv-id`), (5) equations (TeX -> SVG path -> `Path.from_svg_path`; needs

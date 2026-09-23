@@ -9,6 +9,7 @@ TutorDraw is a Python library, not an AI service. A coding assistant can author 
 3. Use labels for short names, callouts for explanations, highlights for emphasis, and dimming for attention. Keep each step focused on one teaching point.
 4. Save the complete lesson as a `.tutordraw.json` file. Keep the Python authoring script as well when procedural generation matters.
 5. Run `tutorial.lint()` and fix every issue it reports, then lint again until it is empty or only `info` remains (see below).
+   Then read `tutorial.describe(i)` against your narration for that step: anything the narration claims that the description does not mention is not on screen. See [describe](DESCRIBE.md).
 6. Export and inspect images. Lint cannot judge whether the diagram is *correct*; you still check the science, the wording and whether each leader points at the right thing.
 7. Reopen the saved lesson for revisions. Make a new file unless the user explicitly wants to replace the existing one. Render again and compare.
 

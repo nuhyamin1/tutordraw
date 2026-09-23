@@ -2,6 +2,12 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **`Tutorial.describe(index=None)`**: plain-English step descriptions from the
+  lesson's structure, in the order things appear, with artwork changes told
+  relative to the previous step. Included in `web_step` payloads; the player
+  labels the picture with it and announces it in a live region.
+- The exported page escapes `<`, `>` and `&` in its inline data, not just
+  `</`, so lesson text such as `<!--<script` cannot change how the page parses.
 - **Browser playback and streaming.** `Tutorial.to_svg(index, time=None)`
   returns a frame as SVG with native, selectable text; `Tutorial.web_step(i)`
   returns a step's player payload; `Tutorial.export_web(path)` writes a

@@ -156,7 +156,8 @@
         .td-dot{flex:1;height:4px;border-radius:2px;background:#3a4557;cursor:pointer;position:relative;overflow:hidden}
         .td-dot i{position:absolute;left:0;top:0;bottom:0;background:#e8a53a}
         .td-dot.pending{background:#2a303b;cursor:default}
-        .td-status{color:#9aa6b8;font-size:12px}`;
+        .td-status{color:#9aa6b8;font-size:12px}
+        .td-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}`;
       const wrap = document.createElement("div");
       wrap.className = "td-player";
       wrap.setAttribute("aria-label", title);
@@ -166,6 +167,12 @@
       this.stage.style.width = this.width + "px";
       this.stage.style.height = this.height + "px";
       this.frame.appendChild(this.stage);
+      // Each step's description (Tutorial.describe) is announced to screen
+      // readers as it starts, and labels the picture for anyone who lands on it.
+      this.stage.setAttribute("role", "img");
+      this.live = document.createElement("div");
+      this.live.className = "td-sr";
+      this.live.setAttribute("aria-live", "polite");
       this.dots = document.createElement("div");
       this.dots.className = "td-dots";
       const bar = document.createElement("div");
@@ -187,7 +194,7 @@
       this.statusEl = document.createElement("div");
       this.statusEl.className = "td-status";
       bar.appendChild(this.statusEl);
-      wrap.append(style, this.frame, this.dots, bar);
+      wrap.append(style, this.frame, this.dots, bar, this.live);
       this.root.appendChild(wrap);
       const resize = () => {
         const scale = this.frame.clientWidth / this.width;
@@ -227,6 +234,9 @@
         };
       });
       this.titleEl.textContent = `${index + 1}. ${step.title}`;
+      const description = step.description || step.title;
+      this.stage.setAttribute("aria-label", description);
+      this.live.textContent = description;
       if (this.onstep) this.onstep(index, step);
       this._apply();
     }

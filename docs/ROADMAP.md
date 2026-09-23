@@ -171,7 +171,7 @@ Design the whole batch before coding; persist it together.
 - [ ] Equations: TeX -> SVG path data -> `Path.from_svg_path`.
 - [ ] Narration-driven timing from TTS word timestamps (feeds reveals; timed captions).
 - [ ] Interactive prompts ("tap the nucleus") via DrawCV hit testing.
-- [ ] Automatic per-beat alt text from targets and annotations.
+- [x] Per-step descriptions (`Tutorial.describe`), announced by the player.
 
 ## Future backlog (not committed scope)
 

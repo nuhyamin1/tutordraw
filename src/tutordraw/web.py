@@ -78,7 +78,8 @@ def web_step(tutorial, index: int) -> dict:
         easing = None if camera_moves else easing_table(step.easing)
     return {"index": index, "id": step.id, "title": step.title,
             "duration": step.duration, "pause": step.pause,
-            "easing": easing, "frames": frames, "svg": end}
+            "easing": easing, "frames": frames, "svg": end,
+            "description": tutorial.describe(index)}
 
 
 def web_bundle(tutorial) -> dict:
@@ -100,8 +101,11 @@ def export_web(tutorial, path: str | Path, *, overwrite: bool = False) -> Path:
     destination = Path(path)
     if destination.is_symlink() or (destination.exists() and (not overwrite or not destination.is_file())):
         raise FileExistsError(f"Web destination already exists: {destination}")
-    # "</" cannot appear inside the inline JSON, or a string could end the script.
-    data = json.dumps(web_bundle(tutorial), ensure_ascii=False, allow_nan=False).replace("</", "<\\/")
+    # No raw <, > or & inside the inline JSON: "</script" would end the block
+    # and "<!--" with "<script" changes how the HTML parser finds its end.
+    # The \u escapes are ordinary JSON, so the data parses unchanged.
+    data = (json.dumps(web_bundle(tutorial), ensure_ascii=False, allow_nan=False)
+            .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"))
     title = (tutorial.title or "Lesson").replace("&", "&amp;").replace("<", "&lt;")
     # One pass over placeholders, not str.format (the JavaScript is full of
     # braces) and not chained replace (a title containing "@DATA@" would expand).

@@ -211,6 +211,13 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 `Composition.marks` lists each finished mark as a `MarkLayout` (`kind`, `text`,
 `targets`, `bounds`, `panel`); `Composition.camera` is `(scale, tx, ty)` or None.
 
+## Describing steps (new in 0.1.0a12)
+
+`tutorial.describe(index=None)` returns a plain-English description of one
+step, or of the whole lesson, built from its structure in the order things
+appear. `web_step` payloads include it as `description`. See
+[DESCRIBE.md](DESCRIBE.md).
+
 ## Browser playback (new in 0.1.0a12)
 
 `tutorial.to_svg(index, *, time=None)` returns one frame as SVG with native
