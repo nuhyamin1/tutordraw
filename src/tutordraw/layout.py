@@ -5,6 +5,7 @@ import warnings
 
 from drawcv import BoundingBox, Color, Drawable, FillStyle, Line, Point, Rectangle, StrokeStyle, Text
 
+from .adapters.drawcv import crisp_rect
 from .errors import LayoutWarning, ValidationError
 from .model import Callout, Label
 from .text import is_rtl, thai_segments, uses_font_path
@@ -187,7 +188,8 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
     if label.leader and ratio > 1:
         artwork.append(Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0))
     if label.box:
-        artwork.append(Rectangle(position=Point(x, y), width=w, height=h,
+        bx, by, bw, bh = crisp_rect(x, y, w, h, theme.border_width)
+        artwork.append(Rectangle(position=Point(bx, by), width=bw, height=bh,
                                  fill=FillStyle(color=Color(*theme.panel_color)),
                                  stroke=StrokeStyle(color=Color(*theme.border_color), width=theme.border_width), z_index=1))
     # Wrapped right-to-left lines hang from the right edge, not the left.

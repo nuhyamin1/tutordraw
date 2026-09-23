@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 from copy import deepcopy
+import math
 from pathlib import Path
 
 from drawcv import Color, Drawable, FillStyle, Group, Scene
@@ -135,3 +136,25 @@ def current_fill(drawable: Drawable) -> tuple[int, int, int] | None:
     # fill.paint, not fill.color: the shorthand raises on gradients and images.
     paint = fill.paint if fill is not None else getattr(drawable, "color", None)
     return paint_color(paint)
+
+
+def crisp_rect(x: float, y: float, width: float, height: float,
+               stroke_width: float) -> tuple[float, float, float, float]:
+    """Snap a stroked rectangle's edges inward so its stroke covers whole pixels.
+
+    DrawCV 0.11 rasterizes like SVG: pixel k spans [k, k + 1], so a 1 px stroke
+    centred on a whole coordinate smears across two half-covered pixels. An odd
+    integer width is centred on .5, an even one on a whole coordinate. Edges move
+    inward by under a pixel, so the rectangle never grows past its measured
+    footprint and a panel flush with the canvas keeps its border on screen.
+    Other widths cannot be crisp and are returned unchanged.
+    """
+    if stroke_width != int(stroke_width):
+        return x, y, width, height
+    half = 0.5 if int(stroke_width) % 2 else 0.0
+    left, top = math.ceil(x - half) + half, math.ceil(y - half) + half
+    right = math.floor(x + width - half) + half
+    bottom = math.floor(y + height - half) + half
+    if right <= left or bottom <= top:
+        return x, y, width, height
+    return left, top, right - left, bottom - top

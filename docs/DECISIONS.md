@@ -50,7 +50,8 @@ metadata or claim a package name is available without checking.
 - D010 uses `get_bounds()` anchors, including supported shape strokes but excluding
   post-processing effect extents.
 - Pin `pydrawcv==0.10.0.post1` until broader compatibility is tested; M1 uses its
-  released wheel, not the local checkout.
+  released wheel, not the local checkout. Superseded in 0.1.0a12 by an exact
+  `pydrawcv==0.11.0` pin; see "DrawCV 0.11.0" below.
 - Built-in Hershey labels reject non-printable/non-ASCII text rather than silently
   rendering unsupported characters. Rich text comes later.
 - The small model lives in `model.py`; split modules when complexity warrants it.
@@ -513,3 +514,38 @@ plain-RGB interpolation it feeds, rather than position-weighted. An image paint
 has no stops and reports None, which `_blend` already handles by cutting to the
 new colour instead of interpolating. Sampling a gradient at a point, or
 interpolating a gradient into another gradient, is out of scope.
+
+## DrawCV 0.11.0 — development 0.1.0a12 (2026-09-24)
+
+Moved the exact pin from `pydrawcv==0.10.0.post1` to `pydrawcv==0.11.0` after
+the full suite passed unchanged against the published wheel. Still exact, not a
+range: 0.11.0 changed rendering, so a range would promise pixels we have not seen.
+
+0.11.0 rasterizes with area-exact coverage on the SVG pixel grid. Strokes are
+now their true width, so every annotation is thinner, and a 1 px panel border
+on a whole coordinate became two half-tone pixels with no pixel in the border
+colour — visibly soft. **Kept the theme widths** and instead snap stroked panel
+and highlight rectangles in the adapter (`crisp_rect`): odd integer widths are
+centred on `.5`, even ones on whole coordinates. Edges snap **inward** (under a
+pixel each), never outward: the first version rounded to nearest and pushed the
+right border of a panel clamped flush with the canvas to `1100.5`, off screen.
+Inward snapping also keeps the drawn border inside the footprint collision
+avoidance measured. Thicker defaults would have changed every lesson's look to paper over a
+grid-alignment problem. Only the drawn rectangle is snapped; measurement,
+collision placement and text positions are untouched. An animated panel's border
+therefore steps by whole pixels while its text moves smoothly — under a pixel
+of relative drift, the same trade browsers make for borders. Leader lines
+are diagonal in general and are not snapped.
+
+Not adopted: DrawCV's new shape `Label`. TutorDraw labels carry per-step state,
+leaders, panels and collision placement that a shape label does not. `paint_order`
+could give bare-text labels a legibility halo on busy artwork; that is a feature
+for later, not part of the upgrade.
+
+Lesson files now embed DrawCV scene schema 1.14, which 0.10.x cannot read, so a
+lesson saved by a12 does not open under a11. Older lessons load unchanged. The
+exact pin makes this a release-note item rather than a bug.
+
+Found by the installed-wheel gate in the same session: `tutordraw.__version__`
+still read `0.1.0a11` while `pyproject.toml` said `0.1.0a12`, so
+`tools/check_installed.py` failed. Fixed in `__init__.py`.

@@ -43,7 +43,7 @@ def main() -> None:
         for label, url in project.get("urls", {}).items():
             if f"{label}, {url}" not in metadata.get_all("Project-URL", []):
                 raise SystemExit(f"Built metadata missing {label} URL")
-        if not any(r.replace(" ", "") == "pydrawcv==0.10.0.post1" for r in metadata.get_all("Requires-Dist", [])):
+        if not any(r.replace(" ", "") == "pydrawcv==0.11.0" for r in metadata.get_all("Requires-Dist", [])):
             raise SystemExit("Published DrawCV dependency pin missing from wheel")
     with tarfile.open(source) as archive:
         names = set(archive.getnames())

@@ -2,7 +2,7 @@
 
 from drawcv import Color, Drawable, Group, Point, Rectangle, Scene, StrokeStyle
 
-from .adapters.drawcv import current_fill, set_fill, translate
+from .adapters.drawcv import crisp_rect, current_fill, set_fill, translate
 from .errors import ValidationError
 from .model import Highlight, Step
 
@@ -169,7 +169,8 @@ def apply_attention(scene: Scene, step: Step) -> None:
 def highlight_artwork(highlight: Highlight, obj: Drawable) -> Rectangle:
     bounds = obj.get_bounds()
     pad = highlight.padding
-    return Rectangle(position=Point(bounds.x - pad, bounds.y - pad),
-                     width=bounds.width + 2 * pad, height=bounds.height + 2 * pad,
+    x, y, w, h = crisp_rect(bounds.x - pad, bounds.y - pad,
+                            bounds.width + 2 * pad, bounds.height + 2 * pad, highlight.width)
+    return Rectangle(position=Point(x, y), width=w, height=h,
                      stroke=StrokeStyle(color=Color(*highlight.color), width=highlight.width),
                      z_index=-1)

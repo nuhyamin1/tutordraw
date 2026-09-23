@@ -2,6 +2,12 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Requires `pydrawcv==0.11.0`** (was `0.10.0.post1`). DrawCV now antialiases
+  with area-exact coverage, so rendered images differ: strokes are drawn at their
+  true width and annotations look thinner. Panel borders and highlight rectangles
+  are now snapped so their strokes cover whole pixels and stay crisp.
+- Lessons saved by this release embed DrawCV scene schema 1.14 and cannot be
+  opened with 0.1.0a11 or earlier. Lessons saved by earlier releases still load.
 - **Automatic collision avoidance for label and callout panels, on by default.**
   A step's annotations are resolved against each other, the highlight boxes, the
   registered targets' artwork and the canvas edges before anything is drawn.

@@ -1,6 +1,6 @@
 # AI handoff — start here
 
-Last updated: **2026-09-23**, collision avoidance milestone (Claude Code).
+Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade (Claude Code).
 
 ## Current state
 
@@ -14,7 +14,8 @@ published to PyPI** by the owner after explicit authorisation.
 
 Owner: Nuh Yamin; package tutordraw; MIT. Origin:
 https://github.com/nuhyamin1/tutordraw.git, branch master.
-Runtime remains published `pydrawcv==0.10.0.post1`. DrawCV is unchanged.
+Runtime is now published `pydrawcv==0.11.0` (a12; a11 and earlier pin
+`0.10.0.post1`). DrawCV itself was not modified.
 
 Standing owner instructions: **commit locally, do not push, do not publish**
 without an explicit request. Inspect Git rather than trusting a handoff's Git
@@ -55,7 +56,8 @@ Consequences worth remembering:
 - a11: `show(at=)` / `explain(at=)` and schema v5. See [REVEAL.md](REVEAL.md).
 - a12: automatic label collision avoidance, on by default; `label(box=False)`
   for bare text; schema v7. Also fixes `restyle(fill=...)` on gradient fills.
-  See [API.md](API.md).
+  See [API.md](API.md). **Moves to `pydrawcv==0.11.0`**, with panel borders and
+  highlights snapped to the pixel grid; see COMPATIBILITY.md and DECISIONS.md.
 
 ## What a7 decided and why
 
@@ -297,7 +299,44 @@ a12 (collision avoidance):
 - `adapters/drawcv.py`: `paint_color`; `current_fill` reads `fill.paint`.
 - `tests/test_collision.py` (25 cases), `tests/conftest.py` theme-field table.
 
-## Verification completed this session (a12)
+a12 (DrawCV 0.11.0 upgrade, 2026-09-24):
+- `pyproject.toml`, `tools/check_installed.py`, `tools/check_release.py`: pin
+  `pydrawcv==0.11.0` (and the `typography` extra).
+- `adapters/drawcv.py`: **new** `crisp_rect`, snapping a stroked rectangle's
+  edges inward onto the pixel grid. Used by `layout.label_artwork` (panel) and
+  `attention.highlight_artwork`.
+- `__init__.py`: `__version__` was still `0.1.0a11`; now `0.1.0a12`.
+- `tests/test_drawcv_compatibility.py`: 5 cases for `crisp_rect` and a render
+  test asserting a solid 1 px border and a solid 3 px highlight edge.
+- README, COMPATIBILITY, VIDEO, ARCHITECTURE, DECISIONS, ROADMAP, CHANGELOG.
+
+## Verification completed this session (DrawCV 0.11.0, 2026-09-24)
+
+**Trap found:** both `.venv` and the global Python had DrawCV installed
+*editable from `C:/Projects/DrawCV`*, so earlier "published wheel" runs in them
+were really runs against the checkout. `.venv` now has the published
+`pydrawcv[typography]==0.11.0`; check with
+`python -c "import drawcv; print(drawcv.__file__)"` (must be under site-packages).
+The global Python is still editable-from-checkout; don't use it for evidence.
+
+- Clean scratch venv with published `pydrawcv[typography]==0.11.0`:
+  `python -m pytest -q` **327 passed, 1 skipped** (symlink test).
+- `.venv` after switching to the published wheel: **327 passed, 1 skipped**;
+  `pip check` clean; `tools/check_docs.py` 21 documents and one README example.
+- `python -m build --no-isolation`, then `tools/check_release.py
+  --require-metadata`: passes. Installed that wheel: `python -I -m pytest -q`
+  327 passed, 1 skipped; `python -I tools/check_installed.py`: 18 PNGs, one
+  video, lessons reload. This gate caught the stale `__version__`.
+- All eight examples re-rendered on the wheel. **Visually inspected** cell step
+  2 (against the 0.10 render), eclipse beat 3, Arabic step 3 and group focus:
+  annotations are thinner than under 0.10 as expected; panel borders and
+  highlights are crisp. The eclipse "Moon" panel sits flush with the right
+  edge; the first snapping version pushed its border off-canvas, fixed by
+  snapping inward and covered by a test.
+- The new render test fails with snapping disabled (no pixel carries the border
+  colour) and passes with it.
+
+## Verification completed in the collision-avoidance session (a12)
 
 Use `.venv/Scripts/python.exe` instead of `python` on this Windows machine.
 
@@ -401,7 +440,8 @@ Local evidence is Windows 11 x64 and CPython 3.12 unless stated otherwise.
 ## Next concrete task
 
 0.1.0a11 is published and verified. a12 is committed locally, unreleased and
-unpushed: automatic collision avoidance, on by default, plus the gradient-fill
+unpushed. It now requires `pydrawcv==0.11.0`, whose lesson files (scene schema
+1.14) a11 cannot open — say so in the release notes. It adds automatic collision avoidance, on by default, plus the gradient-fill
 fix. It moved the format to **schema v7** across two decisions — v6 for the
 avoidance theme fields, v7 for the per-label `box` — and the owner approved each
 explicitly, because both have to round-trip with a saved lesson.
@@ -417,6 +457,9 @@ Work that does not move the format:
    constant, and it is still only checked by eye plus box-geometry assertions.
    Golden-image tests would catch silent drift in exactly the code most likely
    to drift.
+   The DrawCV 0.11.0 upgrade moved every annotation pixel and no test noticed
+   except the new crisp-border one; references must be regenerated whenever
+   the DrawCV pin moves.
 2. **Hand-tuned gaps in the examples.** Every `gap` in `examples/` was chosen to
    dodge an overlap the library now resolves. Revisiting them would simplify the
    examples and exercise the resolver on real lessons.
@@ -432,6 +475,9 @@ straight and may cross a panel they do not belong to (routed leaders are
 deferred); only **registered** targets count as artwork obstacles; a reveal slot
 sits empty until its annotation appears; and a panel larger than the canvas
 still warns and clips, because nothing can be done with it.
+
+Not format-moving, from DrawCV 0.11.0: `paint_order="stroke"` could give
+`box=False` text a halo so it stays legible over busy artwork.
 
 Format-moving features to hold for later, none clearly ahead: timed captions,
 fading annotations in, stroke/scale/rotation in `restyle`, whole-image

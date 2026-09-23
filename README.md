@@ -56,7 +56,7 @@ python -m venv .venv
 
 On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 171 tests (one symlink test skips without symlink privileges). Hosted CI passes on Windows, Linux, and macOS for Python 3.12–3.14. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
 
-No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.10.0.post1`, which imports as `drawcv`. A broader compatibility range is future work. Use an explicit version or `--pre` when selecting an alpha release.
+No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.11.0`, which imports as `drawcv`. A broader compatibility range is future work. Use an explicit version or `--pre` when selecting an alpha release.
 
 ## Working example
 

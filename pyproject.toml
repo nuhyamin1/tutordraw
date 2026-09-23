@@ -11,7 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Nuh Yamin" }]
 requires-python = ">=3.12"
-dependencies = ["pydrawcv==0.10.0.post1"]
+dependencies = ["pydrawcv==0.11.0"]
 keywords = ["tutorial", "drawing", "education", "diagram", "drawcv"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,7 +28,7 @@ classifiers = [
 [project.optional-dependencies]
 # Shaped scripts (Thai, Arabic) need DrawCV's font engine. Everything else,
 # including Latin, Greek, Cyrillic, CJK and symbols, works without this.
-typography = ["pydrawcv[typography]==0.10.0.post1"]
+typography = ["pydrawcv[typography]==0.11.0"]
 # Deliberately excludes the typography extra: on macOS DrawCV requires real
 # PyICU, which has no wheels and builds against Homebrew ICU. Install it
 # separately when you need Thai or Arabic.

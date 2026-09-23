@@ -189,7 +189,7 @@ Local files inspected on 2026-09-20:
 M1 subsequently tested the published 0.10.0.post1 wheel on Windows/Python 3.12,
 including basic Hershey text, nested group anchors, and scene copying via
 `Scene.from_dict(deepcopy(scene.to_dict()))`. The dependency is pinned to that
-release. M2 adds measured Hershey wrapping and tests nested-group dimming. Advanced
+release. 0.1.0a12 moved the pin to 0.11.0 (see DECISIONS). M2 adds measured Hershey wrapping and tests nested-group dimming. Advanced
 assets, rich typography, and broader compatibility remain unverified.
 
 ## Persistence and extensibility

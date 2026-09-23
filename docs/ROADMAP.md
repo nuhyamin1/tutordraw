@@ -49,6 +49,7 @@ after an object move updates annotation placement; order does not affect results
 - [x] Confirm package name, author, MIT license, and repository metadata.
 - [x] Owner authorized and published 0.1.0a3.
 - [x] Verify the exact supported dependency `pydrawcv==0.10.0.post1` using its released wheel; do not widen the range without evidence.
+- [x] 0.1.0a12: move the exact pin to `pydrawcv==0.11.0`; full suite passes on the published wheel, examples re-rendered and inspected.
 - [x] Replace proposed examples with runnable, tested examples and API documentation.
 - [x] Document fonts, supported object types, limitations, errors, and migration
   expectations for an early release.

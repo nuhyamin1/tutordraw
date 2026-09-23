@@ -24,7 +24,7 @@ installed = Path(tutordraw.__file__).resolve()
 assert not installed.is_relative_to(source), f'Editable source import: {installed}'
 assert 'site-packages' in installed.parts, installed
 assert tutordraw.__version__ == version('tutordraw')
-assert version('pydrawcv') == '0.10.0.post1'
+assert version('pydrawcv') == '0.11.0'
 print('Installed:', installed)
 print('DrawCV:', drawcv.__file__)
 """

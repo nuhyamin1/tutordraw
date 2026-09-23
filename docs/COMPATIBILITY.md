@@ -14,7 +14,7 @@ dependencies must have compatible builds for the environment.
 
 ## DrawCV dependency
 
-The supported dependency is exactly **`pydrawcv==0.10.0.post1`**. Runtime tests use
+The supported dependency is exactly **`pydrawcv==0.11.0`**. Runtime tests use
 the published wheel, not `C:/Projects/DrawCV`. Keep this narrow until release
 tests establish a larger range. Users import it as `drawcv`.
 
@@ -23,6 +23,18 @@ public serialization API. Basic shapes, text, nested groups, styles, and transfo
 are exercised locally. This is not a guarantee of all custom objects, external
 assets, vector masks, effects, or blend-mode combinations. Unsupported scene
 copying raises `SceneCopyError` instead of editing the source in place.
+
+**Lesson files and DrawCV versions.** A saved lesson embeds its DrawCV scene.
+DrawCV 0.11.0 writes scene schema 1.14 and reads every older one, so lessons saved
+by 0.1.0a11 and earlier still load. DrawCV 0.10.x cannot read schema 1.14, so a
+lesson saved by 0.1.0a12 or later does not open under 0.1.0a11 or earlier.
+
+**Rendering changed in 0.11.0.** DrawCV now antialiases with area-exact coverage
+on the SVG pixel grid (pixel `k` spans `[k, k + 1]`). Strokes are drawn at their
+true width, so annotations look thinner than under 0.10, and shapes shift by half
+a pixel. TutorDraw snaps panel borders and highlight rectangles inward so their
+strokes land on whole pixels (`crisp_rect` in the adapter); leader lines and user artwork
+are drawn as authored.
 
 ## Text and layout
 

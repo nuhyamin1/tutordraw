@@ -79,7 +79,7 @@ a video is one file: it is either replaced completely or not at all.
 ## Codec availability
 
 TutorDraw calls `cv2.VideoWriter` directly. OpenCV arrives with DrawCV —
-`pydrawcv==0.10.0.post1` requires `opencv-python>=4.8.0` unconditionally — so no
+`pydrawcv==0.11.0` requires `opencv-python>=4.8.0` unconditionally — so no
 extra install is needed, but **which codecs a given OpenCV wheel and host
 provide is not something TutorDraw can promise**. When the writer cannot open,
 `VideoExportError` names the fourcc and says the host may not provide it.
