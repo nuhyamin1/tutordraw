@@ -596,3 +596,83 @@ identical after linting, and that no warning escapes).
 - Checked against the golden lessons by eye: all flagged cases are visible in
   the references, and the three clean lessons report nothing. Each rule was
   mutation-tested (disabling it fails a test).
+
+## Visual vocabulary and schema v8 — design (2026-09-24), program P3
+
+One format bump for all eight P3 items, designed together. Evidence gathered
+first: DrawCV slices `Line`, `Arc`, `Arrow`, `Bezier`, `Path`, `Polyline` by
+`render_progress`; `Transform` scales about `pivot` (None = the object's own
+centre, so a camera must pin `Point(0, 0)`); `Path.offset` grows a closed
+region; `Text` has **no stroke**, so `paint_order` cannot make a text halo.
+
+**Timing model shared by everything new.** Anything that appears can take
+`at=` (seconds into the step, as reveals already do) and `draw=True`. With
+`draw`, its strokes draw on over `Theme.draw_seconds` (0.6) starting at `at`,
+through DrawCV `render_progress`; its text and panel appear when the stroke
+completes. At the end of the step everything is complete, so `render_step`
+is unchanged by timing — static steps stay independent and exact.
+
+**Marks: one list, a `kind` discriminator.** New step-owned annotations are
+`Mark`s persisted in `step["marks"]` as `{id, kind, refs, text, options}`, so a
+later version adds kinds without new top-level fields. A ref is
+`{"target_id"}` or `{"point": [x, y]}` (a fixed scene coordinate).
+- `step.connect(a, b, text=None, *, bend=0, both=False)` — kind `arrow`, a
+  curved or straight arrow between two targets' bounds.
+- `step.brace(*targets, text=None, side="bottom")` — kind `brace`.
+- `step.measure(a, b=None, text=None, *, axis="x", offset=24)` — kind
+  `measure`: one target's extent, or the distance between two refs.
+- `step.angle(vertex, a, b, text=None, *, radius=32)` — kind `angle`.
+- `step.number(target, n=None, *, corner="top_left")` — kind `number`; `n`
+  defaults to the next number in the step. Appears whole: `draw` is refused.
+Mark geometry is a pure function of target bounds, so the planner evaluates it
+at the step's end state and treats it as a blocker for label placement, and
+rendering evaluates it on live bounds. Marks use `leader_color`/`leader_width`;
+their text uses the normal panel style.
+
+**Highlights** gain `shape="outline"` (the target's own path, offset outward by
+`padding` via `to_path` + `Path.offset`; refused at authoring time for shapes
+that cannot convert or are open), plus `at=` and `draw=`.
+
+**Camera.** `step.zoom_to(*targets, padding=40, max_scale=4)` fits the targets'
+end-state bounds to the canvas; `step.reset_camera()` clears it. Steps stay
+independent: no zoom means the full canvas, never "the previous step's". On
+an animated step the camera interpolates from the previous step's framing
+(centre linearly, scale geometrically). Implementation wraps each layer's
+top-level artwork in a camera `Group` inside the working copy, so dimming and
+nested groups keep working, and annotations stay screen-space — text never
+grows with zoom. The planner evaluates placement with the camera at the step's
+end (and start, for the sweep) so labels do not jitter during a zoom.
+
+**Halo.** `box=False` text gets a halo of `Theme.halo_width` (3; 0 disables)
+in `panel_color`, drawn as offset copies beneath the text. This changes the
+rendering of bare labels, deliberately: bare text over artwork is the case
+lint's LOW_CONTRAST flags, and lint now measures against the halo.
+
+**Schema v8** adds step `marks`, `draw` (list of annotation/mark IDs),
+`camera`; highlight `at`, `draw`, `shape`; theme `draw_seconds`, `halo_width`.
+v1–v7 load with defaults. Lint learns marks (off-canvas, overlap with panels,
+busy count).
+
+### P3 implementation notes (2026-09-24)
+
+- **Outline growth is TutorDraw's, not `Path.offset`.** On DrawCV 0.11.0,
+  `Path.offset` took 0.7–2.4 s for one circle: it maps every point through
+  `to_world`, which recomputes the path's bounds each time. `flatten_world`
+  takes ~2 ms, so `adapters.drawcv.outline_path` flattens the world outline
+  and offsets each contour itself (round convex corners, mitred concave ones,
+  per-contour winding so holes grow correctly). Checked by eye on a circle,
+  rectangle, sharp triangle, concave notch and rotated ellipse. Worth
+  reporting upstream; not worked around in DrawCV.
+- **`connect` takes points at either end** (not both). Found by building the
+  lever example: a force arrow on one object had no honest spelling with
+  targets only. The format already allowed point refs, so v8 is unchanged.
+- **Arrow captions lift by the panel's half-extent along the normal**, not its
+  half-height, or a vertical arrow's caption sits across the shaft.
+- **`free` measures honour `offset`**, lifted toward the top of the screen with
+  extension lines, or the line sits on the edge it measures.
+- **Lint ignores areas under 1 px².** `outside_area` of a panel clamped flush
+  to the edge returned 7e-12 and raised a false OFF_CANVAS on the lever lesson.
+- Mark captions are obstacles for label placement but are not themselves
+  moved; lint reports their collisions. Automatic mark placement is roadmap.
+- Old golden references were untouched by P3 except `bare-step1` (the halo,
+  intended and inspected). Eleven new frames pin marks, camera and draw-on.

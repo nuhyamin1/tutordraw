@@ -1,0 +1,54 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  720,
+  400
+ ],
+ "targets": {
+  "cell": [
+   208.5,
+   68.5,
+   303.0,
+   303.0
+  ],
+  "nucleus": [
+   390.0,
+   160.0,
+   60.0,
+   60.0
+  ],
+  "ribosome": [
+   292.0,
+   272.0,
+   16.0,
+   16.0
+  ]
+ },
+ "highlights": [],
+ "annotations": [
+  {
+   "kind": "label",
+   "text": "Cell",
+   "target": "cell",
+   "anchor": "top",
+   "panel": [
+    333.5,
+    0.0,
+    53.0,
+    44.0
+   ],
+   "boxed": true,
+   "leader": [
+    [
+     360.0,
+     68.5
+    ],
+    [
+     360.0,
+     44.0
+    ]
+   ]
+  }
+ ]
+}

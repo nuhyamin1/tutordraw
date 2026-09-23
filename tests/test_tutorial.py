@@ -8,6 +8,9 @@ from drawcv import Circle, Color, FillStyle, Group, OpenCVRenderer, Point, Scene
 from tutordraw import LayoutWarning, SceneCopyError, Theme, Tutorial, ValidationError
 from tutordraw.adapters.drawcv import copy_scene
 from tutordraw.layout import label_artwork
+from tutordraw.serialization import SCHEMA_VERSION
+
+from conftest import downgrade
 
 
 @pytest.fixture
@@ -141,7 +144,8 @@ def test_box_false_draws_the_text_without_a_panel(lesson):
     assert boxed.box is True and bare.box is False
 
     framed_layout, framed = label_artwork(boxed, shape, 640, 360)
-    plain_layout, plain = label_artwork(bare, shape, 640, 360)
+    # Without the halo (schema v8), bare text is exactly the boxed artwork minus its panel.
+    plain_layout, plain = label_artwork(bare, shape, 640, 360, Theme(halo_width=0))
     assert sum(isinstance(obj, Rectangle) for obj in framed) == 1
     assert sum(isinstance(obj, Rectangle) for obj in plain) == 0
     # Same text, same leader, same geometry: only the panel is gone.
@@ -149,6 +153,25 @@ def test_box_false_draws_the_text_without_a_panel(lesson):
     assert ([type(obj) for obj in plain]
             == [type(obj) for obj in framed if not isinstance(obj, Rectangle)])
     assert [obj.text for obj in plain if isinstance(obj, Text)] == ["Boxed"]
+
+
+def test_bare_text_gets_a_halo_beneath_it(lesson):
+    """Eight panel-coloured copies under the real text; none when halo_width=0."""
+    from drawcv import Text
+
+    _, shape, _, target, _ = lesson
+    bare = target.label("Halo", box=False)
+    _, artwork = label_artwork(bare, shape, 640, 360, Theme(halo_width=3))
+    texts = [obj for obj in artwork if isinstance(obj, Text)]
+    real = texts[-1]
+    halo = texts[:-1]
+    assert len(halo) == 8 and all(t.text == "Halo" for t in texts)
+    assert all(t.z_index < real.z_index for t in halo)
+    assert {(t.color.r, t.color.g, t.color.b) for t in halo} == {Theme().panel_color}
+    assert max(abs(t.position.x - real.position.x) for t in halo) == pytest.approx(3)
+    # A boxed label never gets one: its panel already separates it.
+    _, boxed = label_artwork(target.label("Box"), shape, 640, 360, Theme(halo_width=3))
+    assert sum(isinstance(obj, Text) for obj in boxed) == 1
 
 
 def test_unboxed_labels_are_still_kept_apart(lesson, monkeypatch):
@@ -178,16 +201,14 @@ def test_box_survives_the_round_trip_and_defaults_true(lesson):
     tutorial.steps[0].show(target.label("Bare", box=False))
     tutorial.steps[0].explain(target, "Also bare.", box=False)
     document = tutorial.to_dict()
-    assert document["schema_version"] == 7
+    assert document["schema_version"] == SCHEMA_VERSION
     restored = Tutorial.from_dict(document)
     assert [label.box for label in restored.labels] == [True, False]
     assert [callout.box for callout in restored.steps[0].callouts] == [False]
 
     # A v6 document has no box field at all, and loads fully boxed.
-    legacy = deepcopy(document)
-    legacy["schema_version"] = 6
-    for annotation in [*legacy["labels"], *legacy["steps"][0]["callouts"]]:
-        del annotation["box"]
+    legacy = downgrade(document, 6)
+    assert "box" not in legacy["labels"][0]
     older = Tutorial.from_dict(legacy)
     assert all(label.box for label in older.labels)
     assert all(callout.box for callout in older.steps[0].callouts)

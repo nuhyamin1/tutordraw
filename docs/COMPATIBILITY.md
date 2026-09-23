@@ -84,7 +84,9 @@ Direct construction of Target, Label, Callout, and Step is unsupported.
 
 Alpha releases may change APIs. Record any changes and migration instructions in
 [the changelog](../CHANGELOG.md). Version 0.1.0a3 intentionally retains the a2 API.
-Development 0.1.0a9 adds the optional `typography` extra, `Tutorial(font=...)`
+Development 0.1.0a12 writes lesson schema v8 (marks, draw-on, camera, outline
+highlights, halo) and adds `lint`/`layout`; v1-v7 still load, and a11 cannot
+read v8. Development 0.1.0a9 adds the optional `typography` extra, `Tutorial(font=...)`
 and `font=` on the loaders; no schema change and no new required dependency.
 Development 0.1.0a8 adds `Step.restyle` and lesson schema v3; v1 and v2 still load.
 Development 0.1.0a6 adds `export_video` and `VideoExportError`; no existing

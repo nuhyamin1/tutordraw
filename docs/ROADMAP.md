@@ -143,14 +143,17 @@ inspected. Design notes live in DECISIONS.md.
 
 ### P3 — Visual vocabulary, one schema bump (v8)
 Design the whole batch before coding; persist it together.
-- [ ] Draw-on animation for leaders, highlights and new strokes (path trim 0->1).
-- [ ] Camera: zoom/pan to a target per step, animated with the step easing.
-- [ ] Relation arrows between two targets, with a label.
-- [ ] Braces/brackets grouping several targets.
-- [ ] Measurement (dimension) lines and angle marks.
-- [ ] Numbered markers tied to reveal order.
-- [ ] Shape-following highlights via DrawCV `stroke_to_path`/`to_path`.
-- [ ] Halo text for `box=False` via DrawCV `paint_order`.
+- [x] Draw-on animation for leaders, highlights and marks (DrawCV `render_progress`).
+- [x] Camera: `zoom_to` per step, animated with the step easing.
+- [x] Relation arrows between targets or from a point, with a caption.
+- [x] Braces grouping several targets.
+- [x] Measurement (dimension) lines and angle marks.
+- [x] Numbered markers (`step.number`).
+- [x] Shape-following highlights via `to_path` + `flatten_world` (own offset;
+  DrawCV `Path.offset` was too slow, see DECISIONS).
+- [x] Halo text for `box=False`, as offset copies (DrawCV text has no stroke).
+- [ ] Automatic placement of mark captions (today lint reports collisions).
+- [ ] Pan without zoom; a camera that follows a moving target.
 
 ### P4 — Browser playback and streaming
 - [ ] SVG export of a composition (DrawCV 0.11 SVG export), per beat.

@@ -199,6 +199,18 @@ Every filename is checked before export; collisions raise `FileExistsError` unle
 
 Frames encode in temporary files. Explicit overwrite replaces an existing file only after successful encoding; a failed newly-created file is removed. This is not a transaction across the batch: successful earlier files remain if a later step fails. A new file may be visible during its copy. Permission/directory failures during preflight can propagate as filesystem exceptions.
 
+## Marks, drawing on, camera and outlines (new in 0.1.0a12, schema v8)
+
+`step.connect`, `brace`, `measure`, `angle` and `number` add drawn marks and
+return a `Mark`. `draw=True` on labels, callouts, highlights and marks draws
+their strokes on. `step.zoom_to(*targets)` frames the artwork for a step and
+`reset_camera()` clears it. `highlight(shape="outline")` follows the target's
+own outline. `box=False` text gets a halo (`Theme.halo_width`). The full
+reference is [VOCABULARY.md](VOCABULARY.md).
+
+`Composition.marks` lists each finished mark as a `MarkLayout` (`kind`, `text`,
+`targets`, `bounds`, `panel`); `Composition.camera` is `(scale, tx, ty)` or None.
+
 ## Layout and lint (new in 0.1.0a12)
 
 `tutorial.layout(index, *, time=None) -> Composition` reports where everything

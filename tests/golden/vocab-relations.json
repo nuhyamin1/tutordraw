@@ -1,0 +1,195 @@
+{
+ "step": 0,
+ "progress": 1.0,
+ "canvas": [
+  760,
+  540
+ ],
+ "targets": {
+  "block": [
+   560.0,
+   150.0,
+   140.0,
+   80.0
+  ],
+  "earth": [
+   354.0,
+   174.0,
+   52.0,
+   52.0
+  ],
+  "moon": [
+   460.0,
+   160.0,
+   20.0,
+   20.0
+  ],
+  "sun": [
+   80.0,
+   160.0,
+   80.0,
+   80.0
+  ],
+  "triangle": [
+   89.0,
+   299.0,
+   332.0,
+   192.0
+  ]
+ },
+ "highlights": [
+  {
+   "target": "earth",
+   "box": [
+    346.47,
+    166.47,
+    67.06,
+    67.06
+   ],
+   "width": 3.0
+  }
+ ],
+ "annotations": [],
+ "marks": [
+  {
+   "kind": "arrow",
+   "text": "light",
+   "targets": [
+    "sun",
+    "earth"
+   ],
+   "bounds": [
+    165.0,
+    158.0,
+    184.0,
+    43.0
+   ],
+   "panel": [
+    231.0,
+    158.0,
+    52.0,
+    36.0
+   ]
+  },
+  {
+   "kind": "arrow",
+   "text": "gravity",
+   "targets": [
+    "earth",
+    "moon"
+   ],
+   "bounds": [
+    381.06,
+    122.52,
+    76.0,
+    67.92
+   ],
+   "panel": [
+    381.06,
+    122.52,
+    76.0,
+    36.0
+   ]
+  },
+  {
+   "kind": "brace",
+   "text": "Earth-Moon system",
+   "targets": [
+    "earth",
+    "moon"
+   ],
+   "bounds": [
+    320.5,
+    231.0,
+    193.0,
+    55.0
+   ],
+   "panel": [
+    320.5,
+    250.0,
+    193.0,
+    36.0
+   ]
+  },
+  {
+   "kind": "measure",
+   "text": "14 cm",
+   "targets": [
+    "block"
+   ],
+   "bounds": [
+    559.0,
+    232.0,
+    142.0,
+    40.0
+   ],
+   "panel": [
+    594.5,
+    236.0,
+    71.0,
+    36.0
+   ]
+  },
+  {
+   "kind": "measure",
+   "text": "8 cm",
+   "targets": [
+    "block"
+   ],
+   "bounds": [
+    686.5,
+    149.0,
+    59.0,
+    82.0
+   ],
+   "panel": [
+    686.5,
+    172.0,
+    59.0,
+    36.0
+   ]
+  },
+  {
+   "kind": "number",
+   "text": null,
+   "targets": [
+    "sun"
+   ],
+   "bounds": [
+    60.25,
+    140.25,
+    27.0,
+    27.0
+   ],
+   "panel": null
+  },
+  {
+   "kind": "number",
+   "text": null,
+   "targets": [
+    "earth"
+   ],
+   "bounds": [
+    334.25,
+    154.25,
+    27.0,
+    27.0
+   ],
+   "panel": null
+  },
+  {
+   "kind": "number",
+   "text": null,
+   "targets": [
+    "block"
+   ],
+   "bounds": [
+    692.5,
+    129.5,
+    28.0,
+    28.0
+   ],
+   "panel": null
+  }
+ ]
+}

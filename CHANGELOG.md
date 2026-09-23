@@ -2,6 +2,23 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Marks** (lesson schema v8): `step.connect` (arrows between targets or from
+  a point, curved with `bend`), `step.brace`, `step.measure` (dimension lines),
+  `step.angle` and `step.number` (numbered badges). See docs/VOCABULARY.md.
+- **Drawing on**: `draw=True` on `show`, `explain`, `highlight` and marks draws
+  strokes over `Theme.draw_seconds`; text arrives when its stroke completes.
+  `render_step` always shows the finished state.
+- **Camera**: `step.zoom_to(*targets)` / `reset_camera()`. Artwork zooms, text
+  does not; animated steps move from the previous step's framing.
+- **Outline highlights**: `highlight(shape="outline")` follows the target's
+  own shape, grown by `padding`. Highlights also take `at=` and `draw=`.
+- **Halo**: `box=False` text is outlined in `panel_color` by
+  `Theme.halo_width` (3; 0 disables). This changes how bare labels render.
+- `lint()` covers marks (off-canvas, caption overlaps, busy steps), counts a
+  halo as separating text from artwork, and ignores sub-pixel float noise.
+- Lesson schema v8; v1-v7 still load. Lessons saved by this release cannot be
+  opened with 0.1.0a11 or earlier.
+- New example: `examples/lever_lesson.py`.
 - **`Tutorial.lint()`** reports readability problems — overlapping or
   off-canvas panels, panels hiding a target's actual shape, leaders crossing
   each other, panels or other targets, low contrast (including bare text over

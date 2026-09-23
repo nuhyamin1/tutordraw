@@ -1,6 +1,6 @@
 # AI handoff — start here
 
-Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade and P1 golden tests (Claude Code).
+Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade and program P1-P3 (Claude Code).
 
 ## Current state
 
@@ -315,8 +315,38 @@ a12 (DrawCV 0.11.0 upgrade, 2026-09-24):
 On 2026-09-24 the owner approved a five-milestone program (ROADMAP "The
 explainer program"): P1 golden tests, P2 `lint()`, P3 a visual vocabulary in
 **one** schema v8, P4 SVG browser playback with streaming, P5 kits, equations,
-narration timing, prompts and alt text. **P1 and P2 are done (P1 awaits
-hosted-CI confirmation). P3 is next.**
+narration timing, prompts and alt text. **P1, P2 and P3 are done (P1 awaits
+hosted-CI confirmation). P4 is next.**
+
+P3 (schema v8) added `src/tutordraw/marks.py` (arrow/brace/measure/angle/
+number geometry), `camera.py` (fit, blend, install-as-group), `Mark`/`Camera`
+and the new `Step` methods in `model.py`, draw-on through DrawCV
+`render_progress`, `outline_path`/`rect_path` in the adapter, the halo in
+`layout.py`, camera- and mark-aware planning in `collision.py`, `MarkLayout` in
+`composition.py`, v8 in `serialization.py` + `lesson-v8.schema.json`, lint for
+marks, `docs/VOCABULARY.md`, `examples/lever_lesson.py` (also run by
+`check_installed`), `tests/test_marks.py` (38 cases) and 11 golden frames.
+Design and implementation notes: DECISIONS "Visual vocabulary and schema v8".
+
+P3 verification: `.venv` suite **386 passed, 1 skipped**. Wheel built,
+`check_release --require-metadata` passes, installed wheel **386 passed**,
+`check_installed` ran nine examples (22 PNGs, 1 video). Inspected by eye: all
+11 new golden frames, the five-shape outline sheet, and the lever lesson's
+three steps and mid-draw frame. Old references unchanged except `bare-step1`
+(halo, intended). Found and fixed while building the example: `Path.offset`
+slowness (2.4 s -> 9 ms via own offset), a lint float-noise false positive,
+force arrows needing point ends, and vertical-arrow captions.
+
+**Next concrete task — P4 design.** Browser playback: export a step's
+`Composition` to SVG (DrawCV 0.11 `SVGExport`; check it handles the camera
+group, `render_progress` and the halo copies), plus a per-lesson JSON timeline
+(steps, durations, reveal/draw times, camera states) that a small web player
+animates between. Decide first whether the player re-implements draw-on and
+camera tweening in the browser (small payloads, true streaming) or receives
+pre-rendered SVG keyframes (simpler, heavier). Recommendation: SVG per step at
+its finished state + the timeline JSON, with the player doing draw-on via
+`stroke-dashoffset` and camera via a `viewBox`/transform tween; streaming =
+emit each step's SVG + timeline entry as soon as it is authored.
 
 P2 added `src/tutordraw/lint.py`, `Tutorial.layout` / `Tutorial.lint`,
 `Composition.drawables`, `_compose(draw_annotations=)`, exports in

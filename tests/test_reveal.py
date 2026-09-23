@@ -110,7 +110,7 @@ def test_invalid_delays_rejected(lesson, value):
 def test_revealed_at_rejects_non_annotations(lesson):
     tutorial, subject = lesson
     step = tutorial.step("Guard")
-    with pytest.raises(ValidationError, match="label or callout"):
+    with pytest.raises(ValidationError, match="label, callout or mark"):
         step.revealed_at("not an annotation")
 
 

@@ -8,9 +8,10 @@ from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, 
 from .errors import ValidationError
 from .layout import label_artwork
 from .model import Callout, Label, Step, Target
-from .attention import apply_attention, apply_restyles, highlight_artwork
+from .attention import (apply_attention, apply_restyles, final_bounds, highlight_artwork,
+                        residual_moves)
 from .collision import plan_annotations
-from .composition import AnnotationLayout, Composition, HighlightLayout
+from .composition import AnnotationLayout, Composition, HighlightLayout, MarkLayout
 from .lint import Issue
 from .export import export_steps
 from .themes import Theme
@@ -190,6 +191,9 @@ class Tutorial:
 
     def _compose(self, index: int, progress: float, *, draw_annotations: bool = True) -> Composition:
         """Build the working scene for one frame and record every layout decision."""
+        from . import camera as cam
+        from .marks import mark_drawing
+
         source = index_scene(self.scene)
         for target in self._targets.values():
             if target.drawable_id not in source:
@@ -197,6 +201,7 @@ class Tutorial:
         working = copy_scene(self.scene)
         objects = index_scene(working)
         step = self._steps[index]
+        width, height = working.width, working.height
         # Easing shapes the artwork blend; reveals use plain elapsed seconds.
         eased = progress
         if step.easing is not None and progress < 1.0:
@@ -208,36 +213,74 @@ class Tutorial:
         # The planner always needs the real previous step, even at progress 1:
         # that is the other end of the sweep, so every frame plans identically.
         prior = self._steps[index - 1] if index else None
-        apply_restyles(objects, step, prior if eased < 1.0 else None, eased)
+        animating = eased < 1.0
+        apply_restyles(objects, step, prior if animating else None, eased)
+
+        # Frame the artwork. Each end is fitted to its own step's end-state
+        # bounds, measured before the camera exists, so zooming never feeds back.
+        end_view = start_view = None
+        if step.camera is not None or (animating and prior is not None and prior.camera is not None):
+            wanted = {t.drawable_id for t in (step.camera.targets if step.camera else ())}
+            end_view = cam.fit(step.camera, final_bounds(
+                objects, wanted, residual_moves(step, prior, eased)), width, height)
+            if animating and prior is not None and prior.camera is not None:
+                earlier = {t.drawable_id for t in prior.camera.targets}
+                start_view = cam.fit(prior.camera, final_bounds(
+                    objects, earlier, residual_moves(step, prior, eased, 0.0)), width, height)
+        view = None
+        groups = []
+        if end_view is not None or start_view is not None:
+            view = cam.blend(start_view, end_view, eased if animating else 1.0, width, height)
+            groups = cam.install(working)
+            cam.apply(groups, view)
+
+        def camera_at(t):
+            return cam.held_at(groups, cam.blend(start_view, end_view, t, width, height)
+                               if groups else None)
+
         apply_attention(working, step)
         layer = overlay_layer(working)
-        highlights, annotations = [], []
+        elapsed = progress * step.duration
+        highlights, annotations, marks = [], [], []
+        canvas = (width, height)
         with typography_errors():
             for highlight in step.highlights:
-                rect = highlight_artwork(highlight, objects[highlight.target.drawable_id])
-                working.add(rect, layer=layer)
-                highlights.append(HighlightLayout(_name(highlight.target), rect.get_bounds(),
+                drawn = step.draw_progress(highlight, elapsed)
+                if drawn <= 0:
+                    continue
+                shape = highlight_artwork(highlight, objects[highlight.target.drawable_id], drawn)
+                working.add(shape, layer=layer)
+                highlights.append(HighlightLayout(_name(highlight.target), shape.get_bounds(),
                                                   highlight.width))
-            elapsed = progress * step.duration
+
+            def mark_boxes(bounds):
+                return [mark_drawing(mark, bounds, cam.blend(start_view, end_view, 1.0, width, height)
+                                     if groups else None, self.theme, self._font, canvas).bounds
+                        for mark in step.marks]
+
             # Placement is decided once from the step's end state, so it is the
             # same for every frame of it; only the panels track live bounds.
             plan = {}
             if self.theme.avoid_collisions:
                 plan = plan_annotations(
                     step, objects, [t.drawable_id for t in self._targets.values()],
-                    width=working.width, height=working.height, theme=self.theme,
-                    font=self._font, previous=prior, progress=eased)
+                    width=width, height=height, theme=self.theme,
+                    font=self._font, previous=prior, progress=eased,
+                    camera_at=camera_at, mark_boxes=mark_boxes if step.marks else None)
             for label in (*step.labels, *step.callouts):
                 # A delay past the step's duration simply reveals at its end.
-                if min(step.revealed_at(label), step.duration) > elapsed:
+                drawn = step.draw_progress(label, elapsed)
+                if drawn <= 0:
                     continue
                 placement, measured = plan.get(label.id, (None, None))
                 layout, artwork = label_artwork(label, objects[label.target.drawable_id],
-                                                working.width, working.height, self.theme,
-                                                self._font, placement, measured)
+                                                width, height, self.theme,
+                                                self._font, placement, measured, drawn)
                 if draw_annotations:
                     for obj in artwork:
                         working.add(obj, layer=layer)
+                if drawn < 1:
+                    continue  # Still drawing on: nothing readable to report yet.
                 drew_leader = any(isinstance(obj, Line) for obj in artwork)
                 annotations.append(AnnotationLayout(
                     id=label.id, kind="callout" if isinstance(label, Callout) else "label",
@@ -245,10 +288,26 @@ class Tutorial:
                     anchor=label.anchor if placement is None else placement.anchor,
                     panel=layout.panel, boxed=label.box,
                     leader=(layout.anchor, layout.leader_end) if drew_leader else None))
+            if step.marks:
+                live = {t.drawable_id: objects[t.drawable_id].get_bounds()
+                        for mark in step.marks for t in mark.refs if isinstance(t, Target)}
+                for mark in step.marks:
+                    drawn = step.draw_progress(mark, elapsed)
+                    if drawn <= 0:
+                        continue
+                    drawing = mark_drawing(mark, live, view, self.theme, self._font, canvas, drawn)
+                    if draw_annotations:
+                        for obj in drawing.artwork:
+                            working.add(obj, layer=layer)
+                    if drawn >= 1:
+                        marks.append(MarkLayout(
+                            mark.id, mark.kind, mark.text,
+                            tuple(_name(t) for t in mark.refs if isinstance(t, Target)),
+                            drawing.bounds, drawing.panel))
         bounds = {_name(t): objects[t.drawable_id].get_bounds() for t in self._targets.values()}
         ids = {_name(t): t.drawable_id for t in self._targets.values()}
         return Composition(working, index, progress, tuple(annotations), tuple(highlights),
-                           bounds, ids)
+                           bounds, ids, tuple(marks), view)
 
     def export_steps(self, directory: str | Path, *, overwrite: bool = False,
                      alpha: bool = False) -> list[Path]:

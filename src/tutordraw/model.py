@@ -15,6 +15,10 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 Anchor = Literal["left", "right", "top", "bottom", "center"]
+Side = Literal["left", "right", "top", "bottom"]
+Corner = Literal["top_left", "top_right", "bottom_left", "bottom_right"]
+MARK_KINDS = ("arrow", "brace", "measure", "angle", "number")
+HIGHLIGHT_SHAPES = ("box", "outline")
 
 
 @dataclass(frozen=True, eq=False)
@@ -49,6 +53,33 @@ class Highlight:
     padding: float
     color: tuple[int, int, int]
     width: float
+    shape: str = "box"  # "box" or "outline" (follows the target's own path)
+    at: float = 0.0
+    draw: bool = False
+
+
+@dataclass(frozen=True, eq=False)
+class Mark:
+    """A step-owned drawn annotation: arrow, brace, measure, angle or number.
+
+    `refs` holds Targets or fixed (x, y) scene points, in the order the kind
+    defines. Create with Step.connect/brace/measure/angle/number.
+    """
+
+    kind: str
+    refs: tuple
+    text: str | None
+    options: dict
+    id: str = field(default_factory=lambda: str(uuid4()))
+
+
+@dataclass(frozen=True)
+class Camera:
+    """Frame these targets' end-state bounds. Create with Step.zoom_to()."""
+
+    targets: tuple[Target, ...]
+    padding: float
+    max_scale: float
 
 
 @dataclass(frozen=True)
@@ -142,6 +173,9 @@ class Step:
         self._restyles: dict[str, Restyle] = {}
         self._easing: str | None = None
         self._reveals: dict[str, float] = {}
+        self._marks: list[Mark] = []
+        self._draw: set[str] = set()
+        self._camera: Camera | None = None
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._id = str(uuid4())
@@ -175,32 +209,59 @@ class Step:
     def labels(self) -> tuple[Label, ...]:
         return tuple(self._labels)
 
-    def show(self, *labels: Label, at: float | None = None) -> Step:
+    def show(self, *labels: Label, at: float | None = None, draw: bool = False) -> Step:
         """Show registered labels, without inheriting any other step's state.
 
         `at` delays them by that many seconds from the start of the step, so a
         narrator can introduce one thing at a time. See docs/REVEAL.md.
+        `draw=True` draws each leader on before its panel appears.
         """
         for label in labels:
             if not isinstance(label, Label) or self._tutorial._labels.get(label.id) is not label:
                 raise ValidationError("Label must belong to this tutorial")
         seconds = None if at is None else finite_number(at, "at", minimum=0)
+        _check_bool(draw, "draw")
         for label in labels:
             if label not in self._labels:
                 self._labels.append(label)
             if seconds is not None:
                 self._reveals[label.id] = seconds
+            if draw:
+                self._draw.add(label.id)
         return self
+
+    @property
+    def draws(self) -> frozenset[str]:
+        """IDs of annotations and marks that draw on rather than appear whole."""
+        return frozenset(self._draw)
+
+    def draw_progress(self, item, elapsed: float) -> float:
+        """How far `item` has drawn on at `elapsed` seconds: 0 hidden, 1 complete.
+
+        Everything is complete at the end of the step, so render_step never
+        shows a half-drawn stroke. Without draw=True an item jumps 0 -> 1.
+        """
+        if elapsed >= self._duration:
+            return 1.0
+        if isinstance(item, Highlight):
+            start, drawing = item.at, item.draw
+        else:
+            start, drawing = self._reveals.get(item.id, 0.0), item.id in self._draw
+        if elapsed < start:
+            return 0.0
+        if not drawing:
+            return 1.0
+        return min(1.0, (elapsed - start) / self._tutorial.theme.draw_seconds)
 
     @property
     def reveals(self) -> dict[str, float]:
         """Annotation id to its delay in seconds; only delayed ones appear."""
         return dict(self._reveals)
 
-    def revealed_at(self, annotation: Label) -> float:
+    def revealed_at(self, annotation: Label | Mark) -> float:
         """Seconds from the start of this step before the annotation appears."""
-        if not isinstance(annotation, Label):
-            raise ValidationError("revealed_at needs a label or callout")
+        if not isinstance(annotation, (Label, Mark)):
+            raise ValidationError("revealed_at needs a label, callout or mark")
         return self._reveals.get(annotation.id, 0.0)
 
     @property
@@ -220,10 +281,12 @@ class Step:
                 offset: tuple[float, float] = (0, 0), font_scale: float | None = None,
                 padding: float | None = None, box: bool = True,
                 max_width: float | None = None,
-                line_spacing: float | None = None, at: float | None = None) -> Callout:
+                line_spacing: float | None = None, at: float | None = None,
+                draw: bool = False) -> Callout:
         """Add a wrapped explanation only to this step; return its definition."""
         self._check_target(target)
         seconds = None if at is None else finite_number(at, "at", minimum=0)
+        _check_bool(draw, "draw")
         annotation = make_annotation(target, text, anchor=anchor, leader=leader,
                                      gap=gap, offset=offset, font_scale=font_scale,
                                      padding=padding, box=box, callout=True,
@@ -231,19 +294,167 @@ class Step:
         self._callouts.append(annotation)
         if seconds is not None:
             self._reveals[annotation.id] = seconds
+        if draw:
+            self._draw.add(annotation.id)
         return annotation
 
     def highlight(self, target: Target, *, padding: float | None = None,
-                  color: tuple[int, int, int] | None = None, width: float | None = None) -> Step:
-        """Set a rectangular outline for this target in this step."""
+                  color: tuple[int, int, int] | None = None, width: float | None = None,
+                  shape: str = "box", at: float | None = None, draw: bool = False) -> Step:
+        """Outline this target in this step.
+
+        `shape="box"` draws a rectangle around its bounds; `shape="outline"`
+        follows the target's own outline, grown by `padding`, and needs a
+        closed shape. `at` delays it; `draw=True` draws it on.
+        """
         self._check_target(target)
+        if shape not in HIGHLIGHT_SHAPES:
+            raise ValidationError(f"shape must be one of {HIGHLIGHT_SHAPES}, not {shape!r}")
+        _check_bool(draw, "draw")
+        seconds = 0.0 if at is None else finite_number(at, "at", minimum=0)
         theme = self._tutorial.theme
         pad = finite_number(theme.highlight_padding if padding is None else padding, "padding", minimum=0)
         stroke = finite_number(theme.highlight_width if width is None else width, "width", minimum=0)
         if stroke == 0:
             raise ValidationError("width must be positive")
         tint = rgb(theme.highlight_color if color is None else color, "color")
-        self._highlights[target.id] = Highlight(target, pad, tint, stroke)
+        if shape == "outline":
+            from .adapters.drawcv import outline_path
+            outline_path(target.drawable, pad)  # Refuse now, not at render time.
+        self._highlights[target.id] = Highlight(target, pad, tint, stroke, shape, seconds, draw)
+        return self
+
+    @property
+    def marks(self) -> tuple[Mark, ...]:
+        return tuple(self._marks)
+
+    def _ref(self, value, name: str):
+        if isinstance(value, Target):
+            self._check_target(value)
+            return value
+        if isinstance(value, (tuple, list)) and len(value) == 2:
+            return tuple(finite_number(v, name) for v in value)
+        raise ValidationError(f"{name} must be a target of this tutorial or an (x, y) point")
+
+    def _mark(self, kind: str, refs: tuple, text: str | None, options: dict,
+              at: float | None, draw: bool) -> Mark:
+        seconds = None if at is None else finite_number(at, "at", minimum=0)
+        _check_bool(draw, "draw")
+        if text is not None:
+            text = validate_annotation_text(text, allow_newlines=False,
+                                            font=self._tutorial.font is not None)
+        mark = Mark(kind, refs, text, options)
+        self._marks.append(mark)
+        if seconds is not None:
+            self._reveals[mark.id] = seconds
+        if draw:
+            self._draw.add(mark.id)
+        return mark
+
+    def connect(self, source, destination, text: str | None = None, *,
+                bend: float = 0.0, both: bool = False, at: float | None = None,
+                draw: bool = False) -> Mark:
+        """Draw an arrow between two targets, or from/to a fixed (x, y) point.
+
+        A target end stops just outside its bounds; a point end lands exactly
+        there, so `connect((x, y), ball)` is a force arrow pushing on the ball.
+        `bend` curves it sideways by that fraction of its length (-1 to 1);
+        `both=True` puts a head on each end.
+        """
+        source, destination = self._ref(source, "source"), self._ref(destination, "destination")
+        same = source is destination if isinstance(source, Target) else source == destination
+        if same:
+            raise ValidationError("connect needs two different ends")
+        if not isinstance(source, Target) and not isinstance(destination, Target):
+            raise ValidationError("connect needs at least one target")
+        bend = finite_number(bend, "bend")
+        if not -1 <= bend <= 1:
+            raise ValidationError("bend must be between -1 and 1")
+        _check_bool(both, "both")
+        return self._mark("arrow", (source, destination), text, {"bend": bend, "both": both}, at, draw)
+
+    def brace(self, *targets: Target, text: str | None = None, side: Side = "bottom",
+              at: float | None = None, draw: bool = False) -> Mark:
+        """Group targets with a curly brace along one side, optionally captioned."""
+        if not targets:
+            raise ValidationError("brace needs at least one target")
+        for value in targets:
+            if not isinstance(value, Target):
+                raise ValidationError("brace takes targets")
+            self._check_target(value)
+        if side not in ("left", "right", "top", "bottom"):
+            raise ValidationError(f"Unsupported side: {side!r}")
+        return self._mark("brace", tuple(dict.fromkeys(targets)), text, {"side": side}, at, draw)
+
+    def measure(self, start, end=None, text: str | None = None, *, axis: str = "x",
+                offset: float = 24, at: float | None = None, draw: bool = False) -> Mark:
+        """Draw a dimension line with a caption such as "12 cm".
+
+        With one target, spans its width (`axis="x"`) or height (`"y"`). With
+        two refs (targets or (x, y) points), spans between their centres along
+        x, y, or directly (`"free"`). `offset` pushes the line clear of the art.
+        """
+        if axis not in ("x", "y", "free"):
+            raise ValidationError(f"axis must be 'x', 'y' or 'free', not {axis!r}")
+        first = self._ref(start, "start")
+        if end is None:
+            if not isinstance(first, Target) or axis == "free":
+                raise ValidationError("measuring one thing needs a target and axis 'x' or 'y'")
+            refs = (first,)
+        else:
+            refs = (first, self._ref(end, "end"))
+        offset = finite_number(offset, "offset", minimum=0)
+        return self._mark("measure", refs, text, {"axis": axis, "offset": offset}, at, draw)
+
+    def angle(self, vertex, start, end, text: str | None = None, *, radius: float = 32,
+              at: float | None = None, draw: bool = False) -> Mark:
+        """Mark the angle at `vertex` between the directions to `start` and `end`."""
+        refs = (self._ref(vertex, "vertex"), self._ref(start, "start"), self._ref(end, "end"))
+        radius = finite_number(radius, "radius", minimum=0)
+        if radius == 0:
+            raise ValidationError("radius must be positive")
+        return self._mark("angle", refs, text, {"radius": radius}, at, draw)
+
+    def number(self, target: Target, n: int | None = None, *, corner: Corner = "top_left",
+               at: float | None = None) -> Mark:
+        """Put a numbered badge on a target's corner; n defaults to the next number."""
+        if not isinstance(target, Target):
+            raise ValidationError("number needs a target")
+        self._check_target(target)
+        if corner not in ("top_left", "top_right", "bottom_left", "bottom_right"):
+            raise ValidationError(f"Unsupported corner: {corner!r}")
+        if n is None:
+            n = 1 + sum(mark.kind == "number" for mark in self._marks)
+        if isinstance(n, bool) or not isinstance(n, int) or not 0 < n < 1000:
+            raise ValidationError("n must be an integer from 1 to 999")
+        return self._mark("number", (target,), None, {"n": n, "corner": corner}, at, False)
+
+    @property
+    def camera(self) -> Camera | None:
+        return self._camera
+
+    def zoom_to(self, *targets: Target, padding: float = 40, max_scale: float = 4) -> Step:
+        """Frame these targets for this step, zooming the artwork (not the text).
+
+        Framing uses the targets' state at the end of the step. On an animated
+        step the camera moves from the previous step's framing.
+        """
+        if not targets:
+            raise ValidationError("zoom_to needs at least one target")
+        for value in targets:
+            if not isinstance(value, Target):
+                raise ValidationError("zoom_to takes targets")
+            self._check_target(value)
+        padding = finite_number(padding, "padding", minimum=0)
+        max_scale = finite_number(max_scale, "max_scale", minimum=0)
+        if not 0 < max_scale <= 20:
+            raise ValidationError("max_scale must be > 0 and <= 20")
+        self._camera = Camera(tuple(dict.fromkeys(targets)), padding, max_scale)
+        return self
+
+    def reset_camera(self) -> Step:
+        """Show the whole canvas in this step (the default)."""
+        self._camera = None
         return self
 
     @property
@@ -325,3 +536,8 @@ class Step:
         self._focus = tuple(dict.fromkeys(targets))
         self._dim_opacity = factor
         return self
+
+
+def _check_bool(value, name: str) -> None:
+    if not isinstance(value, bool):
+        raise ValidationError(f"{name} must be a boolean")

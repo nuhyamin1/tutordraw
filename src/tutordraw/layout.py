@@ -155,12 +155,14 @@ def wrap_text(text: str, font_scale: float, max_width: float, theme: Theme | Non
 
 def label_artwork(label: Label, target: Drawable, width: int, height: int,
                   theme: Theme | None = None, font=None,
-                  placement: Placement | None = None, measured: Measured | None = None
-                  ) -> tuple[LabelLayout, list[Drawable]]:
+                  placement: Placement | None = None, measured: Measured | None = None,
+                  progress: float = 1.0) -> tuple[LabelLayout, list[Drawable]]:
     """Build one annotation's artwork, optionally at a resolved placement.
 
     Without a placement this is the authored anchor, gap and offset exactly, so
-    a single label lays out the same as it always has.
+    a single label lays out the same as it always has. Below full `progress`
+    only the leader is drawn, that far along; the panel and text follow once it
+    arrives.
     """
     theme = theme or Theme()
     # get_bounds includes the transformed stroke but not post-processing effects.
@@ -186,7 +188,12 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
         warnings.warn(f"Label {label.text!r} extends outside the canvas", LayoutWarning, stacklevel=3)
     artwork: list[Drawable] = []
     if label.leader and ratio > 1:
-        artwork.append(Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0))
+        leader = Line(start=anchor, end=end, stroke=StrokeStyle(color=Color(*theme.leader_color), width=theme.leader_width), z_index=0)
+        if progress < 1:
+            leader.render_progress = progress
+        artwork.append(leader)
+    if progress < 1:
+        return LabelLayout(anchor, panel, end), artwork
     if label.box:
         bx, by, bw, bh = crisp_rect(x, y, w, h, theme.border_width)
         artwork.append(Rectangle(position=Point(bx, by), width=bw, height=bh,
@@ -200,5 +207,26 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
                               y + label.padding + i * line_height * spacing - measure.y)
         text.z_index = 2
         if lines[i]:
+            if not label.box and theme.halo_width > 0:
+                artwork.extend(_halo(lines[i], text.position, label, theme, font))
             artwork.append(text)
     return LabelLayout(anchor, panel, end), artwork
+
+
+def _halo(line: str, position: Point, label: Label, theme: Theme, font) -> list[Text]:
+    """Copies of a line in panel_color around it, so bare text reads on any art.
+
+    DrawCV text has no stroke, so the outline is eight offset copies beneath
+    the real text; at halo widths of a few pixels they read as one outline.
+    """
+    copies = []
+    r = theme.halo_width
+    for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r),
+                   (r * 0.7071, r * 0.7071), (-r * 0.7071, r * 0.7071),
+                   (r * 0.7071, -r * 0.7071), (-r * 0.7071, -r * 0.7071)):
+        copy = annotation_text(line, label.font_scale, theme, font)
+        copy.color = Color(*theme.panel_color)
+        copy.position = Point(position.x + dx, position.y + dy)
+        copy.z_index = 1
+        copies.append(copy)
+    return copies

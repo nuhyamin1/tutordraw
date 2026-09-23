@@ -71,7 +71,7 @@ def test_covering_uses_the_real_shape_not_its_bounds():
 
 
 def test_bare_text_on_dark_artwork_is_low_contrast():
-    scene, tutorial = lesson()
+    scene, tutorial = lesson(Theme(halo_width=0))
     band = Rectangle(position=Point(0, 100), width=600, height=160, fill=FillStyle(color=Color(30, 40, 60)))
     dot = Circle(center=Point(150, 180), radius=16, fill=FillStyle(color=Color(240, 200, 60)))
     scene.add(band)
@@ -81,6 +81,9 @@ def test_bare_text_on_dark_artwork_is_low_contrast():
     tutorial.step("Boxed").show(t_dot.label("Easy to read"))
     assert "LOW_CONTRAST" in codes(tutorial.lint(0))
     assert "LOW_CONTRAST" not in codes(tutorial.lint(1))
+    # The default halo puts the panel colour behind every glyph, which fixes it.
+    tutorial.theme = Theme()
+    assert "LOW_CONTRAST" not in codes(tutorial.lint(0))
 
 
 def test_small_text_long_callouts_and_busy_steps():
@@ -135,3 +138,14 @@ def test_layout_reports_geometry_at_a_time():
             tutorial.layout(bad)
     with pytest.raises(ValidationError):
         tutorial.lint(5)
+
+
+def test_floating_point_noise_is_not_an_issue(monkeypatch):
+    """A panel clamped flush to the edge can measure 1e-11 px outside it."""
+    import tutordraw.lint as lint
+
+    tutorial = LESSONS["edges"][0]()
+    monkeypatch.setattr(lint, "outside_area", lambda *args: 7.3e-12)
+    assert "OFF_CANVAS" not in codes(tutorial.lint())
+    monkeypatch.setattr(lint, "outside_area", lambda *args: 5.0)
+    assert "OFF_CANVAS" in codes(tutorial.lint())

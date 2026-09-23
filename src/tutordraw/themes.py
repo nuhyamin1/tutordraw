@@ -25,6 +25,10 @@ class Theme:
     dim_opacity: float = 0.25
     avoid_collisions: bool = True
     collision_margin: float = 6
+    # Seconds a draw=True stroke takes to draw on (schema v8).
+    draw_seconds: float = 0.6
+    # Outline behind box=False text, in panel_color; 0 disables it (schema v8).
+    halo_width: float = 3
 
     def __post_init__(self) -> None:
         for name in ("text_color", "panel_color", "border_color", "leader_color", "highlight_color"):
@@ -38,6 +42,9 @@ class Theme:
         if not 0 < scale <= 10:
             raise ValidationError("font_scale must be > 0 and <= 10")
         finite_number(self.line_spacing, "line_spacing", minimum=1)
+        if finite_number(self.draw_seconds, "draw_seconds", minimum=0) == 0:
+            raise ValidationError("draw_seconds must be positive")
+        finite_number(self.halo_width, "halo_width", minimum=0)
         if not 0 <= finite_number(self.dim_opacity, "dim_opacity") <= 1:
             raise ValidationError("dim_opacity must be between 0 and 1")
         if not isinstance(self.avoid_collisions, bool):

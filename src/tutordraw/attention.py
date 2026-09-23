@@ -2,7 +2,7 @@
 
 from drawcv import Color, Drawable, Group, Point, Rectangle, Scene, StrokeStyle
 
-from .adapters.drawcv import crisp_rect, current_fill, set_fill, translate
+from .adapters.drawcv import crisp_rect, current_fill, outline_path, rect_path, set_fill, translate
 from .errors import ValidationError
 from .model import Highlight, Step
 
@@ -166,11 +166,26 @@ def apply_attention(scene: Scene, step: Step) -> None:
         apply_dimming(scene, {t.drawable_id for t in step._focus}, step._dim_opacity)
 
 
-def highlight_artwork(highlight: Highlight, obj: Drawable) -> Rectangle:
-    bounds = obj.get_bounds()
+def highlight_artwork(highlight: Highlight, obj: Drawable, progress: float = 1.0) -> Drawable:
+    """A box around the target's bounds, or its own outline grown by padding.
+
+    Below full progress the stroke is a Path drawn that far along; at full
+    progress a box stays a plain Rectangle, exactly as before draw-on existed.
+    """
+    stroke = StrokeStyle(color=Color(*highlight.color), width=highlight.width)
     pad = highlight.padding
-    x, y, w, h = crisp_rect(bounds.x - pad, bounds.y - pad,
-                            bounds.width + 2 * pad, bounds.height + 2 * pad, highlight.width)
-    return Rectangle(position=Point(x, y), width=w, height=h,
-                     stroke=StrokeStyle(color=Color(*highlight.color), width=highlight.width),
-                     z_index=-1)
+    if highlight.shape == "outline":
+        shape = outline_path(obj, pad)
+        shape.stroke = stroke
+    else:
+        bounds = obj.get_bounds()
+        x, y, w, h = crisp_rect(bounds.x - pad, bounds.y - pad,
+                                bounds.width + 2 * pad, bounds.height + 2 * pad, highlight.width)
+        if progress >= 1:
+            return Rectangle(position=Point(x, y), width=w, height=h, stroke=stroke, z_index=-1)
+        shape = rect_path(x, y, w, h)
+        shape.stroke = stroke
+    shape.z_index = -1
+    if progress < 1:
+        shape.render_progress = progress
+    return shape

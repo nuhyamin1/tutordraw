@@ -172,7 +172,8 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
 
 def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Sequence[str], *,
                      width: float, height: float, theme: Theme, font=None,
-                     previous: Step | None = None, progress: float = 1.0
+                     previous: Step | None = None, progress: float = 1.0,
+                     camera_at=None, mark_boxes=None
                      ) -> dict[str, tuple[Placement, Measured]]:
     """Decide every annotation's placement once, from the step's final geometry.
 
@@ -187,18 +188,30 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
 
     The returned nudge is relative to the authored offset, so the panel is still
     built from live bounds each frame and a moved target keeps its label.
+
+    `camera_at(t)` holds the camera at the step's end (1) or start (0) while
+    bounds are measured, so a zoom does not move the labels' slots either.
+    `mark_boxes(bounds)` returns the step's marks at those bounds, as blockers.
     """
+    from contextlib import nullcontext
     from .attention import final_bounds, residual_moves
 
     annotations = (*step.labels, *step.callouts)
     if not annotations:
         return {}
     wanted = (set(target_ids) | {a.target.drawable_id for a in annotations}
-              | {h.target.drawable_id for h in step.highlights})
-    bounds = final_bounds(objects, wanted, residual_moves(step, previous, progress))
+              | {h.target.drawable_id for h in step.highlights}
+              | {ref.drawable_id for mark in step.marks for ref in mark.refs
+                 if hasattr(ref, "drawable_id")})
+    held = camera_at or (lambda t: nullcontext())
+    with held(1.0):
+        bounds = final_bounds(objects, wanted, residual_moves(step, previous, progress))
+        marks = mark_boxes(bounds) if mark_boxes is not None else []
     # An animated step also has a start, and its targets sweep between the two.
-    started = (final_bounds(objects, wanted, residual_moves(step, previous, progress, 0.0))
-               if step.easing is not None else None)
+    started = None
+    if step.easing is not None:
+        with held(0.0):
+            started = final_bounds(objects, wanted, residual_moves(step, previous, progress, 0.0))
     swept = bounds if started is None else {
         key: union(box, started[key]) for key, box in bounds.items()}
     requests, measured = [], {}
@@ -216,6 +229,7 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
         box, pad = swept[highlight.target.drawable_id], highlight.padding
         highlights[highlight.target.drawable_id] = BoundingBox(
             box.x - pad, box.y - pad, box.width + 2 * pad, box.height + 2 * pad)
+    highlights.update({f"mark:{i}": box for i, box in enumerate(marks)})
     chosen = resolve(requests,
                      artwork={key: swept[key] for key in target_ids if key in swept},
                      blockers=highlights, width=width, height=height,

@@ -12,11 +12,18 @@ STEP_FIELDS_ADDED = {
     3: ("restyles",),
     4: ("easing",),
     5: ("reveals",),
+    8: ("marks", "draw", "camera"),
+}
+
+# The same, for highlight fields, which live inside each step.
+HIGHLIGHT_FIELDS_ADDED = {
+    8: ("at", "draw", "shape"),
 }
 
 # The same, for theme fields, which live outside the steps.
 THEME_FIELDS_ADDED = {
     6: ("avoid_collisions", "collision_margin"),
+    8: ("draw_seconds", "halo_width"),
 }
 
 # The same, for label and callout fields, which appear in two places.
@@ -47,6 +54,9 @@ def downgrade(document: dict, version: int) -> dict:
         for newer in newer_versions:
             for field in STEP_FIELDS_ADDED.get(newer, ()):
                 step.pop(field, None)
+            for highlight in step["highlights"]:
+                for field in HIGHLIGHT_FIELDS_ADDED.get(newer, ()):
+                    highlight.pop(field, None)
     for annotation in annotations:
         for newer in newer_versions:
             for field in ANNOTATION_FIELDS_ADDED.get(newer, ()):
@@ -58,5 +68,6 @@ def fields_after(version: int) -> tuple[str, ...]:
     """Every field that exists now but did not at the given version."""
     return tuple(field
                  for newer in range(version + 1, SCHEMA_VERSION + 1)
-                 for table in (STEP_FIELDS_ADDED, THEME_FIELDS_ADDED, ANNOTATION_FIELDS_ADDED)
+                 for table in (STEP_FIELDS_ADDED, THEME_FIELDS_ADDED, ANNOTATION_FIELDS_ADDED,
+                               HIGHLIGHT_FIELDS_ADDED)
                  for field in table.get(newer, ()))

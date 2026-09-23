@@ -114,6 +114,26 @@ working copy, so beats stay independent. Labels and highlights follow a moved
 target automatically. Repeating `restyle` for a target replaces its settings, so
 pass every option you still want. See [restyle](RESTYLE.md).
 
+## Point, connect and measure — don't just label
+
+A good explainer points at things the way a teacher's hand would. Reach for:
+
+- `step.connect(a, b, "causes")` for a relation between two things, and
+  `step.connect((x, y), ball, "push")` for a force acting on one.
+- `step.measure(block, text="14 cm")` for sizes and distances, and
+  `step.angle(vertex, a, b, "30°")` for geometry.
+- `step.brace(a, b, text="the system")` to group several things under a name.
+- `step.number(target)` to give the narration an order ("first... second...").
+- `step.zoom_to(target)` on an `animate()`d step to move in on a detail, and a
+  later step without it to pull back out.
+- `draw=True` together with `at=` so arrows and leaders arrive as the
+  narration reaches them.
+- `highlight(target, shape="outline")` for a closed shape; a box for groups.
+
+Then run `lint()`: mark captions are not moved automatically, and lint tells you
+which ones collide and which option (`offset`, `radius`, `bend`, `side`) moves
+them. See [the vocabulary](VOCABULARY.md) for every option.
+
 ## Characters you may use in annotations
 
 This matters when a model writes lesson text at runtime. Labels and callouts

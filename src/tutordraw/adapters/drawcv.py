@@ -5,7 +5,7 @@ from copy import deepcopy
 import math
 from pathlib import Path
 
-from drawcv import Color, Drawable, FillStyle, Group, Scene
+from drawcv import Color, Drawable, FillStyle, Group, Point, Scene
 
 from ..errors import SceneCopyError, ValidationError
 
@@ -158,3 +158,90 @@ def crisp_rect(x: float, y: float, width: float, height: float,
     if right <= left or bottom <= top:
         return x, y, width, height
     return left, top, right - left, bottom - top
+
+
+def outline_path(drawable: Drawable, padding: float):
+    """The drawable's own closed outline in world space, grown by padding.
+
+    Groups, text and open shapes cannot be outlined; the error says to use a
+    box highlight instead, so the caller can act on it.
+
+    Grown here rather than with DrawCV's Path.offset, which took 0.7-2.4 s for
+    one circle on 0.11.0 (it maps every point to world space, recomputing the
+    path's bounds each time). flatten_world takes ~2 ms; see DECISIONS.md.
+    """
+    from drawcv import Path
+
+    try:
+        contours = drawable.to_path(preserve_world_transform=True).flatten_world(
+            tolerance=0.3, include_closed=True)
+    except Exception as exc:
+        raise ValidationError(
+            f"shape='outline' needs a closed shape; {type(drawable).__name__} cannot be "
+            f"outlined ({exc}). Use shape='box' instead.") from exc
+    if not contours or not all(closed and len(points) >= 3 for points, closed in contours):
+        raise ValidationError(
+            f"shape='outline' needs a closed shape; {type(drawable).__name__} is open. "
+            "Use shape='box' instead.")
+    path = Path()
+    for points, _ in contours:
+        grown = _grow(points, padding)
+        path.move_to(grown[0])
+        for point in grown[1:]:
+            path.line_to(point)
+        path.close()
+    path.fill = None
+    return path
+
+
+def _grow(points: list[Point], padding: float) -> list[Point]:
+    """Offset a closed polygon outward, with round corners where it turns sharply.
+
+    Each contour uses its own winding, so a hole (wound the other way) grows
+    into itself, which is the same thing as the filled region growing.
+    """
+    import math
+
+    if points[0].x == points[-1].x and points[0].y == points[-1].y:
+        points = points[:-1]
+    if padding <= 0:
+        return list(points)
+    count = len(points)
+    area = sum(points[i].x * points[(i + 1) % count].y - points[(i + 1) % count].x * points[i].y
+               for i in range(count))
+    sign = 1.0 if area > 0 else -1.0
+
+    def normal(a: Point, b: Point) -> tuple[float, float]:
+        dx, dy = b.x - a.x, b.y - a.y
+        length = math.hypot(dx, dy) or 1.0
+        return sign * dy / length, -sign * dx / length
+
+    result: list[Point] = []
+    for i in range(count):
+        prev, here, nxt = points[i - 1], points[i], points[(i + 1) % count]
+        n1, n2 = normal(prev, here), normal(here, nxt)
+        turn = math.atan2(n1[0] * n2[1] - n1[1] * n2[0], n1[0] * n2[0] + n1[1] * n2[1])
+        # At a convex corner the normals turn the same way the contour winds.
+        convex = turn * sign > 0
+        if convex and abs(turn) > 0.35:
+            # Round the corner: sweep the offset from one edge's normal to the next.
+            steps = max(2, int(abs(turn) / 0.2))
+            start = math.atan2(n1[1], n1[0])
+            for k in range(steps + 1):
+                angle = start + turn * k / steps
+                result.append(Point(here.x + padding * math.cos(angle), here.y + padding * math.sin(angle)))
+        else:
+            mx, my = n1[0] + n2[0], n1[1] + n2[1]
+            length = math.hypot(mx, my) or 1.0
+            mx, my = mx / length, my / length
+            reach = padding / max(mx * n1[0] + my * n1[1], 0.25)
+            result.append(Point(here.x + mx * reach, here.y + my * reach))
+    return result
+
+
+def rect_path(x: float, y: float, width: float, height: float):
+    """A rectangle as a Path, so render_progress can draw it on."""
+    from drawcv import Rectangle
+    path = Rectangle(position=Point(x, y), width=width, height=height).to_path()
+    path.fill = None
+    return path

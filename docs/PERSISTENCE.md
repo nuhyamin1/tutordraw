@@ -55,6 +55,16 @@ revised.save_json("lesson-revised.tutordraw.json")
 
 This fragment assumes a second step with a callout. The original lesson object and file remain unchanged. For adding teaching content, prefer the regular `step`, `show`, `highlight`, `explain`, and `dim_others` methods.
 
+## Current format: v8
+
+New saves write lesson schema v8, packaged as `lesson-v8.schema.json`. v8 adds
+step `marks`, `draw` and `camera`; highlight `at`, `draw` and `shape`; theme
+`draw_seconds` and `halo_width` (see [the vocabulary](VOCABULARY.md)). Every
+earlier version, v1 to v7, still loads with defaults for the fields it lacks.
+Each mark is rebuilt through its authoring method on load, so a saved mark is
+validated exactly as a new one is. A v8 file cannot be opened by 0.1.0a11 or
+earlier. The sections below describe how the format started.
+
 ## Format v2 (with v1 loading)
 
 Envelope keys are `format`, `schema_version`, `title`, `theme`, `scene`, `targets`, `labels`, and `steps`. `format` must be `tutordraw.lesson`; `schema_version` is integer `2` for new saves. Integer `1` is also accepted when loading.

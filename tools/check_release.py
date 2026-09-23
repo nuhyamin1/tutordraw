@@ -54,7 +54,8 @@ def main() -> None:
                      "docs/VIDEO.md", "examples/video_lesson.py",
                      "docs/TEXT.md", "examples/symbols_lesson.py",
                      "docs/RESTYLE.md", "examples/eclipse_lesson.py", "docs/ANIMATION.md", "docs/REVEAL.md",
-                     "examples/multilingual_lesson.py",
+                     "examples/multilingual_lesson.py", "examples/lever_lesson.py",
+                     "docs/VOCABULARY.md",
                      "tools/check_installed.py", "tests/test_tutorial.py"):
             if f"{name}-{version}/{file}" not in names:
                 raise SystemExit(f"Source distribution missing: {file}")

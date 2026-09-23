@@ -24,6 +24,10 @@ MAX_ANNOTATIONS = 6  # visible at once in one beat
 MAX_CALLOUT_WORDS = 40
 COVER_FRACTION = 0.08  # of a panel's area lying on a target's actual shape
 SAMPLE_STEP = 3.0  # px between hit-test samples
+HALO_ENOUGH = 2.0  # px of halo that separates bare text from the art behind it
+# Areas below one square pixel are floating-point noise, not a real overlap:
+# outside_area subtracts an intersection from a box and can leave 1e-11.
+AREA_EPSILON = 1.0
 
 SEVERITIES = ("error", "warning", "info")
 
@@ -131,6 +135,10 @@ def _leader_hits(annotation: AnnotationLayout, drawable) -> bool:
     return False
 
 
+def _mark_name(mark) -> str:
+    return repr(mark.text) if mark.text else "on " + ", ".join(repr(t) for t in mark.targets)
+
+
 def lint_step(tutorial, index: int) -> list[Issue]:
     step = tutorial.steps[index]
     title = step.title
@@ -157,20 +165,31 @@ def lint_step(tutorial, index: int) -> list[Issue]:
     labels = {label.id: label for label in (*step.labels, *step.callouts)}
 
     for a in annotations:
-        if outside_area(a.panel, width, height) > 0:
+        if outside_area(a.panel, width, height) > AREA_EPSILON:
             add("OFF_CANVAS", "error",
                 f"{a.kind.capitalize()} {a.text!r} extends past the canvas edge.",
                 f"Anchor it on a side of {a.target!r} that faces into the canvas, "
                 "reduce gap, or shorten it (max_width= for a callout).",
                 [a.target], [a.text])
 
-    for a, b in combinations(annotations, 2):
-        if overlap_area(a.panel, b.panel) > 0:
+    for m in composition.marks:
+        if outside_area(m.bounds, width, height) > AREA_EPSILON:
+            add("OFF_CANVAS", "error",
+                f"The {m.kind} {_mark_name(m)} extends past the canvas edge.",
+                "Pick another side or a smaller offset/radius for it, or give the "
+                "canvas more room.", m.targets, [m.text] if m.text else [])
+
+    # Every caption panel in the frame: annotations' and marks' alike.
+    panels = [(a.panel, a.text, (a.target,)) for a in annotations]
+    panels += [(m.panel, m.text, m.targets) for m in composition.marks if m.panel is not None]
+    for (box_a, text_a, targets_a), (box_b, text_b, targets_b) in combinations(panels, 2):
+        if overlap_area(box_a, box_b) > AREA_EPSILON:
             add("ANNOTATION_OVERLAP", "error",
-                f"{a.text!r} and {b.text!r} overlap each other.",
-                "Give one a different anchor, reveal them at different times with "
-                "at=, or split them across steps.",
-                [a.target, b.target], [a.text, b.text])
+                f"{text_a!r} and {text_b!r} overlap each other.",
+                "Give one a different anchor or side, reveal them at different times "
+                "with at=, or split them across steps. A mark's caption moves with "
+                "its offset, radius, bend or side.",
+                [*targets_a, *targets_b], [text_a, text_b])
 
     for a in annotations:
         for name, drawable in drawables.items():
@@ -223,7 +242,8 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 f"{a.text!r} is {measured.line_height:.0f} px tall.",
                 f"Use font_scale of at least {theme.font_scale:g} (the theme default).",
                 [a.target], [a.text])
-        if a.boxed:
+        # A halo of a couple of pixels puts panel_color right behind every glyph.
+        if a.boxed or theme.halo_width >= HALO_ENOUGH:
             ratio = contrast(text_bgr, tuple(reversed(theme.panel_color)))
         else:
             if backdrop is None:
@@ -242,7 +262,8 @@ def lint_step(tutorial, index: int) -> list[Issue]:
             add("LOW_CONTRAST", "warning",
                 f"{a.text!r} has contrast {ratio:.1f}:1 against what is behind it "
                 f"(needs {MIN_CONTRAST}:1).",
-                "Keep its panel (box=True), or change Theme text_color/panel_color."
+                "Keep its panel (box=True), give it a halo (Theme halo_width >= 2), "
+                "or change Theme text_color/panel_color."
                 if not a.boxed else "Change Theme text_color or panel_color.",
                 [a.target], [a.text])
         if a.kind == "callout" and len(a.text.split()) > MAX_CALLOUT_WORDS:
@@ -251,9 +272,10 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 f"Keep a callout under {MAX_CALLOUT_WORDS} words; say the rest in "
                 "narration or split it across steps.", [a.target], [a.text])
 
-    if len(annotations) > MAX_ANNOTATIONS:
+    shown = len(annotations) + len(composition.marks)
+    if shown > MAX_ANNOTATIONS:
         add("BUSY_STEP", "info",
-            f"{len(annotations)} annotations are visible at once.",
+            f"{shown} annotations and marks are visible at once.",
             f"Keep a beat to {MAX_ANNOTATIONS} or fewer: split the step, or introduce "
             "them one at a time with show(..., at=seconds).",
             annotations=[a.text for a in annotations])

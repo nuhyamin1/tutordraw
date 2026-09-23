@@ -6,7 +6,7 @@ text only, so the references do not depend on a font file being installed.
 Changing a lesson here means regenerating its references; see test_golden.py.
 """
 
-from drawcv import (Circle, Color, Ellipse, FillStyle, Group, Line, Point, Rectangle,
+from drawcv import (Circle, Color, Ellipse, FillStyle, Group, Line, Point, Polygon, Rectangle,
                     Scene, StrokeStyle, Text)
 
 from tutordraw import Theme, Tutorial
@@ -162,6 +162,80 @@ def edges() -> Tutorial:
     return lesson
 
 
+def vocab() -> Tutorial:
+    """Every mark kind, an outline highlight and numbered markers."""
+    scene = Scene(760, 540, background=Color(248, 250, 252))
+    _title(scene, "MARKS")
+    sun = Circle(center=Point(120, 200), radius=40, fill=FillStyle(color=Color(250, 200, 70)))
+    earth = Circle(center=Point(380, 200), radius=26, fill=FillStyle(color=Color(80, 130, 210)))
+    moon = Circle(center=Point(470, 170), radius=10, fill=FillStyle(color=Color(190, 190, 200)))
+    block = Rectangle(position=Point(560, 150), width=140, height=80,
+                      fill=FillStyle(color=Color(160, 200, 150)))
+    tri = Polygon(vertices=[Point(90, 490), Point(420, 490), Point(90, 300)],
+                  fill=FillStyle(color=Color(230, 225, 245)),
+                  stroke=StrokeStyle(color=Color(120, 110, 170), width=2))
+    for shape in (sun, earth, moon, block, tri):
+        scene.add(shape)
+    lesson = Tutorial(scene)
+    t_sun, t_earth, t_moon, t_block, t_tri = (lesson.target(s, name=n) for s, n in
+        ((sun, "sun"), (earth, "earth"), (moon, "moon"), (block, "block"), (tri, "triangle")))
+    orbit = lesson.step("Relations")
+    orbit.connect(t_sun, t_earth, "light", bend=0.0)
+    orbit.connect(t_earth, t_moon, "gravity", bend=0.4, both=True)
+    orbit.brace(t_earth, t_moon, text="Earth-Moon system", side="bottom")
+    orbit.measure(t_block, text="14 cm", axis="x")
+    orbit.measure(t_block, text="8 cm", axis="y", offset=16)
+    orbit.number(t_sun)
+    orbit.number(t_earth)
+    orbit.number(t_block, corner="top_right")
+    orbit.highlight(t_earth, shape="outline", padding=6)
+    geometry = lesson.step("Geometry")
+    geometry.angle((90, 490), (420, 490), (90, 300), "90 deg", radius=28)
+    geometry.angle((420, 490), (90, 490), (90, 300), "a", radius=48)
+    geometry.measure((90, 490), (420, 490), "base", axis="x", offset=18)
+    geometry.measure((420, 490), (90, 300), "hypotenuse", axis="free")
+    geometry.highlight(t_tri, shape="outline", padding=5)
+    return lesson
+
+
+def camera() -> Tutorial:
+    """Zoom into one target and back out, animated both ways."""
+    scene = Scene(720, 400, background=Color(240, 245, 250))
+    _title(scene, "ZOOM")
+    cell = Circle(center=Point(360, 220), radius=150, fill=FillStyle(color=Color(232, 242, 244)),
+                  stroke=StrokeStyle(color=Color(190, 214, 216), width=3))
+    nucleus = Circle(center=Point(420, 190), radius=30, fill=FillStyle(color=Color(131, 151, 218)))
+    dot = Circle(center=Point(300, 280), radius=8, fill=FillStyle(color=Color(220, 120, 90)))
+    for shape in (cell, nucleus, dot):
+        scene.add(shape)
+    lesson = Tutorial(scene)
+    t_cell = lesson.target(cell, name="cell")
+    t_nucleus = lesson.target(nucleus, name="nucleus")
+    t_dot = lesson.target(dot, name="ribosome")
+    lesson.step("Whole cell").show(t_cell.label("Cell", anchor="top"))
+    close = lesson.step("Nucleus", duration=2).animate().zoom_to(t_nucleus, padding=60)
+    close.show(t_nucleus.label("Nucleus", anchor="right")).highlight(t_nucleus)
+    back = lesson.step("Back out", duration=2).animate()
+    back.show(t_dot.label("Ribosome", anchor="bottom"))
+    return lesson
+
+
+def drawon() -> Tutorial:
+    """Strokes drawing on: a leader, a highlight and an arrow, sampled mid-draw."""
+    scene = Scene(640, 300, background=Color.white())
+    a = Rectangle(position=Point(80, 120), width=80, height=60, fill=FillStyle(color=Color(150, 190, 230)))
+    b = Circle(center=Point(460, 150), radius=36, fill=FillStyle(color=Color(230, 160, 150)))
+    scene.add(a)
+    scene.add(b)
+    lesson = Tutorial(scene, theme=Theme(draw_seconds=1.0))
+    t_a, t_b = lesson.target(a, name="a"), lesson.target(b, name="b")
+    step = lesson.step("Draw", duration=4)
+    step.show(t_a.label("Source", anchor="top"), draw=True)
+    step.highlight(t_b, draw=True, at=0.5)
+    step.connect(t_a, t_b, "flows to", draw=True, at=1.0)
+    return lesson
+
+
 # name -> (builder, [(frame name, step index, progress)])
 LESSONS = {
     "cell": (cell, [("step1", 0, 1.0), ("step2", 1, 1.0), ("step3", 2, 1.0)]),
@@ -170,4 +244,9 @@ LESSONS = {
     "groups": (groups, [("step1", 0, 1.0)]),
     "motion": (motion, [("start", 0, 1.0), ("mid", 1, 0.4), ("end", 1, 1.0)]),
     "edges": (edges, [("step1", 0, 1.0)]),
+    "vocab": (vocab, [("relations", 0, 1.0), ("geometry", 1, 1.0)]),
+    "camera": (camera, [("whole", 0, 1.0), ("zooming", 1, 0.5), ("zoomed", 1, 1.0),
+                        ("leaving", 2, 0.5), ("out", 2, 1.0)]),
+    "drawon": (drawon, [("leader", 0, 0.1), ("highlight", 0, 0.2), ("arrow", 0, 0.375),
+                        ("done", 0, 1.0)]),
 }

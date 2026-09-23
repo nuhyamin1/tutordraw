@@ -32,6 +32,18 @@ class HighlightLayout:
 
 
 @dataclass(frozen=True)
+class MarkLayout:
+    """A drawn mark (arrow, brace, measure, angle, number) in this frame."""
+
+    id: str
+    kind: str
+    text: str | None
+    targets: tuple[str, ...]  # names (or IDs) of the targets it refers to
+    bounds: BoundingBox  # everything it draws, caption included
+    panel: BoundingBox | None  # its caption panel, if it has text
+
+
+@dataclass(frozen=True)
 class Composition:
     """A working scene plus the layout decisions that produced it."""
 
@@ -42,6 +54,8 @@ class Composition:
     highlights: tuple[HighlightLayout, ...]
     targets: dict[str, BoundingBox]  # target name (or ID) -> live bounds
     drawables: dict[str, str]  # target name (or ID) -> drawable ID in `scene`
+    marks: tuple[MarkLayout, ...] = ()
+    camera: tuple[float, float, float] | None = None  # (scale, tx, ty), None = whole canvas
 
     def to_dict(self) -> dict:
         """Plain, rounded geometry: stable enough to snapshot and compare."""
@@ -51,7 +65,7 @@ class Composition:
         def point(p: Point) -> list[float]:
             return [round(p.x, 2), round(p.y, 2)]
 
-        return {
+        result = {
             "step": self.step,
             "progress": round(self.progress, 4),
             "canvas": [self.scene.width, self.scene.height],
@@ -64,3 +78,12 @@ class Composition:
                 "leader": None if a.leader is None else [point(a.leader[0]), point(a.leader[1])],
             } for a in self.annotations],
         }
+        # Only present when used, so snapshots from before marks stay valid.
+        if self.marks:
+            result["marks"] = [{"kind": m.kind, "text": m.text, "targets": list(m.targets),
+                                "bounds": box(m.bounds),
+                                "panel": None if m.panel is None else box(m.panel)}
+                               for m in self.marks]
+        if self.camera is not None:
+            result["camera"] = [round(v, 4) for v in self.camera]
+        return result

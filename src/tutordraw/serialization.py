@@ -14,7 +14,7 @@ from drawcv import Scene
 
 from .adapters.drawcv import index_scene
 from .errors import LessonFormatError, ValidationError
-from .model import Callout, Label, make_annotation
+from .model import Callout, Label, Target, make_annotation
 from .themes import Theme
 from .validation import finite_number
 
@@ -22,11 +22,18 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 7
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, SCHEMA_VERSION)
+SCHEMA_VERSION = 8
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, SCHEMA_VERSION)
 # Theme fields each schema version introduced; older documents omit them and
 # load with the Theme default, exactly as older step fields do.
-THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin")}
+THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin"),
+                      8: ("draw_seconds", "halo_width")}
+# The same, for highlight fields.
+HIGHLIGHT_FIELDS_ADDED = {8: ("at", "draw", "shape")}
+HIGHLIGHT_FIELDS = {"target_id", "padding", "color", "width", "at", "draw", "shape"}
+# Each mark kind's options, exactly; the key set is how a kind is validated.
+MARK_OPTIONS = {"arrow": {"bend", "both"}, "brace": {"side"}, "measure": {"axis", "offset"},
+                "angle": {"radius"}, "number": {"n", "corner"}}
 # The same, for label and callout fields.
 ANNOTATION_FIELDS_ADDED = {7: ("box",)}
 ANNOTATION_FIELDS = {"id", "target_id", "text", "anchor", "leader", "gap", "offset",
@@ -74,6 +81,13 @@ def _annotation(label: Label) -> dict:
     return value
 
 
+def _mark(mark) -> dict:
+    refs = [{"target_id": ref.id} if isinstance(ref, Target) else {"point": list(ref)}
+            for ref in mark.refs]
+    return {"id": mark.id, "kind": mark.kind, "refs": refs, "text": mark.text,
+            "options": dict(mark.options)}
+
+
 def to_dict(tutorial: Tutorial) -> dict:
     try:
         source = index_scene(tutorial.scene)
@@ -90,7 +104,13 @@ def to_dict(tutorial: Tutorial) -> dict:
                        "labels": [label.id for label in step.labels],
                        "callouts": [_annotation(c) for c in step.callouts],
                        "highlights": [{"target_id": h.target.id, "padding": h.padding,
-                                       "color": list(h.color), "width": h.width} for h in step.highlights],
+                                       "color": list(h.color), "width": h.width, "at": h.at,
+                                       "draw": h.draw, "shape": h.shape} for h in step.highlights],
+                       "marks": [_mark(m) for m in step.marks],
+                       "draw": sorted(step.draws),
+                       "camera": None if step.camera is None else {
+                           "target_ids": [t.id for t in step.camera.targets],
+                           "padding": step.camera.padding, "max_scale": step.camera.max_scale},
                        "dim": None if step._dim_opacity is None else {
                            "target_ids": [t.id for t in step._focus], "opacity": step._dim_opacity},
                        "easing": step.easing,
@@ -209,8 +229,9 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             restyle_fields = {"restyles"} if version >= 3 else set()
             easing_fields = {"easing"} if version >= 4 else set()
             reveal_fields = {"reveals"} if version >= 5 else set()
+            mark_fields = {"marks", "draw", "camera"} if version >= 8 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
-                    | timing_fields | restyle_fields | easing_fields | reveal_fields, where)
+                    | timing_fields | restyle_fields | easing_fields | reveal_fields | mark_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -218,21 +239,32 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             for j, callout in enumerate(_list(item["callouts"], f"{where}.callouts")):
                 step._callouts.append(annotation(callout, f"{where}.callouts[{j}]", callout=True))
             highlighted = set()
+            highlight_fields = HIGHLIGHT_FIELDS - {
+                name for newer, names in HIGHLIGHT_FIELDS_ADDED.items() if newer > version
+                for name in names}
             for j, highlight in enumerate(_list(item["highlights"], f"{where}.highlights")):
                 location = f"{where}.highlights[{j}]"
-                _object(highlight, {"target_id", "padding", "color", "width"}, location)
+                _object(highlight, highlight_fields, location)
                 target = reference(highlight["target_id"], targets, f"{location}.target_id")
                 if target.id in highlighted:
                     raise LessonFormatError(f"{location}: duplicate highlight for {target.id!r}")
                 if highlight["padding"] is None or highlight["width"] is None:
                     raise LessonFormatError(f"{location}: highlight values cannot be null")
                 highlighted.add(target.id)
-                step.highlight(target, padding=highlight["padding"], width=highlight["width"],
-                               color=tuple(_list(highlight["color"], f"{location}.color")))
+                try:
+                    step.highlight(target, padding=highlight["padding"], width=highlight["width"],
+                                   color=tuple(_list(highlight["color"], f"{location}.color")),
+                                   shape=highlight.get("shape", "box"), at=highlight.get("at", 0.0),
+                                   draw=highlight.get("draw", False))
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{location}: {exc}") from exc
+            for j, entry in enumerate(_list(item.get("marks", []), f"{where}.marks")):
+                _load_mark(step, entry, f"{where}.marks[{j}]", targets, identity)
             delays = item.get("reveals", {})
             if not isinstance(delays, dict):
                 raise LessonFormatError(f"{where}.reveals must be an object")
-            shown = {label.id for label in step.labels} | {c.id for c in step.callouts}
+            shown = ({label.id for label in step.labels} | {c.id for c in step.callouts}
+                     | {m.id for m in step.marks})
             for key, value in delays.items():
                 if key not in shown:
                     raise LessonFormatError(f"{where}.reveals: unknown annotation {key!r}")
@@ -240,6 +272,20 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                     step._reveals[key] = finite_number(value, "at", minimum=0)
                 except ValidationError as exc:
                     raise LessonFormatError(f"{where}.reveals[{key!r}]: {exc}") from exc
+            drawn = _list(item.get("draw", []), f"{where}.draw")
+            for key in drawn:
+                if key not in shown:
+                    raise LessonFormatError(f"{where}.draw: unknown annotation or mark {key!r}")
+                if any(m.id == key and m.kind == "number" for m in step.marks):
+                    raise LessonFormatError(f"{where}.draw: number markers cannot draw on")
+            step._draw.update(drawn)
+            if item.get("camera") is not None:
+                view = _object(item["camera"], {"target_ids", "padding", "max_scale"}, f"{where}.camera")
+                try:
+                    step.zoom_to(*references(view["target_ids"], targets, f"{where}.camera.target_ids"),
+                                 padding=view["padding"], max_scale=view["max_scale"])
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.camera: {exc}") from exc
             if item.get("easing") is not None:
                 try:
                     step.animate(item["easing"])
@@ -274,6 +320,49 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
         raise
     except Exception as exc:
         raise LessonFormatError(f"Invalid lesson: {exc}") from exc
+
+
+def _load_mark(step, entry, where, targets, identity) -> None:
+    """Rebuild a mark through its authoring method, so it is validated the same way."""
+    _object(entry, {"id", "kind", "refs", "text", "options"}, where)
+    kind = entry["kind"]
+    if kind not in MARK_OPTIONS:
+        raise LessonFormatError(f"{where}.kind: unknown mark kind {kind!r}")
+    mark_id = identity(entry["id"], f"{where}.id")
+    options = _object(entry["options"], MARK_OPTIONS[kind], f"{where}.options")
+    refs = []
+    for k, ref in enumerate(_list(entry["refs"], f"{where}.refs")):
+        if isinstance(ref, dict) and set(ref) == {"target_id"}:
+            if ref["target_id"] not in targets:
+                raise LessonFormatError(f"{where}.refs[{k}]: unknown reference {ref['target_id']!r}")
+            refs.append(targets[ref["target_id"]])
+        elif isinstance(ref, dict) and set(ref) == {"point"}:
+            refs.append(tuple(_list(ref["point"], f"{where}.refs[{k}].point")))
+        else:
+            raise LessonFormatError(f"{where}.refs[{k}] must be {{target_id}} or {{point}}")
+    text = entry["text"]
+    try:
+        if kind == "arrow":
+            if len(refs) != 2:
+                raise ValidationError("an arrow has exactly two refs")
+            step.connect(*refs, text, **options)
+        elif kind == "brace":
+            step.brace(*refs, text=text, **options)
+        elif kind == "measure":
+            if len(refs) not in (1, 2):
+                raise ValidationError("a measure has one or two refs")
+            step.measure(refs[0], refs[1] if len(refs) == 2 else None, text, **options)
+        elif kind == "angle":
+            if len(refs) != 3:
+                raise ValidationError("an angle has exactly three refs")
+            step.angle(*refs, text, **options)
+        else:
+            if len(refs) != 1 or text is not None:
+                raise ValidationError("a number has one ref and no text")
+            step.number(refs[0], **options)
+    except (ValidationError, TypeError) as exc:
+        raise LessonFormatError(f"{where}: {exc}") from exc
+    step._marks[-1] = replace(step._marks[-1], id=mark_id)
 
 
 def to_json(tutorial: Tutorial) -> str:
