@@ -1,0 +1,262 @@
+"""Find what makes a lesson hard to read, in a form a model can act on.
+
+Lint never changes rendering: it composes each step exactly as rendering does
+and inspects the result. Every issue has a stable `code`, so a caller can
+branch on it, and a `fix` phrased as a concrete change to the authoring call.
+"""
+
+from dataclasses import dataclass, field
+from itertools import combinations
+import warnings
+
+from drawcv import BoundingBox, OpenCVRenderer, Point
+
+from .adapters.drawcv import index_scene
+from .collision import outside_area, overlap_area
+from .composition import AnnotationLayout, Composition
+from .errors import LayoutWarning
+from .layout import measure_label
+
+# Tunables, kept together so their meaning is reviewable in one place.
+MIN_CONTRAST = 4.5  # WCAG AA for body text
+MIN_LINE_HEIGHT = 12.0  # px; below this text is hard to read on a phone
+MAX_ANNOTATIONS = 6  # visible at once in one beat
+MAX_CALLOUT_WORDS = 40
+COVER_FRACTION = 0.08  # of a panel's area lying on a target's actual shape
+SAMPLE_STEP = 3.0  # px between hit-test samples
+
+SEVERITIES = ("error", "warning", "info")
+
+
+@dataclass(frozen=True)
+class Issue:
+    """One problem in one step. `code` is stable; `message` and `fix` are prose."""
+
+    code: str
+    severity: str
+    step: int
+    step_title: str
+    message: str
+    fix: str
+    targets: tuple[str, ...] = ()
+    annotations: tuple[str, ...] = field(default=())
+
+    def to_dict(self) -> dict:
+        return {"code": self.code, "severity": self.severity, "step": self.step,
+                "step_title": self.step_title, "message": self.message, "fix": self.fix,
+                "targets": list(self.targets), "annotations": list(self.annotations)}
+
+
+def _shrink(box: BoundingBox, by: float) -> BoundingBox:
+    return BoundingBox(box.x + by, box.y + by, max(box.width - 2 * by, 0), max(box.height - 2 * by, 0))
+
+
+def _segment_hits_box(a: Point, b: Point, box: BoundingBox) -> bool:
+    """Liang-Barsky: does segment a-b pass through the box's interior?"""
+    if box.width <= 0 or box.height <= 0:
+        return False
+    t0, t1 = 0.0, 1.0
+    dx, dy = b.x - a.x, b.y - a.y
+    for p, q in ((-dx, a.x - box.x), (dx, box.x + box.width - a.x),
+                 (-dy, a.y - box.y), (dy, box.y + box.height - a.y)):
+        if p == 0:
+            if q < 0:
+                return False
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return False
+    return True
+
+
+def _segments_cross(a: Point, b: Point, c: Point, d: Point) -> bool:
+    """Proper crossing only: touching at an endpoint (a shared anchor) is fine."""
+    def cross(o, p, q):
+        return (p.x - o.x) * (q.y - o.y) - (p.y - o.y) * (q.x - o.x)
+    d1, d2 = cross(c, d, a), cross(c, d, b)
+    d3, d4 = cross(a, b, c), cross(a, b, d)
+    eps = 1e-6
+    return ((d1 > eps and d2 < -eps) or (d1 < -eps and d2 > eps)) and \
+           ((d3 > eps and d4 < -eps) or (d3 < -eps and d4 > eps))
+
+
+def _luminance(bgr) -> float:
+    def channel(value):
+        c = value / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    b, g, r = (channel(v) for v in bgr)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast(first_bgr, second_bgr) -> float:
+    light, dark = sorted((_luminance(first_bgr), _luminance(second_bgr)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def _covered_fraction(panel: BoundingBox, drawable) -> float:
+    """Share of the panel lying on the drawable's real shape, not its bounds."""
+    bounds = drawable.get_bounds()
+    if overlap_area(panel, bounds) <= 0:
+        return 0.0
+    x0, y0 = max(panel.x, bounds.x), max(panel.y, bounds.y)
+    x1 = min(panel.x + panel.width, bounds.x + bounds.width)
+    y1 = min(panel.y + panel.height, bounds.y + bounds.height)
+    hits = 0
+    y = y0 + SAMPLE_STEP / 2
+    while y < y1:
+        x = x0 + SAMPLE_STEP / 2
+        while x < x1:
+            hits += bool(drawable.contains_point(Point(x, y)))
+            x += SAMPLE_STEP
+        y += SAMPLE_STEP
+    # Scale the sampled hits back to the whole panel's area.
+    total = (panel.width * panel.height) / (SAMPLE_STEP * SAMPLE_STEP)
+    return hits / total if total else 0.0
+
+
+def _leader_hits(annotation: AnnotationLayout, drawable) -> bool:
+    """Does the leader pass over this shape somewhere away from its ends?"""
+    start, end = annotation.leader
+    length = ((end.x - start.x) ** 2 + (end.y - start.y) ** 2) ** 0.5
+    steps = int(length // 2)
+    for i in range(2, steps - 1):
+        t = i / steps
+        if drawable.contains_point(Point(start.x + (end.x - start.x) * t,
+                                         start.y + (end.y - start.y) * t)):
+            return True
+    return False
+
+
+def lint_step(tutorial, index: int) -> list[Issue]:
+    step = tutorial.steps[index]
+    title = step.title
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", LayoutWarning)
+        composition: Composition = tutorial._compose(index, 1.0)
+    issues: list[Issue] = []
+
+    def add(code, severity, message, fix, targets=(), annotations=()):
+        issues.append(Issue(code, severity, index, title, message, fix,
+                            tuple(targets), tuple(annotations)))
+
+    for warning in caught:
+        if issubclass(warning.category, LayoutWarning) and "could not be placed" in str(warning.message):
+            add("UNPLACEABLE", "warning", str(warning.message),
+                "There is no free space for it. Shorten the text, reveal it later "
+                "with at=, move it to its own step, or give the canvas more room.")
+
+    objects = index_scene(composition.scene)
+    drawables = {name: objects[drawable_id] for name, drawable_id in composition.drawables.items()}
+    width, height = composition.scene.width, composition.scene.height
+    annotations = composition.annotations
+    labels = {label.id: label for label in (*step.labels, *step.callouts)}
+
+    for a in annotations:
+        if outside_area(a.panel, width, height) > 0:
+            add("OFF_CANVAS", "error",
+                f"{a.kind.capitalize()} {a.text!r} extends past the canvas edge.",
+                f"Anchor it on a side of {a.target!r} that faces into the canvas, "
+                "reduce gap, or shorten it (max_width= for a callout).",
+                [a.target], [a.text])
+
+    for a, b in combinations(annotations, 2):
+        if overlap_area(a.panel, b.panel) > 0:
+            add("ANNOTATION_OVERLAP", "error",
+                f"{a.text!r} and {b.text!r} overlap each other.",
+                "Give one a different anchor, reveal them at different times with "
+                "at=, or split them across steps.",
+                [a.target, b.target], [a.text, b.text])
+
+    for a in annotations:
+        for name, drawable in drawables.items():
+            share = _covered_fraction(a.panel, drawable)
+            if share >= COVER_FRACTION:
+                add("COVERS_TARGET", "warning",
+                    f"{share:.0%} of {a.text!r} sits on top of target {name!r}, hiding it.",
+                    f"Move it off {name!r}: try another anchor or a larger gap on "
+                    f"{a.target!r}.", [a.target, name], [a.text])
+
+    for a in annotations:
+        if a.leader is None:
+            continue
+        for b in annotations:
+            if b is not a and _segment_hits_box(*a.leader, _shrink(b.panel, 1)):
+                add("LEADER_CROSSES_PANEL", "warning",
+                    f"The leader of {a.text!r} runs through {b.text!r}.",
+                    f"Anchor {a.text!r} on the side of {a.target!r} nearest its panel, "
+                    "or place the two on different sides.", [a.target, b.target], [a.text, b.text])
+        start = a.leader[0]
+        for name, drawable in drawables.items():
+            # Skip the shape the leader starts on and anything that contains it.
+            if name == a.target or drawable.contains_point(start):
+                continue
+            if _leader_hits(a, drawable):
+                add("LEADER_CROSSES_TARGET", "warning",
+                    f"The leader of {a.text!r} passes over target {name!r}, so it reads "
+                    f"as pointing there.",
+                    f"Anchor {a.text!r} on a side of {a.target!r} facing away from "
+                    f"{name!r}.", [a.target, name], [a.text])
+
+    led = [a for a in annotations if a.leader is not None]
+    for a, b in combinations(led, 2):
+        if _segments_cross(*a.leader, *b.leader):
+            add("LEADERS_CROSS", "warning",
+                f"The leaders of {a.text!r} and {b.text!r} cross.",
+                "Swap their anchors so each panel sits on its own target's side.",
+                [a.target, b.target], [a.text, b.text])
+
+    theme = tutorial.theme
+    text_bgr = tuple(reversed(theme.text_color))
+    backdrop = None
+    for a in annotations:
+        label = labels.get(a.id)
+        if label is None:
+            continue
+        measured = measure_label(label, theme, tutorial.font)
+        if measured.line_height < MIN_LINE_HEIGHT:
+            add("TEXT_TOO_SMALL", "warning",
+                f"{a.text!r} is {measured.line_height:.0f} px tall.",
+                f"Use font_scale of at least {theme.font_scale:g} (the theme default).",
+                [a.target], [a.text])
+        if a.boxed:
+            ratio = contrast(text_bgr, tuple(reversed(theme.panel_color)))
+        else:
+            if backdrop is None:
+                backdrop = OpenCVRenderer().render(
+                    tutorial._compose(index, 1.0, draw_annotations=False).scene).to_numpy()
+            x0, y0 = max(int(a.panel.x), 0), max(int(a.panel.y), 0)
+            x1 = min(int(a.panel.x + a.panel.width), width)
+            y1 = min(int(a.panel.y + a.panel.height), height)
+            region = backdrop[y0:y1, x0:x1, :3].reshape(-1, 3)
+            if not len(region):
+                continue
+            # The worst tenth of the backdrop decides it, not the average.
+            ratios = sorted(contrast(text_bgr, pixel) for pixel in region[::7])
+            ratio = ratios[len(ratios) // 10]
+        if ratio < MIN_CONTRAST:
+            add("LOW_CONTRAST", "warning",
+                f"{a.text!r} has contrast {ratio:.1f}:1 against what is behind it "
+                f"(needs {MIN_CONTRAST}:1).",
+                "Keep its panel (box=True), or change Theme text_color/panel_color."
+                if not a.boxed else "Change Theme text_color or panel_color.",
+                [a.target], [a.text])
+        if a.kind == "callout" and len(a.text.split()) > MAX_CALLOUT_WORDS:
+            add("LONG_CALLOUT", "info",
+                f"The callout on {a.target!r} is {len(a.text.split())} words.",
+                f"Keep a callout under {MAX_CALLOUT_WORDS} words; say the rest in "
+                "narration or split it across steps.", [a.target], [a.text])
+
+    if len(annotations) > MAX_ANNOTATIONS:
+        add("BUSY_STEP", "info",
+            f"{len(annotations)} annotations are visible at once.",
+            f"Keep a beat to {MAX_ANNOTATIONS} or fewer: split the step, or introduce "
+            "them one at a time with show(..., at=seconds).",
+            annotations=[a.text for a in annotations])
+
+    order = {severity: i for i, severity in enumerate(SEVERITIES)}
+    return sorted(issues, key=lambda issue: order[issue.severity])

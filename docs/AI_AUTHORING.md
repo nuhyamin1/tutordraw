@@ -8,10 +8,43 @@ TutorDraw is a Python library, not an AI service. A coding assistant can author 
 2. Create the artwork with DrawCV. Give meaningful objects names and register teaching targets with stable human-readable names.
 3. Use labels for short names, callouts for explanations, highlights for emphasis, and dimming for attention. Keep each step focused on one teaching point.
 4. Save the complete lesson as a `.tutordraw.json` file. Keep the Python authoring script as well when procedural generation matters.
-5. Export and inspect images. Correct misleading diagrams, unsupported text, overlapping panels, off-canvas warnings, and confusing leaders.
-6. Reopen the saved lesson for revisions. Make a new file unless the user explicitly wants to replace the existing one. Render again and compare.
+5. Run `tutorial.lint()` and fix every issue it reports, then lint again until it is empty or only `info` remains (see below).
+6. Export and inspect images. Lint cannot judge whether the diagram is *correct*; you still check the science, the wording and whether each leader points at the right thing.
+7. Reopen the saved lesson for revisions. Make a new file unless the user explicitly wants to replace the existing one. Render again and compare.
 
 The structured file is the shared artifact across sessions/models. A PNG alone does not retain editable teaching structure.
+
+## Lint: fix layout without looking at pixels
+
+`tutorial.lint()` (every step) or `tutorial.lint(i)` returns a list of `Issue`
+objects, errors first. Each has a stable `code`, a `severity`, the `step`, the
+`targets` and `annotations` involved, a `message` and a `fix` phrased as a
+change to your authoring call. `issue.to_dict()` is plain JSON. Lint composes
+steps exactly as rendering does and never changes the lesson or its output.
+
+| Code | Severity | Meaning |
+| --- | --- | --- |
+| `OFF_CANVAS` | error | A panel extends past the canvas edge |
+| `ANNOTATION_OVERLAP` | error | Two panels overlap |
+| `UNPLACEABLE` | warning | Collision avoidance found no free position |
+| `COVERS_TARGET` | warning | A panel sits on a target's actual shape (not just its bounds) |
+| `LEADER_CROSSES_PANEL` | warning | A leader runs through another panel |
+| `LEADER_CROSSES_TARGET` | warning | A leader passes over a different target, so it reads as pointing there |
+| `LEADERS_CROSS` | warning | Two leaders cross |
+| `LOW_CONTRAST` | warning | Text below 4.5:1 against its panel, or against the artwork for `box=False` |
+| `TEXT_TOO_SMALL` | warning | A line is under 12 px tall |
+| `LONG_CALLOUT` | info | A callout over 40 words |
+| `BUSY_STEP` | info | More than 6 annotations visible at once |
+
+A typical loop: author the steps, `issues = tutorial.lint()`, apply each `fix`
+(change an `anchor`, stagger with `show(..., at=)`, split a step, keep a panel),
+and lint again. Lint checks each step's finished state; mid-animation frames
+are covered by collision avoidance, not by lint.
+
+`tutorial.layout(i, time=None)` returns the `Composition` lint reads: each
+visible annotation's `panel`, `leader`, chosen `anchor` and `boxed` flag, each
+highlight's `box`, and every target's live bounds (`targets`, keyed by name).
+`time` is seconds into the step, so a delayed reveal is absent before it lands.
 
 ## Suggested creation prompt
 
@@ -20,7 +53,8 @@ The structured file is the shared artifact across sessions/models. A PNG alone d
 > Make a small sequence of independent teaching steps. Use named targets,
 > concise labels, readable callouts, and emphasis only where it helps. Save the
 > Python script, complete .tutordraw.json lesson, and numbered PNG previews.
-> Execute the script and inspect the images. Resolve layout warnings and check
+> Execute the script, run tutorial.lint() and fix every error and warning it
+> reports, then inspect the images. Check
 > the explanation for factual accuracy. Report output paths and actual limits.
 > Use ASCII annotations with the current built-in font; do not invent unsupported APIs.
 

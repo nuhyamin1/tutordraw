@@ -135,11 +135,11 @@ inspected. Design notes live in DECISIONS.md.
   Windows has been run.
 
 ### P2 — `lint()` for LLM self-correction (no format change)
-- [ ] Public read-only layout API over `Composition` (step, time) -> geometry.
-- [ ] `Tutorial.lint(...)`: machine-readable issues with codes, targets and
-  suggested fixes — overlaps, off-canvas, leader crossings, low contrast, text
-  too small, too many annotations in a beat, unresolvable placement.
-- [ ] Document it in AI_AUTHORING.md as the author -> lint -> fix loop.
+- [x] Public read-only layout API: `Tutorial.layout(index, time=None)`.
+- [x] `Tutorial.lint(index=None)`: 11 issue codes with targets and fixes;
+  shape-accurate coverage and leader tests via DrawCV `contains_point`.
+- [x] Documented in AI_AUTHORING.md as the author -> lint -> fix loop.
+- [ ] Lint mid-animation frames (today: finished state only).
 
 ### P3 — Visual vocabulary, one schema bump (v8)
 Design the whole batch before coding; persist it together.

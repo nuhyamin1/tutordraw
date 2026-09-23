@@ -571,3 +571,28 @@ can be simplified without churning references. They use built-in text only.
 The references pin current behaviour including known flaws (a leader crossing
 in cell step 3, an unclearable label in motion-end); P2's lint should flag
 those rather than the references hiding them.
+
+## lint() and layout() — development 0.1.0a12 (2026-09-24), program P2
+
+`Tutorial.layout` exposes the P1 `Composition` publicly; `Tutorial.lint` reads
+it and never changes rendering (a test asserts pixels and the source scene are
+identical after linting, and that no warning escapes).
+
+- **Real shapes, not bounds.** Bounding boxes made every panel near a round
+  target "cover" it. Coverage and leader-over-target use DrawCV
+  `contains_point`, sampled every 3 px (panels) / 2 px (leaders). Linting a
+  golden lesson costs 4–70 ms.
+- A leader is not "crossing" a target that contains its start point — a
+  nucleus leader necessarily runs across the cell it sits in.
+- Contrast for boxed text is theme text vs panel; for `box=False` it renders
+  the step once without annotations and uses the *worst tenth* of the pixels
+  under the text, because the mean hides a dark stripe.
+- `UNPLACEABLE` comes from the resolver's own LayoutWarning, captured, so lint
+  and rendering cannot disagree about it.
+- Errors are only states that are wrong regardless of taste (off canvas,
+  overlapping panels); readability judgements are warnings; style is info.
+- Finished state only. Mid-animation frames are the collision resolver's job;
+  linting them is a roadmap item, not a promise.
+- Checked against the golden lessons by eye: all flagged cases are visible in
+  the references, and the three clean lessons report nothing. Each rule was
+  mutation-tested (disabling it fails a test).

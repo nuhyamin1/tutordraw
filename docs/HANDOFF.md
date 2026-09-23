@@ -315,8 +315,26 @@ a12 (DrawCV 0.11.0 upgrade, 2026-09-24):
 On 2026-09-24 the owner approved a five-milestone program (ROADMAP "The
 explainer program"): P1 golden tests, P2 `lint()`, P3 a visual vocabulary in
 **one** schema v8, P4 SVG browser playback with streaming, P5 kits, equations,
-narration timing, prompts and alt text. **P1 is done except hosted-CI
-confirmation. P2 is next.**
+narration timing, prompts and alt text. **P1 and P2 are done (P1 awaits
+hosted-CI confirmation). P3 is next.**
+
+P2 added `src/tutordraw/lint.py`, `Tutorial.layout` / `Tutorial.lint`,
+`Composition.drawables`, `_compose(draw_annotations=)`, exports in
+`__init__.py`, `tests/test_lint.py` (9 tests; each rule mutation-tested), and
+docs in AI_AUTHORING.md, API.md, CHANGELOG, DECISIONS. Suite: **347 passed, 1
+skipped** in `.venv`; golden references unchanged.
+
+**Next concrete task — P3 design, before any code.** Write the v8 design in
+DECISIONS.md covering all eight P3 items at once: which are `Step` methods vs
+`Target` factories, what each persists, how each draws, and how each animates
+(one "draw-on" progress model shared by leaders, highlights, arrows, braces,
+dimensions). Suggested shape: new annotation kinds (`arrow`, `brace`,
+`dimension`, `angle`, `marker`) stored in one `step["marks"]` list with a
+`kind` discriminator so v9+ can add kinds without a new top-level field;
+`step["camera"]`; `draw_on` as a per-annotation reveal style next to `at=`.
+Then implement in that order: draw-on, camera, arrows, markers, braces,
+dimensions/angles, shape highlights, halo. Each must: add golden frames, pass
+lint (extend lint for new kinds), and round-trip through schema v8.
 
 P1 changed files:
 - `src/tutordraw/composition.py`: **new** — `Composition`, `AnnotationLayout`,
@@ -334,7 +352,7 @@ and all 20 reference files are inside it. **Not run:** hosted CI — the pixel
 tolerance is unproven on Linux/macOS; if it fails there, loosen
 `CHANNEL_TOLERANCE`/`CHANGED_FRACTION`, never regenerate on CI.
 
-**Next concrete task — P2.** Make a public, read-only layout view over
+**(Done) P2 as planned:** Make a public, read-only layout view over
 `Composition` (suggested `Tutorial.layout(step, *, time=None)`), then
 `Tutorial.lint()` returning issue objects with a stable `code`, the targets
 involved, a message an LLM can act on, and a suggested fix. The golden lessons

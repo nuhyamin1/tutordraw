@@ -2,6 +2,16 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **`Tutorial.lint()`** reports readability problems — overlapping or
+  off-canvas panels, panels hiding a target's actual shape, leaders crossing
+  each other, panels or other targets, low contrast (including bare text over
+  artwork), small text, long callouts and busy steps — as `Issue` objects with
+  a stable `code`, the targets involved and a suggested fix. Built for an LLM's
+  author -> lint -> fix loop.
+- **`Tutorial.layout(index, time=None)`** returns a `Composition`: every
+  visible annotation's panel, leader and chosen side, each highlight's box and
+  each target's live bounds, without rasterizing.
+- New public types: `Composition`, `AnnotationLayout`, `HighlightLayout`, `Issue`.
 - **Requires `pydrawcv==0.11.0`** (was `0.10.0.post1`). DrawCV now antialiases
   with area-exact coverage, so rendered images differ: strokes are drawn at their
   true width and annotations look thinner. Panel borders and highlight rectangles

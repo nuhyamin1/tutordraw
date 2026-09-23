@@ -11,6 +11,7 @@ from .model import Callout, Label, Step, Target
 from .attention import apply_attention, apply_restyles, highlight_artwork
 from .collision import plan_annotations
 from .composition import AnnotationLayout, Composition, HighlightLayout
+from .lint import Issue
 from .export import export_steps
 from .themes import Theme
 
@@ -146,6 +147,36 @@ class Tutorial:
         from .timing import render_frames
         return render_frames(self, fps=fps, alpha=alpha)
 
+    def layout(self, index: int, *, time: float | None = None) -> Composition:
+        """Where everything in a step lands, without rasterizing it.
+
+        `time` is seconds into the step; None means its finished state, as
+        render_step shows it. Read-only: the result is a working copy.
+        """
+        self._check_index(index)
+        step = self._steps[index]
+        if time is None:
+            return self._compose(index, 1.0)
+        if isinstance(time, bool) or not isinstance(time, (int, float)) or not 0 <= time <= step.duration:
+            raise ValidationError(f"time must be between 0 and the step's duration ({step.duration:g})")
+        return self._compose(index, time / step.duration if step.duration else 1.0)
+
+    def lint(self, index: int | None = None) -> list[Issue]:
+        """Report readability problems in one step, or in every step.
+
+        Each Issue has a stable code and a suggested fix. Built for an
+        author-lint-fix loop; it never changes what renders.
+        """
+        from .lint import lint_step
+        if index is not None:
+            self._check_index(index)
+            return lint_step(self, index)
+        return [issue for i in range(len(self._steps)) for issue in lint_step(self, i)]
+
+    def _check_index(self, index: int) -> None:
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(self._steps):
+            raise ValidationError(f"Step index must be between 0 and {len(self._steps) - 1}")
+
     def render_step(self, index: int, *, alpha: bool = False) -> Canvas:
         """Render a zero-based step. Source artwork/history remain untouched."""
         if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(self._steps):
@@ -157,7 +188,7 @@ class Tutorial:
     def _render(self, index: int, progress: float, alpha: bool) -> Canvas:
         return OpenCVRenderer().render(self._compose(index, progress).scene, alpha=alpha)
 
-    def _compose(self, index: int, progress: float) -> Composition:
+    def _compose(self, index: int, progress: float, *, draw_annotations: bool = True) -> Composition:
         """Build the working scene for one frame and record every layout decision."""
         source = index_scene(self.scene)
         for target in self._targets.values():
@@ -204,8 +235,9 @@ class Tutorial:
                 layout, artwork = label_artwork(label, objects[label.target.drawable_id],
                                                 working.width, working.height, self.theme,
                                                 self._font, placement, measured)
-                for obj in artwork:
-                    working.add(obj, layer=layer)
+                if draw_annotations:
+                    for obj in artwork:
+                        working.add(obj, layer=layer)
                 drew_leader = any(isinstance(obj, Line) for obj in artwork)
                 annotations.append(AnnotationLayout(
                     id=label.id, kind="callout" if isinstance(label, Callout) else "label",
@@ -214,7 +246,9 @@ class Tutorial:
                     panel=layout.panel, boxed=label.box,
                     leader=(layout.anchor, layout.leader_end) if drew_leader else None))
         bounds = {_name(t): objects[t.drawable_id].get_bounds() for t in self._targets.values()}
-        return Composition(working, index, progress, tuple(annotations), tuple(highlights), bounds)
+        ids = {_name(t): t.drawable_id for t in self._targets.values()}
+        return Composition(working, index, progress, tuple(annotations), tuple(highlights),
+                           bounds, ids)
 
     def export_steps(self, directory: str | Path, *, overwrite: bool = False,
                      alpha: bool = False) -> list[Path]:

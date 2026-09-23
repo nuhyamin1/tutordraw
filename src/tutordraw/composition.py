@@ -41,6 +41,7 @@ class Composition:
     annotations: tuple[AnnotationLayout, ...]
     highlights: tuple[HighlightLayout, ...]
     targets: dict[str, BoundingBox]  # target name (or ID) -> live bounds
+    drawables: dict[str, str]  # target name (or ID) -> drawable ID in `scene`
 
     def to_dict(self) -> dict:
         """Plain, rounded geometry: stable enough to snapshot and compare."""

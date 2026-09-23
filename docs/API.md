@@ -199,6 +199,19 @@ Every filename is checked before export; collisions raise `FileExistsError` unle
 
 Frames encode in temporary files. Explicit overwrite replaces an existing file only after successful encoding; a failed newly-created file is removed. This is not a transaction across the batch: successful earlier files remain if a later step fails. A new file may be visible during its copy. Permission/directory failures during preflight can propagate as filesystem exceptions.
 
+## Layout and lint (new in 0.1.0a12)
+
+`tutorial.layout(index, *, time=None) -> Composition` reports where everything
+in a step lands without rasterizing it: `annotations` (`AnnotationLayout` with
+`kind`, `text`, `target`, `anchor`, `panel`, `leader`, `boxed`), `highlights`
+(`HighlightLayout` with `target`, `box`, `width`), `targets` (name -> bounds)
+and `to_dict()`. `time` is seconds into the step; None is its finished state.
+
+`tutorial.lint(index=None) -> list[Issue]` reports readability problems with a
+stable `code` and a suggested `fix`, errors first. The codes are listed in
+[AI_AUTHORING.md](AI_AUTHORING.md#lint-fix-layout-without-looking-at-pixels).
+Neither method changes the lesson or what renders.
+
 ## Errors and warnings
 
 - `TutorDrawError`: base exception.
