@@ -325,7 +325,7 @@ and the new `Step` methods in `model.py`, draw-on through DrawCV
 `layout.py`, camera- and mark-aware planning in `collision.py`, `MarkLayout` in
 `composition.py`, v8 in `serialization.py` + `lesson-v8.schema.json`, lint for
 marks, `docs/VOCABULARY.md`, `examples/lever_lesson.py` (also run by
-`check_installed`), `tests/test_marks.py` (38 cases) and 11 golden frames.
+`check_installed`), `tests/test_marks.py` (25 cases) and 11 golden frames.
 Design and implementation notes: DECISIONS "Visual vocabulary and schema v8".
 
 P3 verification: `.venv` suite **386 passed, 1 skipped**. Wheel built,
