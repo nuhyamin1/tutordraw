@@ -2,6 +2,11 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Teaching kit: `tutordraw.kits.NumberLine`**, with points (open or closed),
+  intervals for inequalities, invisible anchors at values, and
+  `hop(step, a, b, text)`: a curved hop arrow created as a step mark, so it
+  draws on, takes `at=` and can be a narration cue. New example:
+  `examples/number_line_lesson.py`.
 - **Teaching kits: `tutordraw.kits.Axes`.** Axes with round tick steps, an
   optional grid, `plot(f)` (breaks at asymptotes and failures, clipped exactly
   at the range edges), `point`, `guide` and `to_scene`, all built from ordinary

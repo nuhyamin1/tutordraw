@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from typing import Callable
 
-from drawcv import (Arrow, BoundingBox, Circle, Color, FillStyle, Group, Line, Path, Point,
+from drawcv import (Arrow, BoundingBox, Circle, Color, FillStyle, Group, Line, Path, Point, Polygon,
                     StrokeStyle, Text)
 
 from .adapters.drawcv import fixed_pivot
@@ -23,6 +23,7 @@ INK = (60, 70, 90)
 CURVE = (40, 100, 200)
 GRID = (226, 231, 238)
 KIT_KEY = "tutordraw"
+HOP_PEAK = 45.0  # px: the most a number-line hop rises above (or dips below) its line
 
 
 def nice_step(span: float, target_ticks: int = 8) -> float:
@@ -320,3 +321,172 @@ class Axes:
                 axes._count = len(existing)
                 return axes
         raise ValidationError(f"No axes named {name!r} in this lesson")
+
+
+class NumberLine:
+    """A horizontal number line with ticks, for arithmetic and inequalities.
+
+    `start` is the left end on the canvas and `length` its width in pixels;
+    `value_range` is the numbers at its ends. The step defaults to a round
+    1, 2 or 5 x 10^n giving about ten ticks.
+    """
+
+    def __init__(self, tutorial, *, start, length: float, value_range, step: float | None = None,
+                 name: str = "number_line", color=INK, font_scale: float = 0.55):
+        if not isinstance(start, (tuple, list)) or len(start) != 2:
+            raise ValidationError("start must be (x, y)")
+        x, y = (finite_number(v, "start") for v in start)
+        length = finite_number(length, "length", minimum=0)
+        if length == 0:
+            raise ValidationError("length must be positive")
+        if not isinstance(name, str) or not name.strip():
+            raise ValidationError("name must be a non-empty string")
+        self.tutorial, self.name = tutorial, name
+        self.start, self.length = Point(x, y), length
+        self.value_range = _pair(value_range, "value_range")
+        if step is None:
+            self.step = nice_step(self.value_range[1] - self.value_range[0], target_ticks=10)
+        else:
+            self.step = finite_number(step, "step", minimum=0)
+            if self.step == 0 or (self.value_range[1] - self.value_range[0]) / self.step > 200:
+                raise ValidationError("step must be positive and give at most 200 ticks")
+        self.color = rgb(color, "color")
+        self.font_scale = finite_number(font_scale, "font_scale", minimum=0)
+        self._count = 0
+        self.group = Group(children=[], name=name, transform=fixed_pivot())
+        self.group.metadata = {KIT_KEY: {"kit": "number_line", "start": [x, y], "length": length,
+                                         "value_range": list(self.value_range), "step": self.step}}
+        self._draw()
+        tutorial.scene.add(self.group)
+        self.line = tutorial.target(self._line, name=f"{name}_line")
+
+    def to_scene(self, value: float) -> Point:
+        """Where a value sits on the canvas."""
+        low, high = self.value_range
+        return Point(self.start.x + (value - low) / (high - low) * self.length, self.start.y)
+
+    def _in_range(self, value, what: str) -> float:
+        value = finite_number(value, what)
+        if not self.value_range[0] <= value <= self.value_range[1]:
+            raise ValidationError(f"{what} {value:g} is outside the number line's range")
+        return value
+
+    def _head(self, tip: Point, direction: float) -> Polygon:
+        return Polygon(vertices=[tip, Point(tip.x - 10 * direction, tip.y - 5),
+                                 Point(tip.x - 10 * direction, tip.y + 5)],
+                       fill=FillStyle(color=Color(*self.color)))
+
+    def _draw(self) -> None:
+        ink = StrokeStyle(color=Color(*self.color), width=2)
+        left, right = self.start, Point(self.start.x + self.length, self.start.y)
+        self._line = Line(start=Point(left.x - 16, left.y), end=Point(right.x + 16, right.y), stroke=ink)
+        parts = [self._line, self._head(Point(right.x + 22, right.y), 1),
+                 self._head(Point(left.x - 22, left.y), -1)]
+        low, high = self.value_range
+        first, last = math.ceil(low / self.step - 1e-9), math.floor(high / self.step + 1e-9)
+        for k in range(first, last + 1):
+            value = k * self.step
+            p = self.to_scene(value)
+            parts.append(Line(start=Point(p.x, p.y - 6), end=Point(p.x, p.y + 6), stroke=ink))
+            text = Text(text=format_number(value, self.step), position=Point(0, 0),
+                        font_scale=self.font_scale, color=Color(*self.color))
+            box = text.get_bounds()
+            text.position = Point(p.x - box.width / 2, p.y + 12)
+            parts.append(text)
+        for part in parts:
+            self.group.add(part, preserve_world_transform=False)
+
+    def _name(self, name, kind):
+        return Axes._name(self, name, kind)
+
+    def point(self, value: float, *, name: str | None = None, open: bool = False,
+              radius: float = 7, color=CURVE):
+        """A dot on the line. `open=True` draws it hollow, as for a strict inequality."""
+        value = self._in_range(value, "value")
+        if not isinstance(open, bool):
+            raise ValidationError("open must be a boolean")
+        tint = Color(*rgb(color, "color"))
+        dot = Circle(center=self.to_scene(value), radius=finite_number(radius, "radius", minimum=0),
+                     fill=FillStyle(color=Color(255, 255, 255) if open else tint),
+                     stroke=StrokeStyle(color=tint, width=2.5), z_index=2)
+        self.group.add(dot, preserve_world_transform=False)
+        return self.tutorial.target(dot, name=self._name(name, "point"))
+
+    def anchor(self, value: float):
+        """An invisible target at a value, named "<name>_at_<value>", reused if it exists.
+
+        Marks such as `step.connect` need targets at their ends; these read well
+        in descriptions ("the number line at 5").
+        """
+        value = self._in_range(value, "value")
+        name = f"{self.name}_at_{format_number(value, self.step)}"
+        try:
+            return self.tutorial.get_target(name)
+        except ValidationError:
+            dot = Circle(center=self.to_scene(value), radius=0.5, opacity=0.001,
+                         fill=FillStyle(color=Color(*self.color)))
+            self.group.add(dot, preserve_world_transform=False)
+            return self.tutorial.target(dot, name=name)
+
+    def hop(self, step, start: float, end: float, text: str | None = None, *,
+            at: float | None = None, draw: bool = True, bend: float | None = None):
+        """A hop arrow in one step, as used to teach +3 or -2; returns the Mark.
+
+        It is a step mark (`step.connect` between anchors on the line), so it
+        belongs to that step only, draws on by default, takes `at=` and can be
+        a narration cue. Rightward hops arc above the line, leftward below.
+        """
+        a, b = self._in_range(start, "start"), self._in_range(end, "end")
+        if a == b:
+            raise ValidationError("a hop needs two different values")
+        if bend is None:
+            # Arc height is half the bend times the length; cap it at HOP_PEAK px
+            # so a long hop stays close to its line instead of ballooning.
+            length = abs(self.to_scene(b).x - self.to_scene(a).x)
+            bend = min(0.35, 2 * HOP_PEAK / length)
+        bend = finite_number(bend, "bend")
+        if not 0 < bend <= 1:
+            raise ValidationError("bend must be greater than 0 and at most 1")
+        # connect's positive bend lifts toward the top of the screen.
+        return step.connect(self.anchor(a), self.anchor(b), text,
+                            bend=bend if b > a else -bend, at=at, draw=draw)
+
+    def interval(self, start: float, end: float, *, name: str | None = None, open_start: bool = False,
+                 open_end: bool = False, color=(40, 150, 90)):
+        """A highlighted stretch of the line, with open or closed ends (for inequalities)."""
+        a, b = self._in_range(start, "start"), self._in_range(end, "end")
+        if not a < b:
+            raise ValidationError("an interval needs start < end")
+        for flag, what in ((open_start, "open_start"), (open_end, "open_end")):
+            if not isinstance(flag, bool):
+                raise ValidationError(f"{what} must be a boolean")
+        tint = Color(*rgb(color, "color"))
+        p, q = self.to_scene(a), self.to_scene(b)
+        parts = [Line(start=p, end=q, stroke=StrokeStyle(color=tint, width=7), z_index=1)]
+        for point, hollow in ((p, open_start), (q, open_end)):
+            parts.append(Circle(center=point, radius=7, z_index=2,
+                                fill=FillStyle(color=Color(255, 255, 255) if hollow else tint),
+                                stroke=StrokeStyle(color=tint, width=2.5)))
+        span = Group(children=parts, transform=fixed_pivot())
+        self.group.add(span, preserve_world_transform=False)
+        return self.tutorial.target(span, name=self._name(name, "interval"))
+
+    @classmethod
+    def find(cls, tutorial, name: str = "number_line") -> NumberLine:
+        """Reattach to a number line saved in a lesson, to add more to it."""
+        from .adapters.drawcv import index_scene
+
+        for obj in index_scene(tutorial.scene).values():
+            data = getattr(obj, "metadata", {}).get(KIT_KEY)
+            if isinstance(obj, Group) and obj.name == name and isinstance(data, dict) \
+                    and data.get("kit") == "number_line":
+                line = cls.__new__(cls)
+                line.tutorial, line.name, line.group = tutorial, name, obj
+                line.start, line.length = Point(*data["start"]), data["length"]
+                line.value_range, line.step = tuple(data["value_range"]), data["step"]
+                line.color, line.font_scale = INK, 0.55
+                line.line = tutorial.get_target(f"{name}_line")
+                line._count = sum(1 for t in tutorial.targets
+                                  if t.name and t.name.startswith(f"{name}_"))
+                return line
+        raise ValidationError(f"No number line named {name!r} in this lesson")

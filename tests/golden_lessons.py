@@ -254,6 +254,21 @@ def graph() -> Tutorial:
     return lesson
 
 
+def numberline() -> Tutorial:
+    """The number line kit: ticks, open and closed points, an interval and hops."""
+    from tutordraw.kits import NumberLine
+
+    lesson = Tutorial(Scene(720, 300, background=Color(248, 250, 252)))
+    top = NumberLine(lesson, start=(70, 110), length=580, value_range=(-3, 5), step=1)
+    top.point(1, name="one")
+    bottom = NumberLine(lesson, start=(70, 240), length=580, value_range=(-3, 5), name="range_line")
+    bottom.interval(-1, 4, open_start=True, name="range")
+    step = lesson.step("Hops")
+    top.hop(step, 1, 4, "+3")
+    top.hop(step, 4, -2, "-6")
+    return lesson
+
+
 # name -> (builder, [(frame name, step index, progress)])
 LESSONS = {
     "cell": (cell, [("step1", 0, 1.0), ("step2", 1, 1.0), ("step3", 2, 1.0)]),
@@ -266,6 +281,7 @@ LESSONS = {
     "camera": (camera, [("whole", 0, 1.0), ("zooming", 1, 0.5), ("zoomed", 1, 1.0),
                         ("leaving", 2, 0.5), ("out", 2, 1.0)]),
     "graph": (graph, [("step1", 0, 1.0)]),
+    "numberline": (numberline, [("step1", 0, 1.0)]),
     "drawon": (drawon, [("leader", 0, 0.1), ("highlight", 0, 0.2), ("arrow", 0, 0.375),
                         ("done", 0, 1.0)]),
 }

@@ -796,3 +796,17 @@ DrawCV with kits as thin wrappers; not now, since DrawCV is out of scope here.
   unfilled strokes by their ink boxes instead of `contains_point`. Result:
   155 ms render, 115 ms SVG, 327 ms lint. User artwork still has DrawCV's
   default pivots; worth reporting upstream. Guarded by a structural test.
+
+### Number line kit (same session)
+
+- **Hops are step marks, not drawing.** The first version drew a hop as kit
+  artwork. The example showed why that is wrong: artwork sits in every step,
+  cannot draw on or be a narration cue, and "drawing it on" with a highlight
+  boxed the arc. `line.hop(step, a, b)` now calls `step.connect` between
+  invisible anchor targets named `<line>_at_<value>`, which also makes the
+  description read "from the number line at 2 to the number line at 5".
+- A long hop's arc grew with its length and reached the next line in the
+  golden frame; the peak is now capped at 45 px by choosing the bend from the
+  hop's length.
+- `connect` still needs at least one target at an end: anchors are what give
+  hops readable descriptions, so two-point arrows stay refused.

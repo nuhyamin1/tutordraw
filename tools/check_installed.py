@@ -31,7 +31,8 @@ print('DrawCV:', drawcv.__file__)
         subprocess.run([sys.executable, "-I", "-c", probe, str(root)], cwd=temporary, check=True)
         for name in ("cell_tutorial.py", "group_focus.py", "save_and_revise.py",
                      "timed_lesson.py", "video_lesson.py", "symbols_lesson.py",
-                     "eclipse_lesson.py", "multilingual_lesson.py", "lever_lesson.py", "web_lesson.py", "graph_lesson.py"):
+                     "eclipse_lesson.py", "multilingual_lesson.py", "lever_lesson.py", "web_lesson.py", "graph_lesson.py",
+                     "number_line_lesson.py"):
             subprocess.run([sys.executable, "-I", "-W", "error", str(example_dir / name)],
                            cwd=temporary, check=True)
         verify = """
@@ -58,6 +59,9 @@ assert 'TutorDrawPlayer' in page and 'data-drawcv-raster' not in page, 'web page
 import json as _json
 streamed = [_json.loads(line) for line in Path('output/web/lever.steps.ndjson').read_text(encoding='utf-8').splitlines()]
 assert [s['index'] for s in streamed] == [0, 1, 2], streamed
+hops = sorted(Path('output/number_line').glob('step-*.png'))
+assert len(hops) == 3, hops
+paths.extend(hops)
 graph = sorted(Path('output/graph').glob('step-*.png'))
 assert len(graph) == 3, graph
 paths.extend(graph)

@@ -123,7 +123,9 @@ ticks and curve: `axes.plot(lambda x: x * x, name="parabola_curve")`. Point at
 places with `axes.point(x, y, name=...)` (`visible=False` for an anchor on a
 curve) and `axes.guide(x=, y=)`. Kit parts show in every step, so hide the
 ones a step should not show yet with `restyle(target, visible=False)`. Use
-`axes.to_scene(x, y)` for your own marks. See [kits](KITS.md).
+`axes.to_scene(x, y)` for your own marks. For arithmetic, use
+`NumberLine` and `line.hop(step, 2, 5, "+3")`: a hop is a step mark, so it
+draws on and can be a narration cue. See [kits](KITS.md).
 
 ## Time the picture to the voice
 

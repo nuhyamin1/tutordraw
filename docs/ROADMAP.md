@@ -167,8 +167,9 @@ Design the whole batch before coding; persist it together.
 
 ### P5 — Content and interaction
 - [x] Teaching kits: axes and graphs (`tutordraw.kits.Axes`).
-- [ ] More kits: number lines, flowcharts, timelines, cycles, force diagrams,
-  labelled cross-sections.
+- [x] Number line kit (`tutordraw.kits.NumberLine`), hops as step marks.
+- [ ] More kits: flowcharts, timelines, cycles, force diagrams, labelled
+  cross-sections.
 - [ ] Equations: TeX -> SVG path data -> `Path.from_svg_path`.
 - [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
   live captions in the player.

@@ -335,6 +335,8 @@ class Step:
             return value
         if isinstance(value, (tuple, list)) and len(value) == 2:
             return tuple(finite_number(v, name) for v in value)
+        if hasattr(value, "x") and hasattr(value, "y"):  # a DrawCV Point, e.g. from a kit's to_scene
+            return (finite_number(value.x, name), finite_number(value.y, name))
         raise ValidationError(f"{name} must be a target of this tutorial or an (x, y) point")
 
     def _mark(self, kind: str, refs: tuple, text: str | None, options: dict,

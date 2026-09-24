@@ -364,6 +364,10 @@ inspected by eye. Found and fixed a DrawCV default-pivot cost (graph render
 unfilled strokes by ink boxes. **Worth raising upstream with DrawCV:** default
 pivots make world mapping O(points squared) for large paths and groups.
 
+P5 (3b) done: `NumberLine` kit with hops as step marks, a `numberline` golden
+frame, `examples/number_line_lesson.py` (run by check_installed), 5 more kit
+tests; axes-kit push CI run 35938539770 green on all nine jobs.
+
 **Next concrete task — P5, one item at a time.** Remaining order: (2, done) narration timing:
 accept word timestamps and set `at=` from them, (3) teaching kits, starting
 with axes/graphs, (4) interactive prompts in the player (hit-test by

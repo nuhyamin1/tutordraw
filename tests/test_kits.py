@@ -8,7 +8,7 @@ from drawcv import Color, Group, Line, Path, Point, Rectangle, Scene, Text
 
 from tutordraw import Tutorial, ValidationError
 from tutordraw.adapters.drawcv import stroke_boxes
-from tutordraw.kits import Axes, format_number, nice_step
+from tutordraw.kits import Axes, NumberLine, format_number, nice_step
 
 pytestmark = pytest.mark.filterwarnings("ignore::tutordraw.errors.LayoutWarning")
 
@@ -159,3 +159,90 @@ def test_generated_artwork_pins_its_pivot(axes):
     bounds = {t.drawable_id: layout.targets[t.name] for t in axes.tutorial.targets}
     drawn = mark_drawing(arrow, bounds, None, axes.tutorial.theme, None, (700, 500))
     assert all(obj.transform.pivot is not None for obj in drawn.artwork if isinstance(obj, Path))
+
+
+# --- number line --------------------------------------------------------------
+
+@pytest.fixture
+def number_line():
+    tutorial = Tutorial(Scene(800, 300, background=Color.white()))
+    return NumberLine(tutorial, start=(100, 150), length=600, value_range=(-5, 5))
+
+
+def test_number_line_maps_values_and_ticks_whole_numbers(number_line):
+    assert (number_line.to_scene(-5).x, number_line.to_scene(5).x) == pytest.approx((100, 700))
+    assert number_line.to_scene(0).y == 150 and number_line.step == 1
+    texts = [obj.text for obj in number_line.group.children if isinstance(obj, Text)]
+    assert texts == [str(v) for v in range(-5, 6)]
+    assert number_line.line.name == "number_line_line"
+
+
+def test_points_can_be_open_or_closed(number_line):
+    closed, hollow = number_line.point(3), number_line.point(-2, open=True)
+    assert closed.drawable.fill.color == closed.drawable.stroke.color
+    assert (hollow.drawable.fill.color.r, hollow.drawable.fill.color.g) == (255, 255)
+    assert closed.drawable.get_bounds().center.x == pytest.approx(number_line.to_scene(3).x)
+
+
+def test_hops_are_step_marks_between_reused_anchors(number_line):
+    tutorial = number_line.tutorial
+    add = tutorial.step("Add", duration=3)
+    up = number_line.hop(add, 2, 5, "+3", at=1.0)
+    down = number_line.hop(add, 5, 1, "-4")
+    assert up.kind == "arrow" and up.options["bend"] > 0 > down.options["bend"]
+    assert add.revealed_at(up) == 1.0 and up.id in add.draws
+    # The anchor at 5 is shared by both hops, not created twice.
+    anchors = [t.name for t in tutorial.targets if "_at_" in t.name]
+    assert anchors == ["number_line_at_2", "number_line_at_5", "number_line_at_1"]
+    assert tutorial.describe(0).startswith(
+        'Add. An arrow goes from the number line at 5 to the number line at 1, labelled "-4". '
+        'Then an arrow goes from the number line at 2 to the number line at 5, labelled "+3".')
+    # Rightward hops arc above the line, leftward ones below.
+    marks = {m.text: m for m in tutorial.layout(0).marks}
+    assert marks["+3"].bounds.top < 150 - 20 and marks["-4"].bounds.bottom > 150 + 20
+    assert tutorial.step("Next").marks == ()  # a hop belongs to its step only
+    # A long hop keeps close to its line instead of ballooning.
+    long = number_line.hop(tutorial.step("Long"), -5, 5)
+    arc = tutorial.layout(2).marks[0].bounds
+    assert long.options["bend"] < 0.35 and arc.top > 150 - 50
+    for bad in (lambda: number_line.hop(add, 2, 2), lambda: number_line.hop(add, 0, 9),
+                lambda: number_line.hop(add, 0, 1, bend=0)):
+        with pytest.raises(ValidationError):
+            bad()
+
+
+def test_intervals_and_validation(number_line):
+    span = number_line.interval(-2, 4, open_start=True)
+    circles = [o for o in span.drawable.children if o.__class__.__name__ == "Circle"]
+    assert circles[0].fill.color.r == 255 and circles[1].fill.color.r != 255
+    for bad in (lambda: number_line.point(6),
+                lambda: number_line.interval(3, 1), lambda: number_line.interval(0, 1, open_end="no"),
+                lambda: NumberLine(number_line.tutorial, start=(0, 0), length=0, value_range=(0, 1)),
+                lambda: NumberLine(number_line.tutorial, start=(0, 0), length=10, value_range=(0, 1),
+                                   step=0.001, name="dense")):
+        with pytest.raises(ValidationError):
+            bad()
+
+
+def test_number_lines_reattach_after_loading(number_line, tmp_path):
+    tutorial = number_line.tutorial
+    number_line.hop(tutorial.step("One"), 0, 3, "+3")
+    loaded = Tutorial.load_json(tutorial.save_json(tmp_path / "line.tutordraw.json"))
+    again = NumberLine.find(loaded)
+    assert again.value_range == (-5, 5) and again.step == 1
+    assert again.point(2).name.startswith("number_line_point")
+    assert loaded.get_target("number_line_at_3") and loaded.steps[0].marks[0].text == "+3"
+    assert again.anchor(3).name == "number_line_at_3"  # reused after loading
+    with pytest.raises(ValidationError, match="No number line"):
+        NumberLine.find(loaded, "nope")
+
+
+def test_kit_points_work_directly_as_mark_ends(axes):
+    """KITS.md shows step.connect(axes.to_scene(0, 8), vertex): a Point must be accepted."""
+    vertex = axes.point(0, 0, name="vertex")
+    step = axes.tutorial.step("Arrow")
+    arrow = step.connect(axes.to_scene(0, 8), vertex, "vertex")
+    assert arrow.refs[0] == pytest.approx((axes.to_scene(0, 8).x, axes.to_scene(0, 8).y))
+    assert step.measure(axes.to_scene(0, 0), axes.to_scene(2, 0), "2", axis="x").refs[1][0] == pytest.approx(
+        axes.to_scene(2, 0).x)
+

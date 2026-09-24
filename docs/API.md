@@ -215,7 +215,9 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 
 `tutordraw.kits.Axes(tutorial, box=..., x_range=..., y_range=...)` draws
 labelled axes from DrawCV objects; `plot(f)`, `point(x, y)`, `guide(x=, y=)`
-return named targets and `to_scene(x, y)` maps coordinates. See
+return named targets and `to_scene(x, y)` maps coordinates.
+`tutordraw.kits.NumberLine(tutorial, start=..., length=..., value_range=...)`
+adds `point`, `interval`, and `hop(step, a, b, text)`, a step mark. See
 [KITS.md](KITS.md).
 
 ## Narration timing (new in 0.1.0a12)
