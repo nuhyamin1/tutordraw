@@ -269,6 +269,52 @@ def numberline() -> Tutorial:
     return lesson
 
 
+def processes() -> Tutorial:
+    """The flowchart, cycle and timeline kits: routed links, arcs, stacked events."""
+    from tutordraw.kits import Cycle, Flowchart, Timeline
+
+    lesson = Tutorial(Scene(960, 620, background=Color(248, 250, 252)))
+    flow = Flowchart(lesson, origin=(110, 60), cell=(190, 100), node_size=(150, 54))
+    flow.node("start", "Start", at=(0, 0), shape="terminal")
+    flow.node("ask", "Is it raining?", at=(0, 1), shape="decision")
+    flow.node("coat", "Wear a coat", at=(1, 2))
+    flow.node("go", "Go outside", at=(0, 3), shape="data")
+    flow.link("start", "ask")
+    flow.link("ask", "coat", "yes")
+    flow.link("ask", "go", "no")
+    flow.link("coat", "go")
+    flow.link("go", "ask", "again")
+    Cycle(lesson, center=(700, 190), radius=140, node_size=(120, 44),
+          stages=["Seed", "Sprout", "Plant", "Flower"])
+    line = Timeline(lesson, start=(60, 520), length=840, span=(1900, 2000))
+    line.period(1914, 1918, "WWI")
+    for year, text in ((1903, "First flight"), (1914, "War"), (1920, "Radio"), (1928, "Penicillin"),
+                       (1969, "Moon landing")):
+        line.event(year, text)
+    step = lesson.step("Processes")
+    step.highlight(lesson.get_target("ask"))
+    return lesson
+
+
+def science() -> Tutorial:
+    """The force diagram and cross-section kits: arrows to scale, labelled rings and bands."""
+    from tutordraw.kits import CrossSection, ForceDiagram
+
+    lesson = Tutorial(Scene(960, 560, background=Color(248, 250, 252)))
+    crate = ForceDiagram(lesson, center=(170, 280), size=70, scale=3, text="5 kg")
+    crate.force("weight", "down", 49, "49 N")
+    crate.force("normal", "up", 49, "49 N")
+    pull = crate.force("pull", 30, 40, "pull 40 N")
+    crate.components(pull)
+    earth = CrossSection(lesson, box=(420, 60, 300, 300), shape="rings", name="earth",
+                         layers=[("crust", "Crust", 0.6), ("mantle", "Mantle", 3), ("core", "Core", 3)])
+    soil = CrossSection(lesson, box=(420, 400, 300, 130), name="soil",
+                        layers=[("topsoil", "Topsoil"), ("subsoil", "Subsoil", 1.5), ("rock", "Rock")])
+    step = lesson.step("Science")
+    step.show(*earth.labels(), *soil.labels())
+    return lesson
+
+
 # name -> (builder, [(frame name, step index, progress)])
 LESSONS = {
     "cell": (cell, [("step1", 0, 1.0), ("step2", 1, 1.0), ("step3", 2, 1.0)]),
@@ -282,6 +328,8 @@ LESSONS = {
                         ("leaving", 2, 0.5), ("out", 2, 1.0)]),
     "graph": (graph, [("step1", 0, 1.0)]),
     "numberline": (numberline, [("step1", 0, 1.0)]),
+    "processes": (processes, [("step1", 0, 1.0)]),
+    "science": (science, [("step1", 0, 1.0)]),
     "drawon": (drawon, [("leader", 0, 0.1), ("highlight", 0, 0.2), ("arrow", 0, 0.375),
                         ("done", 0, 1.0)]),
 }

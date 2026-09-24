@@ -127,6 +127,23 @@ ones a step should not show yet with `restyle(target, visible=False)`. Use
 `NumberLine` and `line.hop(step, 2, 5, "+3")`: a hop is a step mark, so it
 draws on and can be a narration cue. See [kits](KITS.md).
 
+## Standard diagrams: reach for a kit first
+
+Don't hand-place boxes, arrows and circles for a diagram a kit already makes:
+
+- A process with decisions: `Flowchart`, nodes placed by grid cell
+  (`at=(col, row)`), then `flow.link(a, b, "yes")`. Links route themselves.
+- Dates or history: `Timeline`, periods first, then `line.event(year, text)`.
+- A loop of stages (water, carbon, cell or life cycle): `Cycle(stages=[...])`.
+  If it refuses the radius, use the radius its error suggests.
+- Forces: `ForceDiagram`, with real magnitudes and one `scale`, then
+  `fd.net()`. If `net()` says the forces balance, say that instead.
+- Layers (Earth, soil, skin, atmosphere): `CrossSection`, `shape="rings"` or
+  `"bands"`, then `step.show(*section.labels())`.
+
+Kit parts are drawing, so hide later ones with `restyle(target, visible=False)`,
+and put Thai or Arabic in annotations rather than kit text.
+
 ## Time the picture to the voice
 
 When you narrate, don't hand-tune `at=`. Build the step, then call

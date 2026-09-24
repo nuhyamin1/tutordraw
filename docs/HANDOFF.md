@@ -1,6 +1,6 @@
 # AI handoff — start here
 
-Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade and program P1-P3 (Claude Code).
+Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade, program P1-P4 and P5 kits (Claude Code).
 
 ## Current state
 
@@ -368,11 +368,32 @@ P5 (3b) done: `NumberLine` kit with hops as step marks, a `numberline` golden
 frame, `examples/number_line_lesson.py` (run by check_installed), 5 more kit
 tests; axes-kit push CI run 35938539770 green on all nine jobs.
 
-**Next concrete task — P5, one item at a time.** Remaining order: (2, done) narration timing:
-accept word timestamps and set `at=` from them, (3) teaching kits, starting
-with axes/graphs, (4) interactive prompts in the player (hit-test by
-`data-drawcv-id`), (5) equations (TeX -> SVG path -> `Path.from_svg_path`; needs
-a TeX-to-SVG route that is not a new heavy dependency: investigate first).
+P5 (3c) done in a **Claude Code cloud session** (Linux, CPython 3.12 venv made
+with `uv venv -p 3.12 .venv` and `uv pip install -e ".[dev,typography]"`; use
+`.venv/bin/python` there): `Flowchart`, `Timeline`, `Cycle`, `ForceDiagram`,
+`CrossSection`. `src/tutordraw/kits.py` became the package `src/tutordraw/kits/`
+(`graphs.py` holds Axes and NumberLine unchanged, `diagrams.py`, `science.py`,
+shared `_base.py`). New `tests/test_kits_diagrams.py` (44), golden frames
+`processes` and `science`, five narrated examples (`flowchart_lesson.py`,
+`timeline_lesson.py`, `water_cycle_lesson.py`, `forces_lesson.py`,
+`earth_layers_lesson.py`, all lint-clean and in `check_installed`), and
+KITS/API/AI_AUTHORING/README/CHANGELOG/DECISIONS. Evidence: suite **502
+passed, 11 skipped** (skips: font tests, no Thai/Arabic font on the Linux
+container, and the symlink case); wheel built, `check_release
+--require-metadata` passes, installed wheel 502 passed, `check_installed` 26
+PNGs + 1 video. Every example step and both new golden frames inspected by
+eye; fixes found that way are in DECISIONS "Five more kits". Regenerating
+goldens on Linux rewrote `cell-step1/3.png` within tolerance; those were
+restored, only the two new references were added. Hosted CI for this commit
+must be checked after the push: the new goldens were made on Linux, not
+Windows.
+
+**Next concrete task — P5, one item at a time.** Done: descriptions,
+narration timing, all seven kits. Remaining: (4) interactive prompts in the
+player (hit-test by `data-drawcv-id`), (5) equations (TeX -> SVG path ->
+`Path.from_svg_path`; needs a TeX-to-SVG route that is not a new heavy
+dependency: investigate first), (6) save narration in the lesson file at the
+next format change.
 
 P3 (schema v8) added `src/tutordraw/marks.py` (arrow/brace/measure/angle/
 number geometry), `camera.py` (fit, blend, install-as-group), `Mark`/`Camera`

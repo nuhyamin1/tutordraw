@@ -217,8 +217,14 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 labelled axes from DrawCV objects; `plot(f)`, `point(x, y)`, `guide(x=, y=)`
 return named targets and `to_scene(x, y)` maps coordinates.
 `tutordraw.kits.NumberLine(tutorial, start=..., length=..., value_range=...)`
-adds `point`, `interval`, and `hop(step, a, b, text)`, a step mark. See
-[KITS.md](KITS.md).
+adds `point`, `interval`, and `hop(step, a, b, text)`, a step mark.
+`Flowchart` (`node(name, text, at=(col, row), shape=)`, `link(a, b, text)`),
+`Timeline` (`event(when, text)`, `period(start, end, text)`), `Cycle`
+(`stages=[...]`, `stage(key)`, `arrows`), `ForceDiagram` (`force(name,
+direction, magnitude, text)`, `components`, `net`) and `CrossSection`
+(`layers=[(name, text, thickness)]`, `shape="bands"` or `"rings"`, `labels()`)
+build the other common teaching diagrams. Every kit has `find(tutorial, name)`
+to reattach after loading. See [KITS.md](KITS.md).
 
 ## Narration timing (new in 0.1.0a12)
 

@@ -5,9 +5,11 @@ DrawCV objects and hands back named targets. It works out the geometry a model
 tends to get wrong by hand (tick spacing, mapping maths coordinates onto the
 canvas, sampling a function) and nothing else: DrawCV draws the result, lesson
 files save it, and every part can be labelled, highlighted, measured or
-narrated like anything else. [`examples/graph_lesson.py`](../examples/graph_lesson.py) and
-[`examples/number_line_lesson.py`](../examples/number_line_lesson.py) build
-narrated three-step lessons with them.
+narrated like anything else. Every kit has a narrated example lesson:
+[graph](../examples/graph_lesson.py), [number line](../examples/number_line_lesson.py),
+[flowchart](../examples/flowchart_lesson.py), [timeline](../examples/timeline_lesson.py),
+[water cycle](../examples/water_cycle_lesson.py), [forces](../examples/forces_lesson.py) and
+[Earth's layers](../examples/earth_layers_lesson.py).
 
 ## Axes
 
@@ -76,7 +78,111 @@ small boxes along its ink rather than one bounding box, so a label can sit in
 the empty space inside a parabola. Text in the drawing, such as tick numbers
 and titles, is avoided too. Both apply to every lesson, not only kits.
 
+## Flowchart
+
+```python
+from tutordraw.kits import Flowchart
+
+flow = Flowchart(lesson, origin=(260, 110), cell=(260, 110))
+start = flow.node("start", "Leaving home", at=(0, 0), shape="terminal")
+check = flow.node("question", "Is it raining?", at=(0, 1), shape="decision")
+umbrella = flow.node("umbrella", "Take an umbrella", at=(1, 2))
+school = flow.node("school", "Walk to school", at=(0, 3), shape="terminal")
+flow.link(start, check)
+yes = flow.link(check, umbrella, "yes")
+flow.link(check, school, "no")
+```
+
+| Call | Does |
+| --- | --- |
+| `Flowchart(tutorial, *, origin, cell=(220, 110), node_size=(170, 60), name="flowchart", color=..., fill=..., font_scale=0.5)` | An empty chart. `origin` is the centre of cell (0, 0); `cell` is the spacing of columns and rows, which must be larger than `node_size` to leave room for arrows. |
+| `flow.node(name, text, *, at, shape="box", fill=None)` | A node at grid cell `at=(col, row)`, returned as a target that holds the shape and its text. Shapes: `"box"`, `"decision"` (diamond), `"terminal"` (pill), `"data"` (slanted). Text wraps to fit. The shape alone is also a target, `<name>_shape`, for `restyle(fill=...)`. |
+| `flow.link(source, destination, text=None, *, name=None)` | An arrow drawn into the scene, named `arrow_from_<a>_to_<b>` unless named. Nodes in a row or column join straight; otherwise it leaves the side facing the destination and turns once into its top or bottom. An arrow back up a column (a loop) runs round the left. `text` ("yes") sits by its start. Nodes are given as targets or names. |
+| `flow.to_scene(col, row)`, `Flowchart.find(tutorial, name)` | As for axes. |
+
+## Timeline
+
+```python
+from tutordraw.kits import Timeline
+
+line = Timeline(lesson, start=(70, 240), length=800, span=(1900, 1980))
+jets = line.period(1939, 1980, "The jet age")      # periods first, so events clear them
+flight = line.event(1903, "First powered flight")   # above
+atlantic = line.event(1927, "Solo across the Atlantic")   # below
+```
+
+| Call | Does |
+| --- | --- |
+| `Timeline(tutorial, *, start, length, span, step=None, name="timeline", color=..., font_scale=0.5)` | A line with an arrowhead and round date ticks (about eight); registers `<name>_line`. `span` is the first and last date, any numbers. |
+| `line.event(when, text, *, name=None, side=None, color=...)` | A dot with its text on a stem, as one target. Events alternate above and below unless `side` is given, and a stem grows in 36 px levels until the text clears everything already placed. Text wraps at 150 px. |
+| `line.period(start, end, text, *, name=None, row=0, color=...)` | A band above the line between two dates; `row` stacks overlapping periods. Add periods before events so events climb over them. |
+| `line.to_scene(when)`, `Timeline.find(tutorial, name)` | As for axes; a found timeline still avoids what was placed before saving. |
+
+## Cycle
+
+```python
+from tutordraw.kits import Cycle
+
+cycle = Cycle(lesson, center=(450, 340), radius=210,
+              stages=["Evaporation", "Condensation", "Precipitation", "Collection"])
+step.highlight(cycle.stage("condensation"))
+step.dim_others(cycle.stage(2), cycle.arrows[0])   # the stage and the arrow into it
+```
+
+| Call | Does |
+| --- | --- |
+| `Cycle(tutorial, *, center, radius, stages, name="cycle", node_size=(150, 54), clockwise=True, color=..., fills=..., font_scale=0.5)` | 2 to 12 stages round a circle, the first at the top, joined by curved arrows that stop short of the boxes. A stage is a target named from its text (`"Evaporation"` becomes `evaporation`), or give `(name, text)` pairs. Too small a radius is refused with the radius to use. |
+| `cycle.stages`, `cycle.arrows` | Targets in order. `arrows[i]` leaves stage i + 1 and is named `arrow_from_<a>_to_<b>`; the last closes the loop. |
+| `cycle.stage(key)` | A stage by number (1 is the first) or name. |
+| `Cycle.find(tutorial, name)` | Reattach after loading. |
+
+## Force diagram
+
+```python
+from tutordraw.kits import ForceDiagram
+
+crate = ForceDiagram(lesson, center=(450, 320), size=90, scale=4, text="5 kg", name="crate")
+weight = crate.force("weight", "down", 49, "weight 49 N")
+push = crate.force("push", 30, 40, "push 40 N")      # 30 degrees above the right
+parts = crate.components(push)                       # dashed horizontal and vertical parts
+net = crate.net("net force")                         # the vector sum, worked out
+```
+
+| Call | Does |
+| --- | --- |
+| `ForceDiagram(tutorial, *, center, body="block", size=80, scale=6, text=None, name="body", fill=..., color=..., font_scale=0.5)` | A block or ball (`body="ball"`) as the target `name`. `scale` is pixels per unit of force, so every arrow is to scale. |
+| `fd.force(name, direction, magnitude, text=None, *, color=...)` | An arrow out from the body's edge, as a target. `direction` is degrees anticlockwise from the right (90 is up), or a word: `up`, `down`, `left`, `right`, `up-left` and so on. The text sits past the tip. Arrows under 12 px are refused as invisible. |
+| `fd.components(force, *, name=None)` | The force's horizontal and vertical parts as dashed arrows, one target named `<force>_components`. |
+| `fd.net(text=None, *, name="net_force")`, `fd.resultant` | The sum of the forces so far as its own arrow, and as numbers (x, y up). Balanced forces raise, because there is no arrow: say "the forces balance" instead. The net arrow runs along any force in the same direction, so hide those in the step that shows it. |
+| `ForceDiagram.find(tutorial, name)` | Reattach by the body's name. |
+
+## Cross-section
+
+```python
+from tutordraw.kits import CrossSection
+
+earth = CrossSection(lesson, box=(60, 80, 480, 480), shape="rings", name="earth",
+                     layers=[("crust", "Crust", 0.5), ("mantle", "Mantle", 2.9),
+                             ("outer_core", "Outer core", 2.2), ("inner_core", "Inner core", 1.2)])
+step.show(*earth.labels())
+```
+
+| Call | Does |
+| --- | --- |
+| `CrossSection(tutorial, *, box, layers, shape="bands", name="section", fills=..., color=...)` | Layers, outermost or topmost first, as `(name, text)` or `(name, text, thickness)` with relative thickness. `"bands"` stacks rectangles down the box (soil, the atmosphere, skin); `"rings"` nests circles in it (the Earth, a tree trunk, an onion). Each layer is a target by its name. |
+| `section.labels(*, side="right", gap=36)` | A label per layer, lined up in one column. A band's leader ends on its own edge. A ring's points into the ring itself, through an invisible anchor `<name>_layer` (so descriptions read "the mantle layer is labelled"), and ring labels are spaced evenly. Show them together or one per step. |
+| `section.layer(name)`, `CrossSection.find(tutorial, name)` | A layer's target; reattach after loading. |
+
+## Kit text
+
+Text inside kit drawings (node text, dates, stage names, force captions) is
+part of the scene, drawn by DrawCV's built-in renderer. It accepts Latin,
+Greek, Cyrillic, CJK and symbols and refuses Thai and Arabic with the usual
+error naming the character. For those scripts, keep the kit's own text short
+or empty and label its parts with annotations, which use the tutorial's font.
+
 ## More kits
 
-Flowcharts, timelines, cycles and force diagrams are on the roadmap. Each will follow the same rules: plain DrawCV objects, named targets,
-settings in metadata so `find` can reattach.
+Every kit follows the same rules: plain DrawCV objects in one group, named
+targets, settings in the group's metadata so `find` can reattach. Candidates
+for later kits: circuits, maps, a periodic-table cell, Venn diagrams.

@@ -2,6 +2,16 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Five more teaching kits.** `Flowchart` (nodes by grid cell in four shapes,
+  links that route with square corners and loops), `Timeline` (events that
+  alternate and climb clear of each other, periods as bands), `Cycle` (stages
+  round a circle joined by curved arrows), `ForceDiagram` (arrows to scale
+  from the body's edge, components, the net force) and `CrossSection` (bands
+  or rings with one column of labels). Each builds plain DrawCV objects with
+  named targets and has `find` to reattach after loading. `tutordraw.kits` is
+  now a package; imports are unchanged. New examples: `flowchart_lesson.py`,
+  `timeline_lesson.py`, `water_cycle_lesson.py`, `forces_lesson.py`,
+  `earth_layers_lesson.py`.
 - **Teaching kit: `tutordraw.kits.NumberLine`**, with points (open or closed),
   intervals for inequalities, invisible anchors at values, and
   `hop(step, a, b, text)`: a curved hop arrow created as a step mark, so it

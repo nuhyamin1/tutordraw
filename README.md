@@ -34,6 +34,7 @@ Implemented:
 - keep label and callout panels from overlapping each other, the highlight boxes, the artwork or the canvas edges, automatically and on by default; see [API](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md).
 - point, connect and measure: arrows, braces, dimension lines, angle marks and numbered badges; strokes that draw themselves on; a per-step camera that zooms the artwork but not the text; highlights that follow a shape's outline; see [Vocabulary](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VOCABULARY.md).
 - draw graphs with the axes kit: ticks, grid, curves (with asymptotes handled), points and guide lines, all ordinary DrawCV objects with named targets; see [Kits](https://github.com/nuhyamin1/tutordraw/blob/master/docs/KITS.md).
+- build number lines, flowcharts, timelines, cycles, force diagrams and labelled cross-sections the same way, from a few calls each.
 - reveal each label, note, mark and highlight as the narration says it, from text-to-speech word timings, with live captions in the player; see [Narration](https://github.com/nuhyamin1/tutordraw/blob/master/docs/NARRATION.md).
 - describe each step in plain English for screen readers, and so a model can check a step shows what its narration says; see [Describe](https://github.com/nuhyamin1/tutordraw/blob/master/docs/DESCRIBE.md).
 - play a lesson in any browser as sharp SVG, or stream it one step at a time while it is still being written; see [Web](https://github.com/nuhyamin1/tutordraw/blob/master/docs/WEB.md).

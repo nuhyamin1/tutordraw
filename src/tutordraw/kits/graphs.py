@@ -1,11 +1,4 @@
-"""Teaching kits: ready-made diagrams built from ordinary DrawCV objects.
-
-A kit works out geometry a model gets wrong by hand (tick spacing, mapping
-maths coordinates onto the canvas, sampling a function) and adds plain DrawCV
-shapes to the tutorial's scene. DrawCV draws them, lesson files save them, and
-the parts come back as named targets, ready to label, highlight, measure or
-narrate. Nothing here renders anything.
-"""
+"""Maths kits: axes you can plot into, and a number line with hops."""
 
 from __future__ import annotations
 
@@ -15,14 +8,11 @@ from typing import Callable
 from drawcv import (Arrow, BoundingBox, Circle, Color, FillStyle, Group, Line, Path, Point, Polygon,
                     StrokeStyle, Text)
 
-from .adapters.drawcv import fixed_pivot
-from .errors import ValidationError
-from .validation import finite_number, rgb
+from ..adapters.drawcv import fixed_pivot
+from ..errors import ValidationError
+from ..validation import finite_number, rgb
+from ._base import CURVE, GRID, INK, KIT_KEY, _pair
 
-INK = (60, 70, 90)
-CURVE = (40, 100, 200)
-GRID = (226, 231, 238)
-KIT_KEY = "tutordraw"
 HOP_PEAK = 45.0  # px: the most a number-line hop rises above (or dips below) its line
 
 
@@ -40,15 +30,6 @@ def format_number(value: float, step: float) -> str:
     decimals = max(0, -math.floor(math.log10(step) + 1e-9)) if step < 1 else 0
     text = f"{value:.{decimals}f}"
     return "0" if text in ("-0", "-0.0", "-0.00") or float(text) == 0 else text
-
-
-def _pair(value, name: str) -> tuple[float, float]:
-    if not isinstance(value, (tuple, list)) or len(value) != 2:
-        raise ValidationError(f"{name} must be (low, high)")
-    low, high = (finite_number(v, name) for v in value)
-    if not low < high:
-        raise ValidationError(f"{name} must have low < high")
-    return low, high
 
 
 class Axes:
@@ -303,7 +284,7 @@ class Axes:
     @classmethod
     def find(cls, tutorial, name: str = "axes") -> Axes:
         """Reattach to axes saved in a lesson, to plot more into them."""
-        from .adapters.drawcv import index_scene
+        from ..adapters.drawcv import index_scene
 
         for obj in index_scene(tutorial.scene).values():
             data = getattr(obj, "metadata", {}).get(KIT_KEY)
@@ -474,7 +455,7 @@ class NumberLine:
     @classmethod
     def find(cls, tutorial, name: str = "number_line") -> NumberLine:
         """Reattach to a number line saved in a lesson, to add more to it."""
-        from .adapters.drawcv import index_scene
+        from ..adapters.drawcv import index_scene
 
         for obj in index_scene(tutorial.scene).values():
             data = getattr(obj, "metadata", {}).get(KIT_KEY)

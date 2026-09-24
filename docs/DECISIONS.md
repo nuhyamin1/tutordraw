@@ -810,3 +810,40 @@ DrawCV with kits as thin wrappers; not now, since DrawCV is out of scope here.
   hop's length.
 - `connect` still needs at least one target at an end: anchors are what give
   hops readable descriptions, so two-point arrows stay refused.
+
+### Five more kits (2026-09-24, cloud session)
+
+`Flowchart`, `Timeline`, `Cycle`, `ForceDiagram` and `CrossSection`, in the
+`tutordraw.kits` package (`graphs.py`, `diagrams.py`, `science.py`, shared
+`_base.py`); `from tutordraw.kits import Axes` is unchanged.
+
+- **Flowchart nodes are placed by grid cell, not pixels.** A model counts
+  reliably and measures badly. Links route themselves: straight in a row or
+  column, one square turn otherwise, loops round the left because a decision's
+  branches usually leave to the right. No general router: that is the
+  "routed leader lines" backlog item, not a kit.
+- **A node target is a group (shape plus text), with the shape also a target,
+  `<node>_shape`.** Dimming, focus, `visible` and `move` must take the text
+  with the shape, but `restyle(fill=)` only works on a shape, and making
+  restyle recolour groups would change core semantics for one kit.
+- **Kit links, cycle arrows, forces and events are drawing, not step marks.**
+  Unlike a number-line hop, they are part of the diagram in every step; hide
+  later ones with `restyle(visible=False)`. Default names read in
+  descriptions: `arrow_from_<a>_to_<b>`, `<layer>_layer`.
+- **Forces start at the body's edge**, not its centre: centre-drawn arrows
+  covered the body's text in the first render. Lengths are `magnitude * scale`
+  so pictures compare honestly; `net()` refuses balanced forces rather than
+  drawing nothing, so the caller says "balanced" instead.
+- **Ring labels need anchors.** Every ring's bounds are a whole disc, so a
+  leader aimed at a ring target ends on the shared rim. Rings get an invisible
+  anchor halfway through the ring, and ring labels are spaced 58 px apart;
+  46 px was inside the collision margin and the planner scattered them.
+  Bands label their own edge and need no anchor.
+- **Timeline events avoid earlier events and periods**, stepping out in 36 px
+  levels. Periods added after events cannot move them, so the docs say add
+  periods first.
+- **Kit text uses the built-in renderer only** (validated with
+  `validate_annotation_text`), so Thai and Arabic fail loudly naming the
+  character. Scene text through the font engine would need the font supplied
+  again at load for scene objects too; annotations already handle that path.
+
