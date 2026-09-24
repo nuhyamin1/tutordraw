@@ -127,6 +127,16 @@ ones a step should not show yet with `restyle(target, visible=False)`. Use
 `NumberLine` and `line.hop(step, 2, 5, "+3")`: a hop is a step mark, so it
 draws on and can be a narration cue. See [kits](KITS.md).
 
+## Check understanding with a tap
+
+After teaching something, end a step with `step.ask("Tap the nucleus.",
+nucleus)`. Name targets as you would say them ("cell_wall"), because the
+feedback reads them out: "That's the cell wall. Try again." Do not label the
+answer in the asking step (lint says `PROMPT_GIVEAWAY`); reveal the label in
+the next step. For your own app, judge taps with
+`tutorial.check_answer(index, x, y)`. Prompts are not saved in lesson files
+yet, so ask again after loading.
+
 ## Standard diagrams: reach for a kit first
 
 Don't hand-place boxes, arrows and circles for a diagram a kit already makes:

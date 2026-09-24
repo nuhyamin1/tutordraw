@@ -31,7 +31,9 @@ has, it holds the frame and shows "waiting for the next step…", then carries o
 the moment the next one is appended. Steps may arrive out of order; each has
 its `index`. `player.pause()`, `player.play()` and `player.seek(index, time)`
 are available, and `player.onstep = (index, step) => …` fires on each step,
-for example to start that step's narration audio.
+for example to start that step's narration audio. A step with a prompt holds
+at its end until the learner answers; `player.onanswer = (index, result) => …`
+reports each tap. See [PROMPTS.md](PROMPTS.md).
 
 ## The payload
 

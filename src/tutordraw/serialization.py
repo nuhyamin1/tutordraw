@@ -8,12 +8,13 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import warnings
 from typing import TYPE_CHECKING
 
 from drawcv import Scene
 
 from .adapters.drawcv import index_scene
-from .errors import LessonFormatError, ValidationError
+from .errors import LessonFormatError, LessonWarning, ValidationError
 from .model import Callout, Label, Target, make_annotation
 from .themes import Theme
 from .validation import finite_number
@@ -89,6 +90,13 @@ def _mark(mark) -> dict:
 
 
 def to_dict(tutorial: Tutorial) -> dict:
+    asked = [i + 1 for i, step in enumerate(tutorial.steps) if step.prompt is not None]
+    if asked:
+        # Lesson format v8 has no place for prompts. Losing them silently would
+        # be worse than saying so; they come back with the next format change.
+        warnings.warn(f"Prompts are not saved in lesson files yet: step(s) {asked} lose their "
+                      "prompt. Ask again with step.ask(...) after loading.", LessonWarning,
+                      stacklevel=3)
     try:
         source = index_scene(tutorial.scene)
         for target in tutorial.targets:

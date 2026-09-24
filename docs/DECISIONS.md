@@ -847,3 +847,29 @@ DrawCV with kits as thin wrappers; not now, since DrawCV is out of scope here.
   character. Scene text through the font engine would need the font supplied
   again at load for scene objects too; annotations already handle that path.
 
+### Interactive prompts (2026-09-24, cloud session)
+
+`Step.ask(text, answer)`, `Tutorial.check_answer` / `hit_test`, the player's
+prompt bar, three lint codes, and a closing sentence in `describe()`.
+
+- **Judged on the finished picture, through every layer.** Python composes
+  the step at progress 1 and uses DrawCV `Scene.hit_test`, which lists every
+  visible hit, children before their groups; the player uses
+  `document.elementsFromPoint` with `data-drawcv-id` ancestors. Both skip
+  annotations, so a label over a target never blocks the tap, and both judge
+  moved or zoomed artwork where the learner sees it.
+- **Feedback is templates, filled the same way on both sides.** Python sends
+  `{tapped}`/`{answer}` templates and spoken names by drawable ID; the player
+  fills them with plain replacement, as Python does, so feedback agrees word
+  for word and author text may contain other braces.
+- **The step holds at its end, never mid-step.** A prompt is a question about
+  what the step has finished showing. "Show me" is a button so nobody is stuck,
+  and after an answer the step holds about two seconds for the feedback.
+- **Not persisted, and loudly so.** Schema v8 has no field for prompts, and
+  format bumps need the owner's approval. Unlike narration text, which is
+  dropped silently (documented), saving a lesson with prompts warns with the
+  new `LessonWarning`, because a whole question vanishing is worse. Proposed:
+  one v9 carrying both prompts and narration.
+- **Kit `<node>_shape` helpers are never named in feedback** when their node
+  was also hit, so taps read "the start" rather than "the start shape".
+

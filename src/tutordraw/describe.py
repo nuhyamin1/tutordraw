@@ -198,6 +198,12 @@ def describe_step(tutorial, index: int) -> str:
             sentence = "Then " + sentence[0].lower() + sentence[1:]
         sentences.append(sentence)
         last = at
+    if step.prompt is not None:
+        # Asked once the step has played, so always last.
+        question = step.prompt.text
+        if not question.endswith((".", "!", "?")):
+            question += "."
+        sentences.append(f'{"Then the" if events or opening else "The"} learner is asked: "{question}"')
     return " ".join(sentences)
 
 

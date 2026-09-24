@@ -179,6 +179,7 @@ class Step:
         self._narration: tuple = ()
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
+        self._prompt = None
         self._id = str(uuid4())
 
     @property
@@ -590,6 +591,33 @@ class Step:
             raise ValidationError("opacity must be between 0 and 1")
         self._focus = tuple(dict.fromkeys(targets))
         self._dim_opacity = factor
+        return self
+
+    @property
+    def prompt(self):
+        """The step's Prompt, or None. See docs/PROMPTS.md."""
+        return self._prompt
+
+    def ask(self, text: str, answer, *, correct: str | None = None, wrong: str | None = None,
+            hint: str | None = None, attempts: int = 3) -> Step:
+        """End the step with a question answered by tapping the picture.
+
+        `answer` is the target to tap, or a tuple of targets that are all
+        right. The player holds the step at its end until the learner taps an
+        answer. Feedback defaults to "Yes, that's the nucleus.", "That's the
+        cell wall. Try again." and, after `attempts` wrong taps, "Here it is:
+        the nucleus.", naming targets by their names. One prompt per step;
+        asking again replaces it. `Tutorial.check_answer` checks a tap in Python.
+        """
+        from .prompts import make_prompt
+
+        self._prompt = make_prompt(self, text, answer, correct=correct, wrong=wrong,
+                                   hint=hint, attempts=attempts)
+        return self
+
+    def clear_prompt(self) -> Step:
+        """Remove the step's prompt, if it has one."""
+        self._prompt = None
         return self
 
 

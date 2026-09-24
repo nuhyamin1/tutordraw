@@ -2,6 +2,15 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Interactive prompts.** `step.ask(text, answer)` ends a step with a
+  question answered by tapping the picture. The browser player holds the step
+  until an answer is tapped, names wrong taps, rings the answer after three
+  misses or "Show me", and reports each tap to `player.onanswer`.
+  `Tutorial.check_answer(index, x, y)` and `Tutorial.hit_test(index, x, y)` do
+  the same judging in Python. `describe()` and `lint()` cover prompts
+  (`PROMPT_HIDDEN`, `PROMPT_UNTAPPABLE`, `PROMPT_GIVEAWAY`). Prompts are not
+  saved in lesson files yet; saving warns with the new `LessonWarning`. New
+  example: `examples/quiz_lesson.py`. See docs/PROMPTS.md.
 - **Five more teaching kits.** `Flowchart` (nodes by grid cell in four shapes,
   links that route with square corners and loops), `Timeline` (events that
   alternate and climb clear of each other, periods as bands), `Cycle` (stages

@@ -305,5 +305,43 @@ def lint_step(tutorial, index: int) -> list[Issue]:
             "them one at a time with show(..., at=seconds).",
             annotations=[a.text for a in annotations])
 
+    if step.prompt is not None:
+        _lint_prompt(tutorial, index, step, composition, objects, labels, add)
+
     order = {severity: i for i, severity in enumerate(SEVERITIES)}
     return sorted(issues, key=lambda issue: order[issue.severity])
+
+
+def _lint_prompt(tutorial, index, step, composition, objects, labels, add) -> None:
+    """A prompt fails if the learner cannot see or tap its answer, or is told it."""
+    from .prompts import hits
+
+    question = step.prompt.text
+    for answer in step.prompt.answers:
+        name = answer.name or answer.id
+        drawable = objects.get(answer.drawable_id)
+        if drawable is None or not drawable.effective_visible or drawable.effective_opacity < 0.15:
+            add("PROMPT_HIDDEN", "error",
+                f"The answer {name!r} to {question!r} is hidden or nearly transparent in this step.",
+                "Show it in this step (restyle it visible, or leave it out of dim_others), "
+                "or ask about something the learner can see.", [name])
+            continue
+        # Tap a grid across its bounds, as a learner would, and see if any lands.
+        box = drawable.get_bounds()
+        points = [(box.left + box.width * (i + 0.5) / 5, box.top + box.height * (j + 0.5) / 5)
+                  for i in range(5) for j in range(5)]
+        width, height = composition.scene.width, composition.scene.height
+        onscreen = [(x, y) for x, y in points if 0 <= x < width and 0 <= y < height]
+        if not any(answer in hits(tutorial, index, x, y) for x, y in onscreen):
+            add("PROMPT_UNTAPPABLE", "error",
+                f"The answer {name!r} to {question!r} cannot be tapped: it is off the canvas "
+                "or too small to hit.",
+                "Ask about a target that is on the canvas and at least a few pixels across; "
+                "for a thin line, ask about a larger shape near it.", [name])
+    for label in labels.values():
+        if label.target in step.prompt.answers:
+            add("PROMPT_GIVEAWAY", "warning",
+                f"{label.text!r} labels {label.target.name or label.target.id!r}, the answer to "
+                f"{question!r}, in the same step.",
+                "Show that label in the next step instead, as the reveal after the answer.",
+                [label.target.name or label.target.id], [label.text])

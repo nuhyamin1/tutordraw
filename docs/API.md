@@ -234,6 +234,15 @@ spoken, from TTS word timings, and fits the step to the narration.
 `step.narration` holds the parsed words; `web_step` carries them for captions.
 See [NARRATION.md](NARRATION.md).
 
+## Interactive prompts (new in 0.1.0a12)
+
+`step.ask(text, answer, *, correct=None, wrong=None, hint=None, attempts=3)`
+ends a step with a question answered by tapping the picture; the browser
+player waits for the answer. `tutorial.check_answer(index, x, y)` returns an
+`Answer` (`correct`, `tapped`, `feedback`) and `tutorial.hit_test(index, x, y)`
+the targets under a point, innermost first. Prompts are not saved in lesson
+files yet: saving warns with `LessonWarning`. See [PROMPTS.md](PROMPTS.md).
+
 ## Describing steps (new in 0.1.0a12)
 
 `tutorial.describe(index=None)` returns a plain-English description of one

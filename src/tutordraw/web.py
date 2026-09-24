@@ -19,6 +19,7 @@ import tempfile
 
 from .composition import Composition
 from .errors import ValidationError
+from .prompts import payload as prompt_payload
 from .svg import composition_svg
 
 EASING_SAMPLES = 64
@@ -80,7 +81,8 @@ def web_step(tutorial, index: int) -> dict:
             "duration": step.duration, "pause": step.pause,
             "easing": easing, "frames": frames, "svg": end,
             "description": tutorial.describe(index),
-            "narration": [[w.text, w.start, w.end] for w in step.narration] or None}
+            "narration": [[w.text, w.start, w.end] for w in step.narration] or None,
+            "prompt": prompt_payload(tutorial, step.prompt)}
 
 
 def web_bundle(tutorial) -> dict:

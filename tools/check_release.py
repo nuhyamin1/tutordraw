@@ -60,6 +60,9 @@ def main() -> None:
                      "docs/VOCABULARY.md", "examples/web_lesson.py", "docs/WEB.md",
                      "docs/DESCRIBE.md", "docs/NARRATION.md", "docs/KITS.md",
                      "examples/graph_lesson.py", "examples/number_line_lesson.py",
+                     "examples/flowchart_lesson.py", "examples/timeline_lesson.py",
+                     "examples/water_cycle_lesson.py", "examples/forces_lesson.py",
+                     "examples/earth_layers_lesson.py", "examples/quiz_lesson.py", "docs/PROMPTS.md",
                      "tools/check_installed.py", "tests/test_tutorial.py"):
             if f"{name}-{version}/{file}" not in names:
                 raise SystemExit(f"Source distribution missing: {file}")

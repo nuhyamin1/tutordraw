@@ -17,6 +17,12 @@
  * data-td-draw. The SVG is drawn at its native size and scaled with a CSS
  * transform, because DrawCV strokes are non-scaling: scaling the viewBox
  * instead would fatten every line on a small screen.
+ *
+ * A step with a `prompt` ("Tap the nucleus.") holds at its end until the
+ * learner taps an answer, judged by data-drawcv-id under the pointer exactly
+ * as Tutorial.check_answer judges it. After `attempts` wrong taps, or "Show
+ * me", the answer is ringed and the lesson carries on.
+ *   player.onanswer = (index, result) => { ... }  // {correct, tapped, shown, feedback}
  */
 (function (global) {
   "use strict";
@@ -106,6 +112,11 @@
       this.loaded = -1;
       this.last = null;
       this.onstep = null;
+      this.onanswer = null;
+      this.answered = new Set();
+      this.asking = false;
+      this.misses = 0;
+      this.hold = 0;
       this._build(options.title || "");
       this._tick = this._tick.bind(this);
     }
@@ -160,6 +171,15 @@
         .td-caption{min-height:1.5em;padding:8px 4px 0;font-size:17px;line-height:1.5;color:#7d889a}
         .td-caption .said{color:#e8ecf3}
         .td-caption .now{color:#e8a53a}
+        .td-prompt{display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding:10px 12px;border-radius:6px;background:#2c3442;font-size:16px}
+        .td-prompt.on{display:flex}
+        .td-prompt .td-ask{font-weight:600}
+        .td-prompt .td-feedback{flex:1;min-width:10em;color:#c9d2df}
+        .td-prompt .td-feedback.right{color:#7fd69a}
+        .td-prompt .td-feedback.wrong{color:#f0a08f}
+        .td-prompt button{background:#3a4557;color:#e8ecf3;border:0;border-radius:4px;padding:6px 12px;cursor:pointer;font:inherit}
+        .td-frame.asking{cursor:pointer}
+        .td-ring{position:absolute;pointer-events:none;border:3px solid;border-radius:6px;transition:opacity .6s}
         .td-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}`;
       const wrap = document.createElement("div");
       wrap.className = "td-player";
@@ -180,6 +200,20 @@
       this.caption = document.createElement("div");
       this.caption.className = "td-caption";
       this.caption.setAttribute("aria-hidden", "true");
+      // The question, its feedback, and a way out for anyone who cannot tap.
+      this.promptEl = document.createElement("div");
+      this.promptEl.className = "td-prompt";
+      this.promptEl.setAttribute("aria-live", "polite");
+      this.askEl = document.createElement("span");
+      this.askEl.className = "td-ask";
+      this.feedbackEl = document.createElement("span");
+      this.feedbackEl.className = "td-feedback";
+      const reveal = this.revealButton = document.createElement("button");
+      reveal.type = "button";
+      reveal.textContent = "Show me";
+      reveal.addEventListener("click", () => this._reveal());
+      this.promptEl.append(this.askEl, this.feedbackEl, reveal);
+      this.frame.addEventListener("click", event => this._tap(event));
       this.dots = document.createElement("div");
       this.dots.className = "td-dots";
       const bar = document.createElement("div");
@@ -201,7 +235,7 @@
       this.statusEl = document.createElement("div");
       this.statusEl.className = "td-status";
       bar.appendChild(this.statusEl);
-      wrap.append(style, this.frame, this.caption, this.dots, bar, this.live);
+      wrap.append(style, this.frame, this.promptEl, this.caption, this.dots, bar, this.live);
       this.root.appendChild(wrap);
       const resize = () => {
         const scale = this.frame.clientWidth / this.width;
@@ -229,6 +263,10 @@
       this.index = index;
       this.loaded = index;
       this.time = 0;
+      this.hold = 0;
+      this.misses = 0;
+      this.answered.delete(index);  // coming back to a question asks it again
+      this._endPrompt();
       this.svg = parse(step.svg);
       this.stage.replaceChildren(this.svg);
       this.tweens = step.frames && step.frames.length ? buildTweens(this.svg, step.frames.map(parse)) : [];
@@ -286,6 +324,7 @@
         }
       }
       this._updateCaption(t);
+      if (done && step.prompt && !this.answered.has(this.index) && !this.asking) this._ask(step.prompt);
       [...this.dots.children].forEach((dot, i) => {
         const s = this.steps[i];
         const fillBar = dot.firstChild;
@@ -325,12 +364,112 @@
       }
     }
 
+    /* ---- prompts ---- */
+
+    _ask(prompt) {
+      this.asking = true;
+      this.askEl.textContent = prompt.text;
+      this.feedbackEl.textContent = "";
+      this.feedbackEl.className = "td-feedback";
+      this.promptEl.classList.add("on");
+      this.revealButton.hidden = false;
+      this.frame.classList.add("asking");
+    }
+
+    _endPrompt() {
+      this.asking = false;
+      this.promptEl.classList.remove("on");
+      this.frame.classList.remove("asking");
+      this.frame.querySelectorAll(".td-ring").forEach(ring => ring.remove());
+    }
+
+    /* Drawable IDs under a point, innermost first, through every layer: a
+     * label over a target does not stop the tap reaching it. */
+    _hits(x, y) {
+      const prompt = this.steps[this.index].prompt;
+      const ids = [];
+      for (const el of document.elementsFromPoint(x, y)) {
+        if (!this.svg.contains(el)) continue;
+        let node = el.closest("[data-drawcv-id]");
+        while (node && this.svg.contains(node)) {
+          const id = node.getAttribute("data-drawcv-id");
+          const known = prompt.names[id] || prompt.answers.includes(id);
+          if (known && !prompt.helpers.includes(id) && !ids.includes(id)) ids.push(id);
+          node = node.parentElement && node.parentElement.closest("[data-drawcv-id]");
+        }
+      }
+      return ids;
+    }
+
+    _fill(template, tappedId) {
+      const prompt = this.steps[this.index].prompt;
+      return template.split("{tapped}").join(tappedId ? prompt.names[tappedId] : "that")
+        .split("{answer}").join(prompt.answer);
+    }
+
+    _ring(id, colour, fade) {
+      const el = this.svg.querySelector(`[data-drawcv-id="${id}"]`);
+      if (!el) return;
+      const box = el.getBoundingClientRect(), frame = this.frame.getBoundingClientRect();
+      const ring = document.createElement("div");
+      ring.className = "td-ring";
+      ring.style.borderColor = colour;
+      ring.style.left = box.left - frame.left - 6 + "px";
+      ring.style.top = box.top - frame.top - 6 + "px";
+      ring.style.width = box.width + 6 + "px";
+      ring.style.height = box.height + 6 + "px";
+      this.frame.appendChild(ring);
+      if (fade) setTimeout(() => { ring.style.opacity = "0"; setTimeout(() => ring.remove(), 700); }, 700);
+    }
+
+    _tap(event) {
+      if (!this.asking) return;
+      const prompt = this.steps[this.index].prompt;
+      const ids = this._hits(event.clientX, event.clientY);
+      const right = ids.find(id => prompt.answers.includes(id));
+      if (right) return this._finish({correct: true, tapped: right, shown: false,
+        feedback: this._fill(prompt.correct, right)}, right, "#3fae63");
+      this.misses += 1;
+      const feedback = ids.length ? this._fill(prompt.wrong, ids[0]) : this._fill(prompt.miss, null);
+      if (ids.length) this._ring(ids[0], "#e0604a", true);
+      if (this.misses >= prompt.attempts) return this._reveal();
+      this.feedbackEl.textContent = feedback;
+      this.feedbackEl.className = "td-feedback wrong";
+      if (this.onanswer) this.onanswer(this.index, {correct: false, tapped: ids[0] ? prompt.names[ids[0]] : null,
+        shown: false, feedback});
+    }
+
+    _reveal() {
+      if (!this.asking) return;
+      const prompt = this.steps[this.index].prompt;
+      this._finish({correct: false, tapped: null, shown: true, feedback: this._fill(prompt.hint, null)},
+        prompt.answers[0], "#e8a53a");
+    }
+
+    _finish(result, ringId, colour) {
+      const prompt = this.steps[this.index].prompt;
+      this.asking = false;
+      this.answered.add(this.index);
+      this.revealButton.hidden = true;
+      this.frame.classList.remove("asking");
+      prompt.answers.forEach(id => this._ring(id, colour, false));
+      this.feedbackEl.textContent = result.feedback;
+      this.feedbackEl.className = "td-feedback " + (result.correct ? "right" : "");
+      if (result.tapped) result.tapped = prompt.names[result.tapped];
+      // Long enough to read the feedback before the lesson moves on.
+      const step = this.steps[this.index];
+      this.hold = Math.max(0, 2 - step.pause);
+      this.time = step.duration;
+      if (this.onanswer) this.onanswer(this.index, result);
+      this._status();
+    }
+
     _status() {
-      const waiting = this.playing && !this.steps[this.index + 1] &&
-        this.steps[this.index] && this.time >= this.steps[this.index].duration + this.steps[this.index].pause;
+      const waiting = this.playing && !this.steps[this.index + 1] && this.steps[this.index] &&
+        this.time >= this.steps[this.index].duration + this.steps[this.index].pause + this.hold;
       this.toggle.textContent = this.playing ? "Pause" : "Play";
       this.statusEl.textContent = this.loaded < 0 ? "waiting for the first step…" :
-        waiting ? "waiting for the next step…" : "";
+        this.asking ? "your turn" : waiting ? "waiting for the next step…" : "";
     }
 
     _tick(now) {
@@ -339,11 +478,13 @@
         const dt = this.last === null ? 0 : (now - this.last) / 1000;
         this.time += dt;
         const step = this.steps[this.index];
-        if (this.time >= step.duration + step.pause) {
+        if (step.prompt && !this.answered.has(this.index) && this.time >= step.duration) {
+          this.time = step.duration;  // wait for the answer
+        } else if (this.time >= step.duration + step.pause + this.hold) {
           if (this.steps[this.index + 1]) {
             this._load(this.index + 1);
           } else {
-            this.time = step.duration + step.pause;  // hold on the last frame
+            this.time = step.duration + step.pause + this.hold;  // hold on the last frame
           }
         }
         this._apply();

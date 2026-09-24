@@ -175,6 +175,26 @@ class Tutorial:
         self._check_index(index)
         return describe_step(self, index)
 
+    def hit_test(self, index: int, x: float, y: float) -> tuple[Target, ...]:
+        """Targets under canvas point (x, y) in a step's finished picture.
+
+        Innermost first, so a nucleus comes before the cell around it.
+        Annotations do not block taps. See docs/PROMPTS.md.
+        """
+        from .prompts import hits
+        self._check_index(index)
+        return hits(self, index, x, y)
+
+    def check_answer(self, index: int, x: float, y: float):
+        """Judge a tap at canvas point (x, y) against the step's prompt.
+
+        Returns an Answer with `correct`, the `tapped` target (or None) and the
+        `feedback` to show, exactly as the browser player would judge it.
+        """
+        from .prompts import check
+        self._check_index(index)
+        return check(self, index, x, y)
+
     def to_svg(self, index: int, *, time: float | None = None) -> str:
         """One frame as standalone SVG: vector artwork and native, selectable text.
 

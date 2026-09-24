@@ -388,12 +388,31 @@ restored, only the two new references were added. Hosted CI for this commit
 must be checked after the push: the new goldens were made on Linux, not
 Windows.
 
+Kits push be51fae: hosted CI run 35946399572 **green on all nine jobs**,
+including the two Linux-made golden frames on Windows and macOS.
+
+P5 (4) done, same cloud session: interactive prompts. New
+`src/tutordraw/prompts.py` (`Prompt`, `Answer`, hit testing, payload),
+`Step.ask`/`prompt`/`clear_prompt` in `model.py`, `Tutorial.hit_test` and
+`check_answer`, `prompt` in `web_step`, the player's prompt bar and
+`onanswer`, `PROMPT_HIDDEN`/`PROMPT_UNTAPPABLE`/`PROMPT_GIVEAWAY` in
+`lint.py`, the closing sentence in `describe.py`, `LessonWarning` on saving,
+`tests/test_prompts.py` (11; the lint rule mutation-checked),
+`examples/quiz_lesson.py` (in check_installed and check_release),
+`docs/PROMPTS.md`. Evidence: suite **513 passed, 11 skipped**; wheel built,
+check_release passes, installed wheel 513 passed, check_installed clean. In
+headless Chromium (global Node Playwright 1.56, `/opt/pw-browsers`): the quiz
+page asked on its last step; a tap on Evaporation ringed it red with the
+author's wrong text; a tap on Condensation ringed it green; three misses on
+empty canvas ringed the answer amber with the hint; a two-step page held past
+its 1 s step until answered, then moved to step 2 about two seconds later; no
+page errors. Screenshots inspected by eye. CI does not run the JavaScript.
+
 **Next concrete task — P5, one item at a time.** Done: descriptions,
-narration timing, all seven kits. Remaining: (4) interactive prompts in the
-player (hit-test by `data-drawcv-id`), (5) equations (TeX -> SVG path ->
-`Path.from_svg_path`; needs a TeX-to-SVG route that is not a new heavy
-dependency: investigate first), (6) save narration in the lesson file at the
-next format change.
+narration timing, all seven kits, prompts. Remaining: (5) equations (TeX ->
+SVG path -> `Path.from_svg_path`; needs a TeX-to-SVG route that is not a new
+heavy dependency: investigate first), (6) schema v9 saving narration text
+**and prompts**, which needs the owner's approval like every format bump.
 
 P3 (schema v8) added `src/tutordraw/marks.py` (arrow/brace/measure/angle/
 number geometry), `camera.py` (fit, blend, install-as-group), `Mark`/`Camera`

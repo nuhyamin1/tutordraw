@@ -33,7 +33,8 @@ print('DrawCV:', drawcv.__file__)
                      "timed_lesson.py", "video_lesson.py", "symbols_lesson.py",
                      "eclipse_lesson.py", "multilingual_lesson.py", "lever_lesson.py", "web_lesson.py", "graph_lesson.py",
                      "number_line_lesson.py", "flowchart_lesson.py", "timeline_lesson.py",
-                     "water_cycle_lesson.py", "forces_lesson.py", "earth_layers_lesson.py"):
+                     "water_cycle_lesson.py", "forces_lesson.py", "earth_layers_lesson.py",
+                     "quiz_lesson.py"):
             subprocess.run([sys.executable, "-I", "-W", "error", str(example_dir / name)],
                            cwd=temporary, check=True)
         verify = """
