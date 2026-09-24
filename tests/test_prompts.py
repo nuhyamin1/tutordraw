@@ -1,11 +1,9 @@
 """Interactive prompts: step.ask, hit testing, feedback, lint, web payloads."""
 
-import warnings
-
 import pytest
 from drawcv import Circle, Color, FillStyle, Group, Point, Rectangle, Scene
 
-from tutordraw import LessonWarning, Tutorial, ValidationError
+from tutordraw import Tutorial, ValidationError
 from tutordraw.kits import Flowchart
 
 pytestmark = pytest.mark.filterwarnings("ignore::tutordraw.errors.LayoutWarning")
@@ -154,13 +152,37 @@ def test_web_step_carries_the_prompt_by_drawable_id(cell):
     assert cell.web_step(1)["prompt"] is None
 
 
-def test_saving_warns_that_prompts_are_not_kept(cell, tmp_path):
+def test_prompts_survive_save_and_load(cell, tmp_path):
+    nucleus, mito = cell.get_target("nucleus"), cell.get_target("mitochondrion")
+    cell.step("Quiz").ask("Tap the nucleus.", nucleus, wrong="No, {tapped}.", attempts=2)
+    cell.step("Either").ask("Tap a part inside the cell.", (nucleus, mito))
+    cell.step("None")
+    from jsonschema import Draft202012Validator
+
+    from conftest import packaged_schema
+
+    Draft202012Validator(packaged_schema()).validate(cell.to_dict())
+    loaded = Tutorial.load_json(cell.save_json(tmp_path / "quiz.tutordraw.json"))
+    first, second, third = (step.prompt for step in loaded.steps)
+    assert (first.text, first.wrong, first.correct, first.hint, first.attempts) == (
+        "Tap the nucleus.", "No, {tapped}.", None, None, 2)
+    assert [t.name for t in first.answers] == ["nucleus"] and third is None
+    assert [t.name for t in second.answers] == ["nucleus", "mitochondrion"]
+    assert loaded.check_answer(0, 330, 252).feedback == "No, the mitochondrion."
+    assert loaded.web_step(0)["prompt"]["answers"] == [loaded.get_target("nucleus").drawable_id]
+
+
+@pytest.mark.parametrize("change, message", [
+    (lambda p: p.update(answer_ids=["missing"]), "unknown reference"),
+    (lambda p: p.update(answer_ids=[]), "answer must be a target"),
+    (lambda p: p.update(attempts=0), "attempts"),
+    (lambda p: p.pop("hint"), "missing fields"),
+])
+def test_bad_saved_prompts_are_refused(cell, change, message):
+    from tutordraw import LessonFormatError
+
     cell.step("Quiz").ask("Tap the nucleus.", cell.get_target("nucleus"))
-    with pytest.warns(LessonWarning, match=r"step\(s\) \[1\]"):
-        path = cell.save_json(tmp_path / "quiz.tutordraw.json")
-    loaded = Tutorial.load_json(path)
-    assert loaded.steps[0].prompt is None
-    loaded.steps[0].ask("Tap the nucleus.", loaded.get_target("nucleus"))  # asked again after loading
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", LessonWarning)
-        Tutorial(Scene(10, 10)).to_json()  # nothing to lose, no warning
+    document = cell.to_dict()
+    change(document["steps"][0]["prompt"])
+    with pytest.raises(LessonFormatError, match=message):
+        Tutorial.from_dict(document)

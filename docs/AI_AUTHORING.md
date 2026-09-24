@@ -134,8 +134,7 @@ nucleus)`. Name targets as you would say them ("cell_wall"), because the
 feedback reads them out: "That's the cell wall. Try again." Do not label the
 answer in the asking step (lint says `PROMPT_GIVEAWAY`); reveal the label in
 the next step. For your own app, judge taps with
-`tutorial.check_answer(index, x, y)`. Prompts are not saved in lesson files
-yet, so ask again after loading.
+`tutorial.check_answer(index, x, y)`. Prompts save with the lesson.
 
 ## Standard diagrams: reach for a kit first
 
@@ -208,4 +207,4 @@ line; only callouts accept newlines. See [text](TEXT.md) for the exact rules.
 
 ## Current limits
 
-Thai, Arabic and other shaped scripts need future typography work. Timed lessons export to a video file with `export_video`; see [video](VIDEO.md). There is no automatic label-overlap solver, interactive lesson player, narration, captions, or transitions yet. Source drawings remain editable, but undo history is not saved. See [compatibility](COMPATIBILITY.md) and [persistence](PERSISTENCE.md).
+Thai and Arabic need a font (`Tutorial(font=...)`); Hebrew, Devanagari and emoji are refused. Kit text inside drawings takes no shaped scripts; put those in annotations. Leader lines are straight and may cross other panels. Equations are not supported yet: write them as plain text (`x² + 1`). Undo history is not saved. See [compatibility](COMPATIBILITY.md) and [persistence](PERSISTENCE.md).

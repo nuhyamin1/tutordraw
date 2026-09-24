@@ -55,7 +55,7 @@ the current word highlighted, the rest dim.
 
 ## Saving
 
-`narrate` sets reveal times and the duration, which lesson files already save.
-The narration text and word timings themselves are **not saved** yet: a
-reloaded lesson keeps its timing but has no captions until `narrate` is called
-again. Saving them needs a lesson-format change, deferred to the next one.
+Lesson schema v9 saves the word timings with the step, as well as the reveal
+times and duration `narrate` set, so a reloaded lesson has its captions back.
+Files saved before v9 load with timing but no words; call `narrate` again to
+add them.

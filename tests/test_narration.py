@@ -98,3 +98,27 @@ def test_fit_false_keeps_the_duration_and_narration_reaches_the_player(lesson):
     assert payload["narration"][1] == ["nucleus", 0.1, 0.6]
     tutorial.step("Silent")
     assert tutorial.web_step(1)["narration"] is None
+
+
+def test_narration_survives_save_and_load_with_its_captions(lesson, tmp_path):
+    from jsonschema import Draft202012Validator
+
+    from conftest import packaged_schema
+
+    tutorial, _, nucleus = lesson
+    step = tutorial.step("Spoken")
+    label = nucleus.label("Nucleus")
+    step.show(label)
+    step.narrate([("The", 0.0, 0.2), ("nucleus", 0.25, 0.8), ("sits", 0.9, 1.1)], {label: "nucleus"})
+    document = tutorial.to_dict()
+    Draft202012Validator(packaged_schema()).validate(document)
+    loaded = Tutorial.load_json(tutorial.save_json(tmp_path / "spoken.tutordraw.json"))
+    again = loaded.steps[0]
+    assert [(w.text, w.start, w.end) for w in again.narration] == [
+        ("The", 0.0, 0.2), ("nucleus", 0.25, 0.8), ("sits", 0.9, 1.1)]
+    assert again.revealed_at(again.labels[0]) == pytest.approx(0.1)  # timing kept, not replayed
+    assert loaded.web_step(0)["narration"] == tutorial.web_step(0)["narration"]
+    document["steps"][0]["narration"] = [["late", 2.0, 1.0]]
+    from tutordraw import LessonFormatError
+    with pytest.raises(LessonFormatError, match="narration"):
+        Tutorial.from_dict(document)

@@ -408,11 +408,22 @@ empty canvas ringed the answer amber with the hint; a two-step page held past
 its 1 s step until answered, then moved to step 2 about two seconds later; no
 page errors. Screenshots inspected by eye. CI does not run the JavaScript.
 
-**Next concrete task — P5, one item at a time.** Done: descriptions,
-narration timing, all seven kits, prompts. Remaining: (5) equations (TeX ->
-SVG path -> `Path.from_svg_path`; needs a TeX-to-SVG route that is not a new
-heavy dependency: investigate first), (6) schema v9 saving narration text
-**and prompts**, which needs the owner's approval like every format bump.
+Prompts push d90e3bc: hosted CI run 35948353665 green.
+
+P5 (6) done, owner approved: **lesson schema v9**, adding step `narration`
+and `prompt` (`serialization.py`, new `lesson-v9.schema.json` generated from
+v8 and packaged, `conftest.py` table). The pre-v9 "prompts are not saved"
+warning and its `LessonWarning` class were removed before any release.
+Tests: prompt and narration round trips validated against the packaged v9
+schema, malformed saved prompts refused; suite **519 passed, 11 skipped**.
+Docs: PERSISTENCE, COMPATIBILITY, NARRATION, PROMPTS, API, AI_AUTHORING (its
+stale "Current limits" paragraph rewritten), CHANGELOG, ROADMAP.
+
+**Next concrete task — P5 (5), the last item: equations.** TeX -> SVG path
+-> `Path.from_svg_path`. Investigate a TeX-to-SVG route that is not a new
+heavy dependency first (e.g. matplotlib mathtext is heavy; a small vendored
+subset or an optional extra may do); record the choice in DECISIONS. **Do not
+bump the format again** without the owner's approval.
 
 P3 (schema v8) added `src/tutordraw/marks.py` (arrow/brace/measure/angle/
 number geometry), `camera.py` (fit, blend, install-as-group), `Mark`/`Camera`

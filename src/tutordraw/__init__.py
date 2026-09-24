@@ -1,6 +1,6 @@
 """Teach with existing DrawCV drawings."""
 
-from .errors import (ExportError, LayoutWarning, LessonFormatError, LessonWarning, SceneCopyError,
+from .errors import (ExportError, LayoutWarning, LessonFormatError, SceneCopyError,
                      TutorDrawError, ValidationError, VideoExportError)
 from .composition import AnnotationLayout, Composition, HighlightLayout
 from .lint import Issue
@@ -13,4 +13,4 @@ __version__ = "0.1.0a12"
 __all__ = ["Tutorial", "Target", "Label", "Callout", "Step", "Theme", "TutorDrawError",
            "ValidationError", "SceneCopyError", "LayoutWarning", "ExportError",
            "LessonFormatError", "VideoExportError", "Composition", "AnnotationLayout",
-           "HighlightLayout", "Issue", "Prompt", "Answer", "LessonWarning"]
+           "HighlightLayout", "Issue", "Prompt", "Answer"]

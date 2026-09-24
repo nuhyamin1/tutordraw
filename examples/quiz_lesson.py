@@ -4,7 +4,6 @@ The first steps teach the water cycle; the last asks a question the learner
 answers by tapping the picture. In the browser player the step waits for a
 tap, says what was tapped if it is wrong, and rings the answer after three
 misses or "Show me". `check_answer` judges a tap the same way in Python.
-Prompts are not saved in lesson files yet (see docs/PROMPTS.md).
 The lesson lints clean and the script fails if not.
 """
 

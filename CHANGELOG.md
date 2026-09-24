@@ -2,15 +2,18 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Lesson schema v9.** Steps save their narration word timings and their
+  prompt, so captions and questions survive a save. v1 to v8 still load
+  (without narration words or prompts); builds that only know v8 cannot open
+  v9. Packaged as `lesson-v9.schema.json`.
 - **Interactive prompts.** `step.ask(text, answer)` ends a step with a
   question answered by tapping the picture. The browser player holds the step
   until an answer is tapped, names wrong taps, rings the answer after three
   misses or "Show me", and reports each tap to `player.onanswer`.
   `Tutorial.check_answer(index, x, y)` and `Tutorial.hit_test(index, x, y)` do
   the same judging in Python. `describe()` and `lint()` cover prompts
-  (`PROMPT_HIDDEN`, `PROMPT_UNTAPPABLE`, `PROMPT_GIVEAWAY`). Prompts are not
-  saved in lesson files yet; saving warns with the new `LessonWarning`. New
-  example: `examples/quiz_lesson.py`. See docs/PROMPTS.md.
+  (`PROMPT_HIDDEN`, `PROMPT_UNTAPPABLE`, `PROMPT_GIVEAWAY`). New example:
+  `examples/quiz_lesson.py`. See docs/PROMPTS.md.
 - **Five more teaching kits.** `Flowchart` (nodes by grid cell in four shapes,
   links that route with square corners and loops), `Timeline` (events that
   alternate and climb clear of each other, periods as bands), `Cycle` (stages
@@ -40,7 +43,7 @@
   as the narration speaks their phrases, from TTS word timings (tuples, dicts,
   per-character timings via `narration.words_from_characters`, or a plain
   string timed at an even pace), and fit the step to the narration. The player
-  shows live captions. Narration text is not yet saved in lesson files.
+  shows live captions.
 - An arrow between two targets that share a centre now draws nothing instead
   of failing the whole frame, and lint reports it as `EMPTY_MARK`.
 - `examples/lever_lesson.py` is now narrated with cues instead of `at=`.

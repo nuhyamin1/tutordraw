@@ -73,9 +73,9 @@ keyboard-reachable button, so the step never traps someone who cannot tap.
 | `PROMPT_UNTAPPABLE` | error | No tap across an answer's bounds reaches it: off the canvas or too thin. |
 | `PROMPT_GIVEAWAY` | warning | A label in the same step names the answer. Show it in the next step instead. |
 
-## Not saved yet
+## Saving
 
-Lesson files (schema v8) have no place for prompts. `save_json`, `to_json`
-and `to_dict` warn with `LessonWarning` naming the steps that lose theirs,
-rather than dropping them silently; ask again after loading. Prompts are
-planned for the next format change, together with narration text.
+Lesson schema v9 saves each step's prompt, answers by target ID, author
+feedback and attempts. A prompt is rebuilt through `step.ask` on load, so a
+saved one is validated exactly as a new one is. Files from before v9 have no
+prompts.

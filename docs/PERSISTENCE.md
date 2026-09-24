@@ -55,9 +55,20 @@ revised.save_json("lesson-revised.tutordraw.json")
 
 This fragment assumes a second step with a callout. The original lesson object and file remain unchanged. For adding teaching content, prefer the regular `step`, `show`, `highlight`, `explain`, and `dim_others` methods.
 
-## Current format: v8
+## Current format: v9
 
-New saves write lesson schema v8, packaged as `lesson-v8.schema.json`. v8 adds
+New saves write lesson schema v9, packaged as `lesson-v9.schema.json`. v9 adds
+two step fields: `narration`, the word timings as `[word, start, end]`
+arrays (empty when the step is not narrated), and `prompt`, null or
+`{text, answer_ids, correct, wrong, hint, attempts}` (see
+[prompts](PROMPTS.md)). A loaded step gets its words back without replaying
+its cues: the reveal times `narrate` set are already in `reveals`. v1 to v8
+still load, with no narration and no prompt. A v9 file cannot be opened by a
+build that only knows v8.
+
+### v8
+
+v8 added
 step `marks`, `draw` and `camera`; highlight `at`, `draw` and `shape`; theme
 `draw_seconds` and `halo_width` (see [the vocabulary](VOCABULARY.md)). Every
 earlier version, v1 to v7, still loads with defaults for the fields it lacks.

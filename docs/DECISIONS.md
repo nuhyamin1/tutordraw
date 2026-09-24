@@ -865,11 +865,29 @@ prompt bar, three lint codes, and a closing sentence in `describe()`.
 - **The step holds at its end, never mid-step.** A prompt is a question about
   what the step has finished showing. "Show me" is a button so nobody is stuck,
   and after an answer the step holds about two seconds for the feedback.
-- **Not persisted, and loudly so.** Schema v8 has no field for prompts, and
-  format bumps need the owner's approval. Unlike narration text, which is
-  dropped silently (documented), saving a lesson with prompts warns with the
-  new `LessonWarning`, because a whole question vanishing is worse. Proposed:
-  one v9 carrying both prompts and narration.
+- **Persisted in schema v9** (below). Before the owner approved v9, saving a
+  lesson with prompts warned rather than dropping them silently; that
+  warning, and the unreleased `LessonWarning` class, went away with v9.
 - **Kit `<node>_shape` helpers are never named in feedback** when their node
   was also hit, so taps read "the start" rather than "the start shape".
+
+### Lesson schema v9: narration and prompts (2026-09-24, owner approved)
+
+The owner approved one bump carrying both things the format lacked.
+
+- **Two step fields, both always present:** `narration` (`[word, start, end]`
+  arrays, empty when not narrated) and `prompt` (null or
+  `{text, answer_ids, correct, wrong, hint, attempts}`). Always-present,
+  like every earlier addition, so a v9 document has one shape.
+- **Narration loads as words, not as a replayed `narrate` call.** The cues'
+  reveal times and the fitted duration are already saved in `reveals` and
+  `duration`; replaying would need the cue phrases, which were never stored,
+  and could disagree with later hand edits. Words go through `parse_words`,
+  so bad timings fail loading with the step named.
+- **Prompts load through `step.ask`**, as marks load through their authoring
+  methods, so a saved prompt is validated exactly as a new one; author
+  feedback is stored as written (None for defaults), so a later change of
+  default wording reaches old lessons.
+- v1 to v8 still load with no words and no prompt; `tests/conftest.py`
+  `STEP_FIELDS_ADDED[9]` makes the legacy-version tests cover v8.
 

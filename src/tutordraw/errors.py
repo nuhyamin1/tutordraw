@@ -21,10 +21,6 @@ class LayoutWarning(UserWarning):
     """An annotation extends beyond the output canvas."""
 
 
-class LessonWarning(UserWarning):
-    """Saving a lesson leaves something out that the file format cannot hold yet."""
-
-
 class ExportError(TutorDrawError):
     """An export failed after preflight; completed_paths contains successful files."""
 

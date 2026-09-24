@@ -240,8 +240,8 @@ See [NARRATION.md](NARRATION.md).
 ends a step with a question answered by tapping the picture; the browser
 player waits for the answer. `tutorial.check_answer(index, x, y)` returns an
 `Answer` (`correct`, `tapped`, `feedback`) and `tutorial.hit_test(index, x, y)`
-the targets under a point, innermost first. Prompts are not saved in lesson
-files yet: saving warns with `LessonWarning`. See [PROMPTS.md](PROMPTS.md).
+the targets under a point, innermost first. Lesson schema v9 saves prompts
+and narration words. See [PROMPTS.md](PROMPTS.md).
 
 ## Describing steps (new in 0.1.0a12)
 

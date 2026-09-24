@@ -8,13 +8,13 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
-import warnings
 from typing import TYPE_CHECKING
 
 from drawcv import Scene
 
 from .adapters.drawcv import index_scene
-from .errors import LessonFormatError, LessonWarning, ValidationError
+from .errors import LessonFormatError, ValidationError
+from .narration import parse_words
 from .model import Callout, Label, Target, make_annotation
 from .themes import Theme
 from .validation import finite_number
@@ -23,8 +23,9 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 8
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, SCHEMA_VERSION)
+SCHEMA_VERSION = 9
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, SCHEMA_VERSION)
+PROMPT_FIELDS = {"text", "answer_ids", "correct", "wrong", "hint", "attempts"}
 # Theme fields each schema version introduced; older documents omit them and
 # load with the Theme default, exactly as older step fields do.
 THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin"),
@@ -89,14 +90,15 @@ def _mark(mark) -> dict:
             "options": dict(mark.options)}
 
 
+def _prompt(prompt) -> dict | None:
+    if prompt is None:
+        return None
+    return {"text": prompt.text, "answer_ids": [t.id for t in prompt.answers],
+            "correct": prompt.correct, "wrong": prompt.wrong, "hint": prompt.hint,
+            "attempts": prompt.attempts}
+
+
 def to_dict(tutorial: Tutorial) -> dict:
-    asked = [i + 1 for i, step in enumerate(tutorial.steps) if step.prompt is not None]
-    if asked:
-        # Lesson format v8 has no place for prompts. Losing them silently would
-        # be worse than saying so; they come back with the next format change.
-        warnings.warn(f"Prompts are not saved in lesson files yet: step(s) {asked} lose their "
-                      "prompt. Ask again with step.ask(...) after loading.", LessonWarning,
-                      stacklevel=3)
     try:
         source = index_scene(tutorial.scene)
         for target in tutorial.targets:
@@ -127,7 +129,9 @@ def to_dict(tutorial: Tutorial) -> dict:
                                      "move": None if r.move is None else list(r.move),
                                      "fill": None if r.fill is None else list(r.fill),
                                      "opacity": r.opacity, "visible": r.visible}
-                                    for r in step.restyles]}
+                                    for r in step.restyles],
+                       "narration": [[w.text, w.start, w.end] for w in step.narration],
+                       "prompt": _prompt(step.prompt)}
                       for step in tutorial.steps],
         }
         result = _json_copy(document)
@@ -238,8 +242,10 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             easing_fields = {"easing"} if version >= 4 else set()
             reveal_fields = {"reveals"} if version >= 5 else set()
             mark_fields = {"marks", "draw", "camera"} if version >= 8 else set()
+            spoken_fields = {"narration", "prompt"} if version >= 9 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
-                    | timing_fields | restyle_fields | easing_fields | reveal_fields | mark_fields, where)
+                    | timing_fields | restyle_fields | easing_fields | reveal_fields | mark_fields
+                    | spoken_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -322,6 +328,22 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                     raise LessonFormatError(f"{where}.dim.opacity cannot be null")
                 step.dim_others(*references(dim["target_ids"], targets, f"{where}.dim.target_ids"),
                                 opacity=dim["opacity"])
+            words = _list(item.get("narration", []), f"{where}.narration")
+            if words:
+                # The words only: the reveal times narrate() set are already in
+                # "reveals", so replaying the cues would be redundant.
+                try:
+                    step._narration = parse_words(words)
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.narration: {exc}") from exc
+            if item.get("prompt") is not None:
+                asked = _object(item["prompt"], PROMPT_FIELDS, f"{where}.prompt")
+                answers = references(asked["answer_ids"], targets, f"{where}.prompt.answer_ids")
+                try:
+                    step.ask(asked["text"], tuple(answers), correct=asked["correct"],
+                             wrong=asked["wrong"], hint=asked["hint"], attempts=asked["attempts"])
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.prompt: {exc}") from exc
         tutorial.duration  # Reject cumulative overflow or unrepresentable intervals.
         return tutorial
     except LessonFormatError:
