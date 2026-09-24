@@ -176,6 +176,8 @@ Design the whole batch before coding; persist it together.
 - [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
   live captions in the player.
 - [x] Save narration text and timings in the lesson file: schema v9, with prompts.
+- [ ] Forgiving prompt taps: a tap between an equation's glyphs or on thin
+  text currently misses (found after 0.2.0a1).
 - [x] Interactive prompts ("tap the nucleus") via DrawCV hit testing
   (`Step.ask`, `Tutorial.check_answer`, the player's prompt bar), saved in
   schema v9.

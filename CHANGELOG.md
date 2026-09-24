@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0a1 — third alpha (2026-09-24)
+## 0.2.0a1 — third alpha (published 2026-09-24)
 
 A new minor version because the change from 0.1.0a11 is large: this is the
 development milestone previously called 0.1.0a12, never uploaded under that

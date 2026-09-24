@@ -4,13 +4,22 @@ Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade, program P1-P4 and P5 kits (
 
 ## Current state
 
-**Published: 0.1.0a11 (2026-09-21). 0.2.0a1 is prepared for upload
-(2026-09-24): the milestone first called 0.1.0a12, renumbered by the owner
-because the change is large.** The owner authorised the release and chose
-0.2.0a1 over 0.2.0 so it stays an alpha. The upload runs on the owner's PC
-with their PyPI token (there is no credential in the cloud session, and none
-may be put in the repository). Until PyPI lists 0.2.0a1, the README's
-"Published alpha 0.2.0a1" line is ahead of reality.
+**Published: 0.2.0a1 (2026-09-24)**, the milestone first called 0.1.0a12,
+renumbered by the owner because the change from 0.1.0a11 is large; it stays
+an alpha. The owner authorised it and uploaded from their PC (twine used a
+credential already stored there; none is in the repository or the cloud
+session). Their Windows run before upload: 547 passed, 1 skipped (the
+symlink case; the font tests ran), `check_release --require-metadata`
+passed. Verified afterwards from PyPI in a clean Linux venv:
+`tutordraw[math]==0.2.0a1` installs, reports 0.2.0a1, saves schema v9, and
+typesets an equation. Earlier releases: 0.1.0a11 (2026-09-21), 0.1.0a3.
+
+**Found after release, fix in the next version:** taps land on filled ink
+only, so a tap between an equation's glyphs (or on thin text) misses: 87 of
+120 grid taps over `E = mc^2` counted, and its bounds' centre did not. Make
+prompt hit testing forgiving (e.g. accept a tap within a few pixels of the
+answer, or inside a text-like target's bounds) in both `prompts.hits` and
+the player.
 
 Six milestones landed on 2026-09-21: a6 video export, a7 annotation text beyond
 ASCII, a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between
