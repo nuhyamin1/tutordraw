@@ -423,8 +423,9 @@ Schema v9 push 4794f3e: hosted CI run 35949502793 green.
 
 P5 (5) done, same session: **equations**, `src/tutordraw/kits/equations.py`
 (`Equation`, optional `math` extra = `ziamath>=0.13,<0.14`, also in `dev`
-so CI runs the tests). `tests/test_equations.py` (16, skipped without
-ziamath), an `equation` golden frame (Linux-made; the extra is in `dev`, so
+so CI runs the tests). Suite **537 passed, 11 skipped**; installed wheel and
+check_installed clean. `tests/test_equations.py` (17, skipped without
+ziamath; one proves saved equations open without it), an `equation` golden frame (Linux-made; the extra is in `dev`, so
 CI checks it), `examples/pythagoras_lesson.py` (in check_installed, skipped
 there without the extra, and in check_release). Docs: KITS, API,
 AI_AUTHORING, README, COMPATIBILITY (new "Optional math extra"), CHANGELOG,
