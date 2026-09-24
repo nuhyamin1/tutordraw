@@ -2,6 +2,11 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Equations: `tutordraw.kits.Equation`.** LaTeX typeset into filled DrawCV
+  paths by ziamath, in named pieces on one baseline, each a target that can
+  be highlighted, recoloured, connected to or narrated. New optional extra
+  `math` (`ziamath>=0.13,<0.14`); without it `Equation` raises with the
+  install command. New example: `examples/pythagoras_lesson.py`.
 - **Lesson schema v9.** Steps save their narration word timings and their
   prompt, so captions and questions survive a save. v1 to v8 still load
   (without narration words or prompts); builds that only know v8 cannot open

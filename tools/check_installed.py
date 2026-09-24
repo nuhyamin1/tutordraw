@@ -1,5 +1,6 @@
 """Run examples in a temporary project using an installed, non-editable package."""
 
+import importlib.util
 from pathlib import Path
 import shutil
 import subprocess
@@ -34,7 +35,10 @@ print('DrawCV:', drawcv.__file__)
                      "eclipse_lesson.py", "multilingual_lesson.py", "lever_lesson.py", "web_lesson.py", "graph_lesson.py",
                      "number_line_lesson.py", "flowchart_lesson.py", "timeline_lesson.py",
                      "water_cycle_lesson.py", "forces_lesson.py", "earth_layers_lesson.py",
-                     "quiz_lesson.py"):
+                     "quiz_lesson.py", "pythagoras_lesson.py"):
+            if name == "pythagoras_lesson.py" and importlib.util.find_spec("ziamath") is None:
+                print("Skipping pythagoras_lesson.py: the math extra is not installed")
+                continue
             subprocess.run([sys.executable, "-I", "-W", "error", str(example_dir / name)],
                            cwd=temporary, check=True)
         verify = """

@@ -223,7 +223,8 @@ adds `point`, `interval`, and `hop(step, a, b, text)`, a step mark.
 (`stages=[...]`, `stage(key)`, `arrows`), `ForceDiagram` (`force(name,
 direction, magnitude, text)`, `components`, `net`) and `CrossSection`
 (`layers=[(name, text, thickness)]`, `shape="bands"` or `"rings"`, `labels()`)
-build the other common teaching diagrams. Every kit has `find(tutorial, name)`
+build the other common teaching diagrams, and `Equation(tutorial, latex, position=)`
+typesets LaTeX into named pieces (optional `math` extra). Every kit has `find(tutorial, name)`
 to reattach after loading. See [KITS.md](KITS.md).
 
 ## Narration timing (new in 0.1.0a12)

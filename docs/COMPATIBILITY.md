@@ -24,6 +24,15 @@ are exercised locally. This is not a guarantee of all custom objects, external
 assets, vector masks, effects, or blend-mode combinations. Unsupported scene
 copying raises `SceneCopyError` instead of editing the source in place.
 
+## Optional math extra
+
+`pip install "tutordraw[math]"` adds `ziamath>=0.13,<0.14` for
+`tutordraw.kits.Equation`. Tested with ziamath 0.13, ziafont 0.11 and
+latex2mathml 3.81.1 on Linux CPython 3.12 locally, and in hosted CI through the
+`dev` extra. All three are pure Python and MIT licensed. Equations are saved as
+ordinary DrawCV paths, so a saved lesson opens and renders without the extra;
+only typesetting new equations needs it.
+
 **Lesson files and DrawCV versions.** A saved lesson embeds its DrawCV scene.
 DrawCV 0.11.0 writes scene schema 1.14 and reads every older one, so lessons saved
 by 0.1.0a11 and earlier still load. DrawCV 0.10.x cannot read schema 1.14, so a

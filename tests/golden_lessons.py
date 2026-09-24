@@ -315,6 +315,24 @@ def science() -> Tutorial:
     return lesson
 
 
+def equation() -> Tutorial:
+    """The equation kit: fractions, roots, sub- and superscripts, a recoloured piece."""
+    import pytest
+
+    pytest.importorskip("ziamath")
+    from tutordraw.kits import Equation
+
+    lesson = Tutorial(Scene(720, 300, background=Color(248, 250, 252)))
+    quadratic = Equation(lesson, ["x =", ("formula", r"\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}")],
+                         position=(40, 30), size=34, name="quadratic")
+    Equation(lesson, r"\int_0^1 x^2\,dx = \frac{1}{3}", position=(40, 150), size=30, name="integral")
+    Equation(lesson, r"\mathrm{2H_2 + O_2 \rightarrow 2H_2O}", position=(360, 170), size=28, name="water")
+    step = lesson.step("Equations")
+    step.restyle(quadratic.part("formula"), fill=(190, 60, 50))
+    step.show(quadratic.part("formula").label("the quadratic formula", anchor="right"))
+    return lesson
+
+
 # name -> (builder, [(frame name, step index, progress)])
 LESSONS = {
     "cell": (cell, [("step1", 0, 1.0), ("step2", 1, 1.0), ("step3", 2, 1.0)]),
@@ -330,6 +348,7 @@ LESSONS = {
     "numberline": (numberline, [("step1", 0, 1.0)]),
     "processes": (processes, [("step1", 0, 1.0)]),
     "science": (science, [("step1", 0, 1.0)]),
+    "equation": (equation, [("step1", 0, 1.0)]),
     "drawon": (drawon, [("leader", 0, 0.1), ("highlight", 0, 0.2), ("arrow", 0, 0.375),
                         ("done", 0, 1.0)]),
 }

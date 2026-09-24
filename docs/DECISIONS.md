@@ -891,3 +891,38 @@ The owner approved one bump carrying both things the format lacked.
 - v1 to v8 still load with no words and no prompt; `tests/conftest.py`
   `STEP_FIELDS_ADDED[9]` makes the legacy-version tests cover v8.
 
+### Equations (2026-09-24, owner chose the optional ziamath extra)
+
+`tutordraw.kits.Equation`, behind `pip install "tutordraw[math]"`.
+
+- **ziamath over matplotlib mathtext.** Measured in scratch environments:
+  ziamath with ziafont and latex2mathml installs 3.1 MB, all pure Python and
+  MIT, with its own STIX Two Math font, and typesets in 5 to 25 ms.
+  matplotlib installs 133 MB with 13 packages and reads a smaller LaTeX
+  subset. KaTeX or MathJax would need a JavaScript runtime. Writing a layout
+  engine was never realistic. Optional, not required, at the owner's choice.
+- **Own path conversion, not DrawCV's SVG importer.** With
+  `config.svg2 = False` ziamath writes only absolute `M L Q Z` paths and
+  `<rect>` bars, no transforms. Each piece becomes one filled `Path` via
+  `Path.from_svg_path`, so a piece is a single target that `restyle(fill=)`
+  can recolour (a group could not be). The importer also worked, given an
+  integer viewport, but would have produced many small objects per piece.
+  Unexpected path commands are refused rather than drawn wrong.
+- **Pieces, not sub-expression targets.** ziamath does not map output back
+  to input, so named parts are pieces typeset separately on a shared
+  baseline. A lone operator piece loses LaTeX's operator spacing, so pieces
+  are spaced 0.22 x size by default; the first render with 6 px looked
+  cramped.
+- **Unknown commands are refused.** latex2mathml turns `\foo` into
+  `<mi>\foo</mi>`, which would draw the word; the MathML is checked first.
+- **ziamath's import-time DeprecationWarning is silenced** (Python 3.12
+  deprecates its `importlib.resources.path` call); it belongs to ziamath and
+  must not fail programs run with `-W error`, as the examples are.
+- **Cost, measured, not fixed here.** One formula (about 800 outline points)
+  renders in about 0.2 s; six on one canvas took about 0.8 s, and lint 3.9 s.
+  Profiling shows DrawCV `Path.get_bounds` mapping each point through
+  `Transform.transform_point`, which rebuilds the matrix and a NumPy array per
+  point; `fixed_pivot()` did not help. **Worth raising upstream with DrawCV**:
+  one matrix per mapper call would make this near free. TutorDraw does not
+  modify DrawCV, so this is documented instead.
+

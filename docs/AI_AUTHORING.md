@@ -150,6 +150,10 @@ Don't hand-place boxes, arrows and circles for a diagram a kit already makes:
 - Layers (Earth, soil, skin, atmosphere): `CrossSection`, `shape="rings"` or
   `"bands"`, then `step.show(*section.labels())`.
 
+- An equation: `Equation(lesson, [("lhs", "a^2 + b^2"), "=", ("rhs", "c^2")],
+  position=(x, y))`, with a piece for anything a step will point at. Needs
+  `pip install "tutordraw[math]"`.
+
 Kit parts are drawing, so hide later ones with `restyle(target, visible=False)`,
 and put Thai or Arabic in annotations rather than kit text.
 
@@ -207,4 +211,4 @@ line; only callouts accept newlines. See [text](TEXT.md) for the exact rules.
 
 ## Current limits
 
-Thai and Arabic need a font (`Tutorial(font=...)`); Hebrew, Devanagari and emoji are refused. Kit text inside drawings takes no shaped scripts; put those in annotations. Leader lines are straight and may cross other panels. Equations are not supported yet: write them as plain text (`x² + 1`). Undo history is not saved. See [compatibility](COMPATIBILITY.md) and [persistence](PERSISTENCE.md).
+Thai and Arabic need a font (`Tutorial(font=...)`); Hebrew, Devanagari and emoji are refused. Kit text inside drawings takes no shaped scripts; put those in annotations. Leader lines are straight and may cross other panels. Equations need the `math` extra; without it, write them as plain text (`x² + 1`). Undo history is not saved. See [compatibility](COMPATIBILITY.md) and [persistence](PERSISTENCE.md).

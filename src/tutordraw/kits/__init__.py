@@ -9,8 +9,9 @@ narrate. Nothing here renders anything. See docs/KITS.md.
 """
 
 from .diagrams import Cycle, Flowchart, Timeline
+from .equations import Equation
 from .graphs import Axes, NumberLine, format_number, nice_step
 from .science import CrossSection, ForceDiagram
 
-__all__ = ["Axes", "CrossSection", "Cycle", "Flowchart", "ForceDiagram", "NumberLine", "Timeline",
+__all__ = ["Axes", "CrossSection", "Cycle", "Equation", "Flowchart", "ForceDiagram", "NumberLine", "Timeline",
            "format_number", "nice_step"]

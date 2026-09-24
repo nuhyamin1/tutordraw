@@ -9,7 +9,8 @@ narrated like anything else. Every kit has a narrated example lesson:
 [graph](../examples/graph_lesson.py), [number line](../examples/number_line_lesson.py),
 [flowchart](../examples/flowchart_lesson.py), [timeline](../examples/timeline_lesson.py),
 [water cycle](../examples/water_cycle_lesson.py), [forces](../examples/forces_lesson.py) and
-[Earth's layers](../examples/earth_layers_lesson.py).
+[Earth's layers](../examples/earth_layers_lesson.py) and
+[Pythagoras](../examples/pythagoras_lesson.py).
 
 ## Axes
 
@@ -172,6 +173,42 @@ step.show(*earth.labels())
 | `CrossSection(tutorial, *, box, layers, shape="bands", name="section", fills=..., color=...)` | Layers, outermost or topmost first, as `(name, text)` or `(name, text, thickness)` with relative thickness. `"bands"` stacks rectangles down the box (soil, the atmosphere, skin); `"rings"` nests circles in it (the Earth, a tree trunk, an onion). Each layer is a target by its name. |
 | `section.labels(*, side="right", gap=36)` | A label per layer, lined up in one column. A band's leader ends on its own edge. A ring's points into the ring itself, through an invisible anchor `<name>_layer` (so descriptions read "the mantle layer is labelled"), and ring labels are spaced evenly. Show them together or one per step. |
 | `section.layer(name)`, `CrossSection.find(tutorial, name)` | A layer's target; reattach after loading. |
+
+## Equation
+
+Needs the optional math extra: `pip install "tutordraw[math]"` (ziamath,
+pure Python, MIT, about 3 MB with its STIX Two Math font). Without it,
+`Equation` raises with that install command.
+
+```python
+from tutordraw.kits import Equation
+
+theorem = Equation(lesson, [("a_squared", "a^2"), "+", ("b_squared", "b^2"), "=",
+                            ("c_squared", "c^2")], position=(600, 250), size=48, name="theorem")
+step.restyle(theorem.part("c_squared"), fill=(200, 70, 50))
+step.connect(theorem.part("c_squared"), (300, 305), draw=True)   # to the hypotenuse
+quadratic = Equation(lesson, r"x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}", position=(40, 30))
+```
+
+| Call | Does |
+| --- | --- |
+| `Equation(tutorial, latex, *, position, size=32, name="equation", color=..., spacing=None)` | Typesets LaTeX as filled DrawCV paths. `latex` is one string or a list of pieces laid left to right on one baseline, each a string or a `(name, latex)` pair. `position` is the top left; `size` the font size in pixels (6 to 400); `spacing` the gap between pieces (0.22 x size). The whole equation is the target `name`. |
+| `eq.parts`, `eq.part(key)` | Each piece is one `Path` target, named as given or `<name>_part<i>`, so it can be highlighted, recoloured with `restyle(fill=...)`, connected to, hidden or narrated. By number (1 is the first) or name. |
+| `eq.width`, `eq.height`, `eq.baseline` | The typeset size and the baseline's canvas y, for placing things beside it. |
+| `Equation.find(tutorial, name)` | Reattach after loading. |
+
+Supported LaTeX is what ziamath and latex2mathml read: fractions, roots,
+sub- and superscripts, big operators with limits, Greek, arrows,
+`\mathrm{}` for chemistry, `\vec`, `\left(`/`\right)`, matrices. A piece
+must be complete on its own, so a name can go on `b^2 - 4ac` only if it is
+its own piece, not inside a `\sqrt`. Bad input is refused with the problem
+named, including an unknown command such as `\foo`, which the converter
+would otherwise draw as the word.
+
+Cost: glyph outlines are many points, and DrawCV maps each point to world
+space one at a time, so a step showing one formula renders in about 0.2 s
+and linting it takes longer. Fine for a lesson; worth knowing in a tight
+loop. See DECISIONS "Equations".
 
 ## Kit text
 

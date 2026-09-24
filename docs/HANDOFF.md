@@ -419,11 +419,23 @@ schema, malformed saved prompts refused; suite **519 passed, 11 skipped**.
 Docs: PERSISTENCE, COMPATIBILITY, NARRATION, PROMPTS, API, AI_AUTHORING (its
 stale "Current limits" paragraph rewritten), CHANGELOG, ROADMAP.
 
-**Next concrete task — P5 (5), the last item: equations.** TeX -> SVG path
--> `Path.from_svg_path`. Investigate a TeX-to-SVG route that is not a new
-heavy dependency first (e.g. matplotlib mathtext is heavy; a small vendored
-subset or an optional extra may do); record the choice in DECISIONS. **Do not
-bump the format again** without the owner's approval.
+Schema v9 push 4794f3e: hosted CI run 35949502793 green.
+
+P5 (5) done, same session: **equations**, `src/tutordraw/kits/equations.py`
+(`Equation`, optional `math` extra = `ziamath>=0.13,<0.14`, also in `dev`
+so CI runs the tests). `tests/test_equations.py` (16, skipped without
+ziamath), an `equation` golden frame (Linux-made; the extra is in `dev`, so
+CI checks it), `examples/pythagoras_lesson.py` (in check_installed, skipped
+there without the extra, and in check_release). Docs: KITS, API,
+AI_AUTHORING, README, COMPATIBILITY (new "Optional math extra"), CHANGELOG,
+ROADMAP, DECISIONS "Equations" (includes a measured DrawCV per-point cost worth
+raising upstream).
+
+**P5 is complete.** Every item in ROADMAP P5 is checked. Next candidates, for
+the owner to choose: raise the DrawCV `transform_point` cost upstream; the
+backlog items in ROADMAP; a release of 0.1.0a12 (only on the owner's explicit
+request; it is unpublished). **Do not bump the format again** without the
+owner's approval.
 
 P3 (schema v8) added `src/tutordraw/marks.py` (arrow/brace/measure/angle/
 number geometry), `camera.py` (fit, blend, install-as-group), `Mark`/`Camera`

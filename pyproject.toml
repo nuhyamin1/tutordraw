@@ -32,7 +32,10 @@ typography = ["pydrawcv[typography]==0.11.0"]
 # Deliberately excludes the typography extra: on macOS DrawCV requires real
 # PyICU, which has no wheels and builds against Homebrew ICU. Install it
 # separately when you need Thai or Arabic.
-dev = ["pytest>=8", "build>=1", "setuptools>=77", "wheel", "twine>=6", "jsonschema>=4.18,<5"]
+# Equations from LaTeX (tutordraw.kits.Equation). ziamath is pure Python, MIT,
+# about 3 MB with its font and latex2mathml; tested with 0.13.
+math = ["ziamath>=0.13,<0.14"]
+dev = ["ziamath>=0.13,<0.14", "pytest>=8", "build>=1", "setuptools>=77", "wheel", "twine>=6", "jsonschema>=4.18,<5"]
 
 [project.urls]
 Repository = "https://github.com/nuhyamin1/tutordraw"

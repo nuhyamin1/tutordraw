@@ -171,7 +171,8 @@ Design the whole batch before coding; persist it together.
 - [x] More kits: flowcharts, timelines, cycles, force diagrams, labelled
   cross-sections (`Flowchart`, `Timeline`, `Cycle`, `ForceDiagram`,
   `CrossSection`).
-- [ ] Equations: TeX -> SVG path data -> `Path.from_svg_path`.
+- [x] Equations: TeX -> SVG path data -> `Path.from_svg_path`
+  (`tutordraw.kits.Equation`, optional `math` extra using ziamath).
 - [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
   live captions in the player.
 - [x] Save narration text and timings in the lesson file: schema v9, with prompts.
