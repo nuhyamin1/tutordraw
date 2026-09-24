@@ -236,6 +236,24 @@ def drawon() -> Tutorial:
     return lesson
 
 
+def graph() -> Tutorial:
+    """The axes kit: grid, ticks, a curve with an asymptote, a point and guides."""
+    from tutordraw.kits import Axes
+
+    scene = Scene(720, 480, background=Color(248, 250, 252))
+    lesson = Tutorial(scene)
+    axes = Axes(lesson, box=(80, 40, 440, 380), x_range=(-3, 3), y_range=(-2, 8), grid=True)
+    axes.plot(lambda x: x * x, name="parabola_curve")
+    axes.plot(lambda x: 1 / x, name="hyperbola", color=(200, 90, 60), width=2)
+    reading = axes.point(2, 4, name="reading")
+    axes.guide(x=2, y=4, name="guides")
+    anchor = axes.point(-2.2, 4.84, name="parabola", visible=False)
+    step = lesson.step("Graph")
+    step.show(anchor.label("y = x^2", anchor="left"), reading.label("(2, 4)", anchor="right"))
+    step.highlight(reading)
+    return lesson
+
+
 # name -> (builder, [(frame name, step index, progress)])
 LESSONS = {
     "cell": (cell, [("step1", 0, 1.0), ("step2", 1, 1.0), ("step3", 2, 1.0)]),
@@ -247,6 +265,7 @@ LESSONS = {
     "vocab": (vocab, [("relations", 0, 1.0), ("geometry", 1, 1.0)]),
     "camera": (camera, [("whole", 0, 1.0), ("zooming", 1, 0.5), ("zoomed", 1, 1.0),
                         ("leaving", 2, 0.5), ("out", 2, 1.0)]),
+    "graph": (graph, [("step1", 0, 1.0)]),
     "drawon": (drawon, [("leader", 0, 0.1), ("highlight", 0, 0.2), ("arrow", 0, 0.375),
                         ("done", 0, 1.0)]),
 }

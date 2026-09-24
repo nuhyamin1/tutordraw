@@ -12,7 +12,7 @@ import math
 
 from drawcv import BoundingBox, Circle, Color, Drawable, FillStyle, Path, Point, Polygon, Rectangle, StrokeStyle
 
-from .adapters.drawcv import crisp_rect
+from .adapters.drawcv import crisp_rect, fixed_pivot
 from .camera import State, to_screen
 from .layout import annotation_text, clamp_panel, place_panel
 from .model import Mark, Target
@@ -50,7 +50,7 @@ def _stroke(theme: Theme) -> StrokeStyle:
 
 
 def _path(points: list[Point], theme: Theme) -> Path:
-    path = Path(stroke=_stroke(theme))
+    path = Path(stroke=_stroke(theme), transform=fixed_pivot())
     path.move_to(points[0])
     for point in points[1:]:
         path.line_to(point)
@@ -160,7 +160,7 @@ def _arrow(mark, bounds, camera, theme, font):
         nx, ny = -nx, -ny
     side = 1.0 if bend >= 0 else -1.0
     mid = Point((start.x + end.x) / 2 + nx * bend * length, (start.y + end.y) / 2 + ny * bend * length)
-    path = Path(stroke=_stroke(theme))
+    path = Path(stroke=_stroke(theme), transform=fixed_pivot())
     path.move_to(start)
     # A quadratic through `mid`'s control point, written as the equivalent cubic.
     c1 = Point(start.x + 2 / 3 * (mid.x - start.x), start.y + 2 / 3 * (mid.y - start.y))
@@ -203,7 +203,7 @@ def _brace(mark, bounds, camera, theme, font):
             return Point(box.right + GAP + v, box.top + u)
         return Point(box.left - GAP - v, box.top + u)
 
-    path = Path(stroke=_stroke(theme))
+    path = Path(stroke=_stroke(theme), transform=fixed_pivot())
     path.move_to(world(0, 0))
 
     def quad(p0, q, p2):

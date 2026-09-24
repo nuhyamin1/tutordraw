@@ -13,6 +13,7 @@ import warnings
 
 from drawcv import BoundingBox, Drawable
 
+from .adapters.drawcv import stroke_boxes
 from .errors import LayoutWarning
 from .layout import (Measured, Placement, anchor_points, clamp_panel, measure_label,
                      place_panel)
@@ -153,7 +154,7 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
                        + sum(overlap_area(panel, other, margin) for other in solid))
             hard = crowded + outside_area(panel, width, height)
             soft = sum(overlap_area(panel, box)
-                       for key, box in artwork.items() if key != skip)
+                       for key, box in artwork.items() if key.split("#")[0] != skip)
             score = (hard, soft, rank)
             if best is None or score < best[0]:
                 best = (score, placement, panel, crowded)
@@ -207,6 +208,16 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
     with held(1.0):
         bounds = final_bounds(objects, wanted, residual_moves(step, previous, progress))
         marks = mark_boxes(bounds) if mark_boxes is not None else []
+        # Unfilled strokes block only along their ink; chunks are measured now
+        # and shifted to where each target ends up, as its bounds were.
+        chunks = {}
+        for key in target_ids:
+            if key in bounds and key in objects:
+                pieces = stroke_boxes(objects[key])
+                if pieces:
+                    now = objects[key].get_bounds()
+                    dx, dy = bounds[key].x - now.x, bounds[key].y - now.y
+                    chunks[key] = [BoundingBox(b.x + dx, b.y + dy, b.width, b.height) for b in pieces]
     # An animated step also has a start, and its targets sweep between the two.
     started = None
     if step.easing is not None:
@@ -230,8 +241,23 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
         highlights[highlight.target.drawable_id] = BoundingBox(
             box.x - pad, box.y - pad, box.width + 2 * pad, box.height + 2 * pad)
     highlights.update({f"mark:{i}": box for i, box in enumerate(marks)})
+    artwork = {}
+    # Words in the drawing (titles, tick numbers, captions) are worth keeping
+    # readable even when nobody registered them: covering them is a soft cost.
+    # Annotations are not in the scene yet, so every Text here is artwork.
+    from drawcv import Text
+    for key, obj in objects.items():
+        if isinstance(obj, Text) and key not in bounds and obj.visible and obj.text.strip():
+            artwork[f"text:{key}"] = obj.get_bounds()
+    for key in target_ids:
+        if key not in swept:
+            continue
+        if key in chunks and started is None:
+            artwork.update({f"{key}#{i}": box for i, box in enumerate(chunks[key])})
+        else:
+            artwork[key] = swept[key]  # a moving stroke keeps its swept bounds
     chosen = resolve(requests,
-                     artwork={key: swept[key] for key in target_ids if key in swept},
+                     artwork=artwork,
                      blockers=highlights, width=width, height=height,
                      margin=theme.collision_margin)
     return {key: (placement, measured[key]) for key, placement in chosen.items()}

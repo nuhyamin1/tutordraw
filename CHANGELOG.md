@@ -2,6 +2,16 @@
 
 ## 0.1.0a12 — development milestone (unreleased)
 
+- **Teaching kits: `tutordraw.kits.Axes`.** Axes with round tick steps, an
+  optional grid, `plot(f)` (breaks at asymptotes and failures, clipped exactly
+  at the range edges), `point`, `guide` and `to_scene`, all built from ordinary
+  DrawCV objects as named targets; `Axes.find` reattaches after loading.
+- **Label placement near strokes and text.** Unfilled strokes (curves, lines,
+  outlines) now block labels only along their ink, and text in the drawing
+  (titles, tick numbers) is avoided. Existing lessons' placements are unchanged.
+- `describe()` no longer mentions things hidden from the first step, and uses
+  "are" for plural target names ("the guides appear").
+- New example: `examples/graph_lesson.py`.
 - **`Step.narrate(words, cues)`**: reveal labels, callouts, marks and highlights
   as the narration speaks their phrases, from TTS word timings (tuples, dicts,
   per-character timings via `narration.words_from_characters`, or a plain

@@ -269,3 +269,68 @@ def replace_in_place(old: Drawable, new: Drawable) -> None:
         layer.remove(obj)
     for obj in (new, *tail):
         layer.add(obj)
+
+
+STROKE_CHUNK = 24.0  # px of stroke per obstacle box
+
+
+def stroke_boxes(drawable: Drawable) -> list | None:
+    """Small boxes along an unfilled stroke's path, or None to use its bounds.
+
+    A curve or a long diagonal line has a bounding box far bigger than the ink,
+    so as one obstacle it pushes labels away from empty space. Chunked along the
+    stroke, it only blocks where it is drawn. Filled shapes and groups keep
+    their bounds, which do describe their ink.
+    """
+    from drawcv import BoundingBox, Group
+
+    if isinstance(drawable, Group) or getattr(drawable, "fill", None) is not None:
+        return None
+    try:
+        contours = drawable.to_path(preserve_world_transform=True).flatten_world(tolerance=1.0)
+    except Exception:
+        return None
+    stroke = getattr(drawable, "stroke", None)
+    pad = max(getattr(stroke, "width", 1.0) or 1.0, 1.0) / 2 + 1
+    boxes = []
+    for points in contours:
+        # Subdivide long segments first: a straight diagonal is one segment,
+        # and one box for it would be its whole bounding box again.
+        dense = [points[0]]
+        for previous, point in zip(points, points[1:]):
+            span = ((point.x - previous.x) ** 2 + (point.y - previous.y) ** 2) ** 0.5
+            pieces = max(1, int(span // STROKE_CHUNK))
+            for k in range(1, pieces + 1):
+                t = k / pieces
+                dense.append(Point(previous.x + (point.x - previous.x) * t,
+                                   previous.y + (point.y - previous.y) * t))
+        chunk = [dense[0]]
+        length = 0.0
+        for previous, point in zip(dense, dense[1:]):
+            length += ((point.x - previous.x) ** 2 + (point.y - previous.y) ** 2) ** 0.5
+            chunk.append(point)
+            if length >= STROKE_CHUNK:
+                boxes.append(chunk)
+                chunk, length = [point], 0.0
+        if len(chunk) > 1 or not boxes:
+            boxes.append(chunk)
+    result = []
+    for chunk in boxes:
+        xs, ys = [p.x for p in chunk], [p.y for p in chunk]
+        result.append(BoundingBox(min(xs) - pad, min(ys) - pad,
+                                  max(xs) - min(xs) + 2 * pad, max(ys) - min(ys) + 2 * pad))
+    return result or None
+
+
+
+def fixed_pivot():
+    """An identity transform with an explicit pivot, for generated artwork.
+
+    DrawCV's default pivot is the object's own centre, found from its bounds.
+    Mapping a point to world space then recomputes those bounds, so exporting
+    or hit-testing a long path cost O(points squared): seconds for one curve.
+    Generated artwork is never rotated or scaled, so pinning the pivot at the
+    origin changes nothing it draws.
+    """
+    from drawcv import Transform
+    return Transform(pivot=Point(0, 0))

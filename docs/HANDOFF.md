@@ -354,6 +354,16 @@ lever page showed the caption on the right word at 4.5 s with only the cued
 labels revealed. Narration text is not persisted (deferred to the next format
 bump, see DECISIONS).
 
+P5 (3) done: `tutordraw.kits.Axes` (`src/tutordraw/kits.py`), chunked stroke
+obstacles and text obstacles in the planner (`stroke_boxes` in the adapter),
+`describe()` grammar fixes, `tests/test_kits.py` (34), a `graph` golden frame,
+`examples/graph_lesson.py` (run by check_installed), `docs/KITS.md`. Suite
+**459 passed, 1 skipped**; the graph example's three steps and the golden were
+inspected by eye. Found and fixed a DrawCV default-pivot cost (graph render
+7.5 s -> 155 ms, lint 11 s -> 327 ms; see DECISIONS) and made lint judge
+unfilled strokes by ink boxes. **Worth raising upstream with DrawCV:** default
+pivots make world mapping O(points squared) for large paths and groups.
+
 **Next concrete task — P5, one item at a time.** Remaining order: (2, done) narration timing:
 accept word timestamps and set `at=` from them, (3) teaching kits, starting
 with axes/graphs, (4) interactive prompts in the player (hit-test by

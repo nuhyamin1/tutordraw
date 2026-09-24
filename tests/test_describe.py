@@ -40,7 +40,7 @@ def test_changes_are_described_relative_to_the_previous_step(lesson):
     tutorial.step("Hold").restyle(t["moon"], move=(0, -50), fill=(200, 40, 40)) \
         .restyle(t["sun"], opacity=0.3)
     tutorial.step("Reset")
-    assert tutorial.describe(0) == "Start. The moon is hidden."
+    assert tutorial.describe(0) == "Start."  # hidden from the start: never seen
     assert tutorial.describe(1) == "Rise. The moon appears, slides up and turns red."
     assert tutorial.describe(2) == "Hold. The sun fades to 30%."  # the moon did not change
     assert tutorial.describe(3) == ("Reset. The moon moves back down and returns to its "
@@ -110,3 +110,18 @@ def test_descriptions_travel_with_web_steps():
     tutorial = LESSONS["motion"][0]()
     assert tutorial.web_step(1)["description"] == tutorial.describe(1)
     assert "slides down and right and turns red" in tutorial.describe(1)
+
+
+def test_plural_names_agree_and_first_step_hiding_is_silent(lesson):
+    tutorial, t = lesson
+    scene = tutorial.scene
+    gears = Circle(center=Point(50, 50), radius=10, fill=FillStyle(color=Color(1, 2, 3)))
+    scene.add(gears)
+    g = tutorial.target(gears, name="gears")
+    tutorial.step("One").restyle(g, visible=False).show(t["sun"].label("Sun"))
+    tutorial.step("Two").show(g.label("Gears")).highlight(g)
+    tutorial.step("Three").restyle(g, visible=False)
+    assert tutorial.describe(0) == 'One. The sun is labelled "Sun".'
+    assert tutorial.describe(1) == 'Two. The gears appear. The gears are boxed. The gears are labelled "Gears".'
+    assert tutorial.describe(2) == "Three. The gears are hidden."
+

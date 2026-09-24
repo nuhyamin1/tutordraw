@@ -211,6 +211,13 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 `Composition.marks` lists each finished mark as a `MarkLayout` (`kind`, `text`,
 `targets`, `bounds`, `panel`); `Composition.camera` is `(scale, tx, ty)` or None.
 
+## Teaching kits (new in 0.1.0a12)
+
+`tutordraw.kits.Axes(tutorial, box=..., x_range=..., y_range=...)` draws
+labelled axes from DrawCV objects; `plot(f)`, `point(x, y)`, `guide(x=, y=)`
+return named targets and `to_scene(x, y)` maps coordinates. See
+[KITS.md](KITS.md).
+
 ## Narration timing (new in 0.1.0a12)
 
 `step.narrate(words, cues=None, *, lead=0.15, tail=0.5, fit=True, rate=None)`

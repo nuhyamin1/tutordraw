@@ -39,6 +39,23 @@ def _name(ref) -> str:
     return f"the point ({ref[0]:g}, {ref[1]:g})"
 
 
+def _plural(ref) -> bool:
+    """A named target like "guides" or "gears" takes "are"; "nucleus" does not."""
+    if not isinstance(ref, Target) or not ref.name:
+        return False
+    word = ref.name.replace("_", " ").split()[-1].lower()
+    return word.endswith("s") and not word.endswith(("ss", "us", "is"))
+
+
+def _verb(ref, singular: str, plural: str) -> str:
+    return plural if _plural(ref) else singular
+
+
+def _subject(ref) -> str:
+    name = _name(ref)
+    return name[0].upper() + name[1:]
+
+
 def _join(parts: list[str]) -> str:
     if len(parts) <= 1:
         return "".join(parts)
@@ -109,28 +126,34 @@ def describe_step(tutorial, index: int) -> str:
         changes = []
         shown_now = now.visible if now is not None and now.visible is not None else True
         shown_before = before.visible if before is not None and before.visible is not None else True
+        if index == 0 and not shown_now:
+            continue  # hidden from the start: nothing the viewer has seen
         if shown_now != shown_before:
-            changes.append("appears" if shown_now else "is hidden")
+            changes.append(_verb(target, "appears", "appear") if shown_now
+                           else _verb(target, "is hidden", "are hidden"))
         move = now.move if now is not None and now.move else (0.0, 0.0)
         was = before.move if before is not None and before.move else (0.0, 0.0)
         heading = _direction(move[0] - was[0], move[1] - was[1])
         if heading and shown_now:
             back = "back " if move == (0.0, 0.0) else ""
-            changes.append(f"{'slides' if moving else 'moves'} {back}{heading}")
+            verb = _verb(target, "slides", "slide") if moving else _verb(target, "moves", "move")
+            changes.append(f"{verb} {back}{heading}")
         fill = now.fill if now is not None else None
         old_fill = before.fill if before is not None else None
         if fill != old_fill and shown_now:
-            changes.append(f"turns {colour_name(fill)}" if fill is not None
-                           else "returns to its original colour")
+            changes.append(f"{_verb(target, 'turns', 'turn')} {colour_name(fill)}" if fill is not None
+                           else _verb(target, "returns to its original colour",
+                                      "return to their original colour"))
         opacity = now.opacity if now is not None else None
         old_opacity = before.opacity if before is not None else None
         if opacity != old_opacity and shown_now:
             level = 1.0 if opacity is None else opacity
-            changes.append("fades out" if level == 0 else "is fully shown" if level >= 1
-                           else f"fades to {round(level * 100)}%")
+            fades = _verb(target, "fades", "fade")
+            changes.append(f"{fades} out" if level == 0
+                           else _verb(target, "is fully shown", "are fully shown") if level >= 1
+                           else f"{fades} to {round(level * 100)}%")
         if changes:
-            who = _name(target)
-            opening.append(f"{who[0].upper()}{who[1:]} {_join(changes)}.")
+            opening.append(f"{_subject(target)} {_join(changes)}.")
 
     if step._focus:
         focus = _join([_name(t) for t in step._focus])
@@ -142,7 +165,7 @@ def describe_step(tutorial, index: int) -> str:
     for highlight in step.highlights:
         style = "outlined" if highlight.shape == "outline" else "boxed"
         events.append((min(highlight.at, step.duration), order,
-                       f"{_name(highlight.target)[0].upper()}{_name(highlight.target)[1:]} is {style}."))
+                       f"{_subject(highlight.target)} {_verb(highlight.target, 'is', 'are')} {style}."))
         order += 1
     numbers = [m for m in step.marks if m.kind == "number"]
     for item in (*step.labels, *step.callouts, *step.marks):
@@ -156,7 +179,8 @@ def describe_step(tutorial, index: int) -> str:
             if not sentence.endswith((".", "!", "?", '"')):
                 sentence += "."
         else:
-            sentence = f'{_name(item.target)[0].upper()}{_name(item.target)[1:]} is labelled "{item.text}".'
+            sentence = (f'{_subject(item.target)} {_verb(item.target, "is", "are")} '
+                        f'labelled "{item.text}".')
         events.append((at, order, sentence))
         order += 1
     if len(numbers) > 1:

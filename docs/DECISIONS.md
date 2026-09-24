@@ -756,3 +756,43 @@ engine will do to the timing.
 - Found while testing: `connect()` between concentric targets gave a
   zero-length path, and DrawCV's tangent raised, failing the whole frame. Such
   an arrow now draws nothing and lint reports EMPTY_MARK.
+
+## Teaching kits — development 0.1.0a12 (2026-09-24), program P5
+
+Owner question answered before building: kits do **not** draw. They compute
+geometry (ticks, coordinate mapping, sampling) and add ordinary DrawCV objects
+to the scene, registering the parts as targets. That keeps rendering in DrawCV
+and needs no DrawCV change. General-purpose charting could later move into
+DrawCV with kits as thin wrappers; not now, since DrawCV is out of scope here.
+
+- Settings live in the kit group's DrawCV `metadata`, so a saved lesson keeps
+  them with no TutorDraw format change and `Axes.find` can reattach.
+- The whole axes group is **not** a target: its bounds are the whole plot and
+  would block every label. The two axis lines are.
+- Curves split where f fails or is non-finite and are cut exactly at the y
+  range edge by interpolation, so 1/x shows two branches and nothing is drawn
+  outside the box.
+- Tick step: the 1/2/5 x 10^n step whose tick count is closest to 8 on a log
+  scale. A first version that took the first step at least the raw span / 8
+  gave 5 ticks for a span of 10.
+- **Planner obstacles changed for every lesson**, found by building the graph:
+  a parabola's bounding box covered the whole plot and pushed labels away from
+  it. Unfilled strokes now contribute boxes every 24 px along their ink
+  (long straight segments subdivided, or a diagonal is one big box again).
+  Text in the drawing is a soft obstacle, after a vertex note covered the
+  "-1" tick label. No golden frame changed: existing lessons were already
+  clear of both. A moving stroke keeps its swept bounds.
+- `describe()` stays silent about targets hidden from step one (the viewer
+  never saw them) and agrees verbs with plural names, both found on the graph
+  example ("The guides is hidden").
+- **Performance: pin the pivot of generated artwork.** The first graph took
+  7.5 s to render, 2.1 s to export as SVG and 11 s to lint. Cause, in DrawCV
+  0.11.0: a Transform with the default pivot (None = the object's own centre)
+  re-measures the object's bounds on every world-space mapping, so a group of
+  curves or a 240-point path cost O(points squared) in rendering, SVG export
+  and `contains_point` (which also re-flattens the path per call). The kit
+  group, kit paths and mark paths now carry `fixed_pivot()` (identity, pivot at
+  the origin, visually identical: every golden frame unchanged), and lint judges
+  unfilled strokes by their ink boxes instead of `contains_point`. Result:
+  155 ms render, 115 ms SVG, 327 ms lint. User artwork still has DrawCV's
+  default pivots; worth reporting upstream. Guarded by a structural test.

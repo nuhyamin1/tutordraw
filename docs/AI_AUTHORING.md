@@ -116,6 +116,15 @@ working copy, so beats stay independent. Labels and highlights follow a moved
 target automatically. Repeating `restyle` for a target replaces its settings, so
 pass every option you still want. See [restyle](RESTYLE.md).
 
+## Graphs: use the axes kit, don't draw them
+
+For any graph, `from tutordraw.kits import Axes` and let it place the axes,
+ticks and curve: `axes.plot(lambda x: x * x, name="parabola_curve")`. Point at
+places with `axes.point(x, y, name=...)` (`visible=False` for an anchor on a
+curve) and `axes.guide(x=, y=)`. Kit parts show in every step, so hide the
+ones a step should not show yet with `restyle(target, visible=False)`. Use
+`axes.to_scene(x, y)` for your own marks. See [kits](KITS.md).
+
 ## Time the picture to the voice
 
 When you narrate, don't hand-tune `at=`. Build the step, then call

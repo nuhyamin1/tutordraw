@@ -11,7 +11,7 @@ import warnings
 
 from drawcv import BoundingBox, OpenCVRenderer, Point
 
-from .adapters.drawcv import index_scene
+from .adapters.drawcv import index_scene, stroke_boxes
 from .collision import outside_area, overlap_area
 from .composition import AnnotationLayout, Composition
 from .errors import LayoutWarning
@@ -101,11 +101,19 @@ def contrast(first_bgr, second_bgr) -> float:
     return (light + 0.05) / (dark + 0.05)
 
 
-def _covered_fraction(panel: BoundingBox, drawable) -> float:
-    """Share of the panel lying on the drawable's real shape, not its bounds."""
+def _covered_fraction(panel: BoundingBox, drawable, ink=None) -> float:
+    """Share of the panel lying on the drawable's real shape, not its bounds.
+
+    `ink` is the drawable's stroke boxes when it is an unfilled stroke: then
+    the overlap with those boxes is the answer, and DrawCV's contains_point
+    (which re-flattens a path on every call) is not needed.
+    """
     bounds = drawable.get_bounds()
     if overlap_area(panel, bounds) <= 0:
         return 0.0
+    if ink is not None:
+        area = panel.width * panel.height
+        return min(1.0, sum(overlap_area(panel, box) for box in ink) / area) if area else 0.0
     x0, y0 = max(panel.x, bounds.x), max(panel.y, bounds.y)
     x1 = min(panel.x + panel.width, bounds.x + bounds.width)
     y1 = min(panel.y + panel.height, bounds.y + bounds.height)
@@ -122,9 +130,16 @@ def _covered_fraction(panel: BoundingBox, drawable) -> float:
     return hits / total if total else 0.0
 
 
-def _leader_hits(annotation: AnnotationLayout, drawable) -> bool:
+def _leader_hits(annotation: AnnotationLayout, drawable, ink=None) -> bool:
     """Does the leader pass over this shape somewhere away from its ends?"""
     start, end = annotation.leader
+    if ink is not None:
+        # Trim the ends, as the sampling below skips them, then test the ink boxes.
+        length = ((end.x - start.x) ** 2 + (end.y - start.y) ** 2) ** 0.5 or 1.0
+        trim = min(4.0 / length, 0.5)
+        a = Point(start.x + (end.x - start.x) * trim, start.y + (end.y - start.y) * trim)
+        b = Point(end.x - (end.x - start.x) * trim, end.y - (end.y - start.y) * trim)
+        return any(_segment_hits_box(a, b, box) for box in ink)
     length = ((end.x - start.x) ** 2 + (end.y - start.y) ** 2) ** 0.5
     steps = int(length // 2)
     for i in range(2, steps - 1):
@@ -160,6 +175,8 @@ def lint_step(tutorial, index: int) -> list[Issue]:
 
     objects = index_scene(composition.scene)
     drawables = {name: objects[drawable_id] for name, drawable_id in composition.drawables.items()}
+    # Unfilled strokes are judged by their ink boxes, computed once per step.
+    ink = {name: stroke_boxes(drawable) for name, drawable in drawables.items()}
     width, height = composition.scene.width, composition.scene.height
     annotations = composition.annotations
     labels = {label.id: label for label in (*step.labels, *step.callouts)}
@@ -199,7 +216,7 @@ def lint_step(tutorial, index: int) -> list[Issue]:
 
     for a in annotations:
         for name, drawable in drawables.items():
-            share = _covered_fraction(a.panel, drawable)
+            share = _covered_fraction(a.panel, drawable, ink[name])
             if share >= COVER_FRACTION:
                 add("COVERS_TARGET", "warning",
                     f"{share:.0%} of {a.text!r} sits on top of target {name!r}, hiding it.",
@@ -218,9 +235,11 @@ def lint_step(tutorial, index: int) -> list[Issue]:
         start = a.leader[0]
         for name, drawable in drawables.items():
             # Skip the shape the leader starts on and anything that contains it.
-            if name == a.target or drawable.contains_point(start):
+            inside = (any(box.contains(start) for box in ink[name]) if ink[name] is not None
+                      else drawable.contains_point(start))
+            if name == a.target or inside:
                 continue
-            if _leader_hits(a, drawable):
+            if _leader_hits(a, drawable, ink[name]):
                 add("LEADER_CROSSES_TARGET", "warning",
                     f"The leader of {a.text!r} passes over target {name!r}, so it reads "
                     f"as pointing there.",

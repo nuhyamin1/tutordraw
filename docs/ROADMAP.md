@@ -166,8 +166,9 @@ Design the whole batch before coding; persist it together.
 - [ ] Arrowheads riding the tip while drawing on, in the browser.
 
 ### P5 — Content and interaction
-- [ ] Teaching kits: axes/graphs, number lines, flowcharts, timelines, cycles,
-  force diagrams, labelled cross-sections — emitting registered targets.
+- [x] Teaching kits: axes and graphs (`tutordraw.kits.Axes`).
+- [ ] More kits: number lines, flowcharts, timelines, cycles, force diagrams,
+  labelled cross-sections.
 - [ ] Equations: TeX -> SVG path data -> `Path.from_svg_path`.
 - [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
   live captions in the player.
