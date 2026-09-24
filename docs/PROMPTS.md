@@ -1,6 +1,6 @@
 # Interactive prompts
 
-New in development 0.1.0a12. A step can end with a question the learner
+New in 0.2.0a1. A step can end with a question the learner
 answers by tapping the picture:
 
 ```python

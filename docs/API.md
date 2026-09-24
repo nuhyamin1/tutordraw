@@ -1,4 +1,4 @@
-# Implemented API — 0.1.0a12 (development)
+# Implemented API — 0.2.0a1
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 
@@ -118,7 +118,7 @@ interpolate; `visible` does not. Hard cuts remain the default, and
 `render_step` always shows the finished state. Saved in lesson schema v4.
 See [ANIMATION.md](ANIMATION.md).
 
-## Automatic collision avoidance (new in 0.1.0a12)
+## Automatic collision avoidance (new in 0.2.0a1)
 
 Label and callout panels no longer overlap each other. Before drawing a step,
 TutorDraw resolves every annotation's panel against the other panels, the
@@ -199,7 +199,7 @@ Every filename is checked before export; collisions raise `FileExistsError` unle
 
 Frames encode in temporary files. Explicit overwrite replaces an existing file only after successful encoding; a failed newly-created file is removed. This is not a transaction across the batch: successful earlier files remain if a later step fails. A new file may be visible during its copy. Permission/directory failures during preflight can propagate as filesystem exceptions.
 
-## Marks, drawing on, camera and outlines (new in 0.1.0a12, schema v8)
+## Marks, drawing on, camera and outlines (new in 0.2.0a1, schema v8)
 
 `step.connect`, `brace`, `measure`, `angle` and `number` add drawn marks and
 return a `Mark`. `draw=True` on labels, callouts, highlights and marks draws
@@ -211,7 +211,7 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 `Composition.marks` lists each finished mark as a `MarkLayout` (`kind`, `text`,
 `targets`, `bounds`, `panel`); `Composition.camera` is `(scale, tx, ty)` or None.
 
-## Teaching kits (new in 0.1.0a12)
+## Teaching kits (new in 0.2.0a1)
 
 `tutordraw.kits.Axes(tutorial, box=..., x_range=..., y_range=...)` draws
 labelled axes from DrawCV objects; `plot(f)`, `point(x, y)`, `guide(x=, y=)`
@@ -227,7 +227,7 @@ build the other common teaching diagrams, and `Equation(tutorial, latex, positio
 typesets LaTeX into named pieces (optional `math` extra). Every kit has `find(tutorial, name)`
 to reattach after loading. See [KITS.md](KITS.md).
 
-## Narration timing (new in 0.1.0a12)
+## Narration timing (new in 0.2.0a1)
 
 `step.narrate(words, cues=None, *, lead=0.15, tail=0.5, fit=True, rate=None)`
 reveals each cued label, callout, mark or highlighted target as its phrase is
@@ -235,7 +235,7 @@ spoken, from TTS word timings, and fits the step to the narration.
 `step.narration` holds the parsed words; `web_step` carries them for captions.
 See [NARRATION.md](NARRATION.md).
 
-## Interactive prompts (new in 0.1.0a12)
+## Interactive prompts (new in 0.2.0a1)
 
 `step.ask(text, answer, *, correct=None, wrong=None, hint=None, attempts=3)`
 ends a step with a question answered by tapping the picture; the browser
@@ -244,14 +244,14 @@ player waits for the answer. `tutorial.check_answer(index, x, y)` returns an
 the targets under a point, innermost first. Lesson schema v9 saves prompts
 and narration words. See [PROMPTS.md](PROMPTS.md).
 
-## Describing steps (new in 0.1.0a12)
+## Describing steps (new in 0.2.0a1)
 
 `tutorial.describe(index=None)` returns a plain-English description of one
 step, or of the whole lesson, built from its structure in the order things
 appear. `web_step` payloads include it as `description`. See
 [DESCRIBE.md](DESCRIBE.md).
 
-## Browser playback (new in 0.1.0a12)
+## Browser playback (new in 0.2.0a1)
 
 `tutorial.to_svg(index, *, time=None)` returns one frame as SVG with native
 text. `tutorial.web_step(index)` returns one step's player payload, and
@@ -259,7 +259,7 @@ text. `tutorial.web_step(index)` returns one step's player payload, and
 player. Stream a lesson by sending each `web_step` as it is authored to a page
 running `TutorDrawPlayer`. See [WEB.md](WEB.md).
 
-## Layout and lint (new in 0.1.0a12)
+## Layout and lint (new in 0.2.0a1)
 
 `tutorial.layout(index, *, time=None) -> Composition` reports where everything
 in a step lands without rasterizing it: `annotations` (`AnnotationLayout` with

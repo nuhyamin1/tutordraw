@@ -6,9 +6,9 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 ## Status
 
-**Published alpha [0.1.0a11](https://pypi.org/project/tutordraw/0.1.0a11/).** TutorDraw provides the tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
+**Published alpha [0.2.0a1](https://pypi.org/project/tutordraw/0.2.0a1/).** TutorDraw provides the tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-0.1.0a11 is a large step from the previous release 0.1.0a3: it adds complete lesson save/load, AI revision support, deterministic timed playback, video export, annotation text beyond ASCII, per-step artwork changes, animation between beats, timed annotation reveals, and optional Thai and Arabic. Versions a4 to a10 were development milestones and were never uploaded.
+0.2.0a1 is a large step from 0.1.0a11, hence the new minor version: it adds automatic label collision avoidance, arrows, braces, measurements and a camera, a browser player that streams, narration timing with captions, plain-English step descriptions, lint, eight teaching kits (axes, number line, flowchart, timeline, cycle, force diagram, cross-section, equations), tap-the-picture prompts, and lesson format v9. It requires `pydrawcv==0.11.0`, and lessons it saves do not open in 0.1.0a11. It is still an alpha: APIs may change.
 
 Implemented:
 
@@ -42,15 +42,15 @@ Implemented:
 - play a lesson in any browser as sharp SVG, or stream it one step at a time while it is still being written; see [Web](https://github.com/nuhyamin1/tutordraw/blob/master/docs/WEB.md).
 - check a lesson for overlaps, crossing leaders, low contrast and other readability problems with `tutorial.lint()`, which returns fixes a model can apply; see [AI authoring](https://github.com/nuhyamin1/tutordraw/blob/master/docs/AI_AUTHORING.md).
 
-Timed captions, interactive playback, and routed leader lines remain planned.
+Routed leader lines that bend around artwork remain planned.
 
 ## Install the alpha
 
 ```shell
-python -m pip install tutordraw==0.1.0a11
+python -m pip install tutordraw==0.2.0a1
 ```
 
-The exact version selects this prerelease explicitly. Requires Python 3.12+.
+The exact version selects this prerelease explicitly (plain `pip install tutordraw` skips alphas). Add `"tutordraw[math]==0.2.0a1"` for equations or `"tutordraw[typography]==0.2.0a1"` for Thai and Arabic. Requires Python 3.12+.
 
 ## Develop from this repository
 

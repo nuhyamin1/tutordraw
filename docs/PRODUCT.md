@@ -43,7 +43,7 @@ names and behavior can evolve with implementation and owner feedback.
 | Step | Title, description, explicit annotations and attention state | Timing, transitions, branching |
 | Output | PNG for one step or a numbered sequence | Video, HTML playback, PDF |
 
-Collision avoidance is automatic as of 0.1.0a12. Authors may still need manual
+Collision avoidance is automatic as of 0.2.0a1. Authors may still need manual
 position controls and clear warnings when content extends outside the canvas.
 Long text must wrap or produce a clear layout error; it must not silently vanish.
 

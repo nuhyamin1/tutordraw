@@ -1,6 +1,6 @@
 # Teaching kits
 
-New in development 0.1.0a12. A kit builds a standard diagram from ordinary
+New in 0.2.0a1. A kit builds a standard diagram from ordinary
 DrawCV objects and hands back named targets. It works out the geometry a model
 tends to get wrong by hand (tick spacing, mapping maths coordinates onto the
 canvas, sampling a function) and nothing else: DrawCV draws the result, lesson

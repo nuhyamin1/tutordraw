@@ -1,6 +1,6 @@
 # Browser playback and streaming
 
-New in development 0.1.0a12. A lesson can play in any browser as crisp,
+New in 0.2.0a1. A lesson can play in any browser as crisp,
 scalable SVG, and it can play *while it is still being written*: send each step
 as soon as it is authored and the player plays what it has, then waits.
 [`examples/web_lesson.py`](../examples/web_lesson.py) writes both forms.

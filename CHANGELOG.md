@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.0a12 — development milestone (unreleased)
+## 0.2.0a1 — third alpha (2026-09-24)
+
+A new minor version because the change from 0.1.0a11 is large: this is the
+development milestone previously called 0.1.0a12, never uploaded under that
+number. It needs `pydrawcv==0.11.0`; lesson files it saves (schema v9) do not
+open in 0.1.0a11. Lessons from 0.1.0a11 and earlier still open.
+
 
 - **Equations: `tutordraw.kits.Equation`.** LaTeX typeset into filled DrawCV
   paths by ziamath, in named pieces on one baseline, each a target that can

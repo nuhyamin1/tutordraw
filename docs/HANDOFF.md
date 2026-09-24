@@ -4,8 +4,13 @@ Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade, program P1-P4 and P5 kits (
 
 ## Current state
 
-**Published: 0.1.0a11 (2026-09-21). Development 0.1.0a12 is in the tree,
-unreleased and unpushed.**
+**Published: 0.1.0a11 (2026-09-21). 0.2.0a1 is prepared for upload
+(2026-09-24): the milestone first called 0.1.0a12, renumbered by the owner
+because the change is large.** The owner authorised the release and chose
+0.2.0a1 over 0.2.0 so it stays an alpha. The upload runs on the owner's PC
+with their PyPI token (there is no credential in the cloud session, and none
+may be put in the repository). Until PyPI lists 0.2.0a1, the README's
+"Published alpha 0.2.0a1" line is ahead of reality.
 
 Six milestones landed on 2026-09-21: a6 video export, a7 annotation text beyond
 ASCII, a8 per-step artwork changes, a9 Thai and Arabic, a10 animation between
@@ -431,6 +436,17 @@ there without the extra, and in check_release). Docs: KITS, API,
 AI_AUTHORING, README, COMPATIBILITY (new "Optional math extra"), CHANGELOG,
 ROADMAP, DECISIONS "Equations" (includes a measured DrawCV per-point cost worth
 raising upstream).
+
+Release preparation, same session: version 0.2.0a1 in `pyproject.toml` and
+`__init__.py`; CHANGELOG dated with a renumbering note; README status,
+install line and extras; RELEASING filenames; "new in" notes in the docs.
+Gate evidence: suite 537 passed, 11 skipped; check_docs 27 documents;
+fresh build; `check_release --require-metadata` passes (twine check
+--strict); a clean venv installing the wheel with `[math,typography]` from
+PyPI has consistent dependencies, runs the suite (537 passed) and
+check_installed. PyPI had only 0.1.0a3 and 0.1.0a11 before upload. The branch
+is merged into master (merge commit, no rewrite); hosted CI on master is the
+last gate.
 
 **P5 is complete.** Every item in ROADMAP P5 is checked. Next candidates, for
 the owner to choose: raise the DrawCV `transform_point` cost upstream; the

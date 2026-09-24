@@ -1,6 +1,6 @@
 # Narration timing
 
-New in development 0.1.0a12. Tie each thing on screen to the phrase that
+New in 0.2.0a1. Tie each thing on screen to the phrase that
 introduces it, and TutorDraw reveals it as the voice says that phrase:
 
 ```python

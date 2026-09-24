@@ -1,6 +1,6 @@
 # Describing steps in words
 
-New in development 0.1.0a12. `tutorial.describe(index)` says in plain English
+New in 0.2.0a1. `tutorial.describe(index)` says in plain English
 what a step shows; `tutorial.describe()` does the whole lesson, one line per
 step. For example, the last beat of the eclipse example:
 

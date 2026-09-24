@@ -36,7 +36,7 @@ only typesetting new equations needs it.
 **Lesson files and DrawCV versions.** A saved lesson embeds its DrawCV scene.
 DrawCV 0.11.0 writes scene schema 1.14 and reads every older one, so lessons saved
 by 0.1.0a11 and earlier still load. DrawCV 0.10.x cannot read schema 1.14, so a
-lesson saved by 0.1.0a12 or later does not open under 0.1.0a11 or earlier.
+lesson saved by 0.2.0a1 or later does not open under 0.1.0a11 or earlier.
 
 **Rendering changed in 0.11.0.** DrawCV now antialiases with area-exact coverage
 on the SVG pixel grid (pixel `k` spans `[k, k + 1]`). Strokes are drawn at their
@@ -93,7 +93,7 @@ Direct construction of Target, Label, Callout, and Step is unsupported.
 
 Alpha releases may change APIs. Record any changes and migration instructions in
 [the changelog](../CHANGELOG.md). Version 0.1.0a3 intentionally retains the a2 API.
-Development 0.1.0a12 writes lesson schema v9: v8 (marks, draw-on, camera,
+0.2.0a1 writes lesson schema v9: v8 (marks, draw-on, camera,
 outline highlights, halo) plus step narration and prompts. It adds
 `lint`/`layout`; v1-v8 still load, and a11 cannot read v8 or v9. Development 0.1.0a9 adds the optional `typography` extra, `Tutorial(font=...)`
 and `font=` on the loaders; no schema change and no new required dependency.

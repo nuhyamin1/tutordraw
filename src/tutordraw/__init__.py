@@ -9,7 +9,7 @@ from .prompts import Answer, Prompt
 from .themes import Theme
 from .tutorial import Tutorial
 
-__version__ = "0.1.0a12"
+__version__ = "0.2.0a1"
 __all__ = ["Tutorial", "Target", "Label", "Callout", "Step", "Theme", "TutorDrawError",
            "ValidationError", "SceneCopyError", "LayoutWarning", "ExportError",
            "LessonFormatError", "VideoExportError", "Composition", "AnnotationLayout",

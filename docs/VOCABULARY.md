@@ -1,6 +1,6 @@
 # Visual vocabulary (schema v8)
 
-New in development 0.1.0a12. Everything here is step-owned, so steps stay
+New in 0.2.0a1. Everything here is step-owned, so steps stay
 independent: nothing carries over to the next step unless you repeat it.
 [`examples/lever_lesson.py`](../examples/lever_lesson.py) uses all of it and
 lints clean.
