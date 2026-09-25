@@ -1,6 +1,17 @@
 # AI handoff — start here
 
-Last updated: **2026-09-25**, the scale restyle for Illustrate's phase 3 (Claude Code).
+Last updated: **2026-09-26**, a fade-out that fades in the player (Claude Code).
+
+## Unreleased: a target fading out fades in the browser player (2026-09-26)
+
+DrawCV's SVG export leaves out opacity-0 entities, so an animated step's
+finished frame lacked any target the step fades out and the player cut it at
+the step's start. `web.web_step` now writes such a drawable (visible at the
+start, opacity 0 at the end) at `FADED` = 0.001 in the finished frame
+(`web._keep_fading`); see DECISIONS.md. Tests `tests/test_fade_out.py` (3).
+**Ran: `.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider`: 637
+passed, 1 skipped.** Seen in Illustrate's app: a board fading while it slides
+away, frame by frame. No schema change.
 
 ## Unreleased: a scale restyle, for Illustrate's phase 3 (2026-09-25)
 

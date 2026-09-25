@@ -1138,3 +1138,19 @@ traced with DrawCV's `to_path(...).flatten_world()`.
   one path, and a letter's opening is not where a leader should go) and
   groups (a kit's bounds describe it) keep the bounds point.
 - A point on the target's fill is already on it.
+
+## A target fading out fades in the player (2026-09-26)
+
+**Why**: DrawCV's SVG export (0.11.0) leaves out every entity with opacity 0,
+so an animated step's finished frame had no element for a target the step
+fades to fully transparent. The player tweens only elements present in both
+its start and finished frames, so such a target vanished as the step began
+instead of fading. Seen in Illustrate: lines faded while the rest of a column
+slides up, and a whole board faded while sliding away.
+
+- DrawCV is not changed. `web.web_step` composes the finished frame, and a
+  drawable that is visible at the step's start and has opacity 0 at its end
+  is written with `FADED` = 0.001 opacity (invisible), so the player fades it
+  over the step's motion. Only for animated steps (a cut has no start frame),
+  only in the web payload (layouts, PNG and video export are unchanged; the
+  composition is built fresh for the payload, nothing cached is changed).

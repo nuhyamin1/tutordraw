@@ -26,6 +26,9 @@ EASING_SAMPLES = 64
 CAMERA_KEYFRAMES = 6
 PATH_KEYFRAMES = 12  # a move along a path, as a polyline the player walks
 PLAYER_VERSION = 1
+# DrawCV's SVG export leaves out anything with opacity 0; a target that fades out in an animated step keeps
+# this much in the finished frame, so the player has an element to fade (invisible to the eye).
+FADED = 0.001
 
 
 def step_timing(tutorial, index: int) -> dict[str, tuple[float, float]]:
@@ -67,7 +70,7 @@ def web_step(tutorial, index: int) -> dict:
     with the easing already applied; the player blends between neighbours.
     """
     step = tutorial.steps[index]
-    end = frame_svg(tutorial, index, tutorial._compose(index, 1.0))
+    final = tutorial._compose(index, 1.0)
     frames: list[str] = []
     easing = None
     if step.easing is not None and index > 0:
@@ -79,9 +82,11 @@ def web_step(tutorial, index: int) -> dict:
         # Everything present and drawn, so every element has a state to blend. Frames span the motion,
         # which may be only the step's first seconds (`motion`, which the player reads).
         span = min(1.0, step.motion / step.duration) if step.motion is not None else 1.0
-        frames = [frame_svg(tutorial, index, tutorial._compose(index, span * k / count, complete=True))
-                  for k in range(count)]
+        earlier = [tutorial._compose(index, span * k / count, complete=True) for k in range(count)]
+        frames = [frame_svg(tutorial, index, composition) for composition in earlier]
         easing = None if count > 1 else easing_table(step.easing)
+        _keep_fading(final, earlier[0])
+    end = frame_svg(tutorial, index, final)
     return {"index": index, "id": step.id, "title": step.title,
             "duration": step.duration, "pause": step.pause,
             "easing": easing, "frames": frames, "svg": end,
@@ -90,6 +95,18 @@ def web_step(tutorial, index: int) -> dict:
             "description": tutorial.describe(index),
             "narration": [[w.text, w.start, w.end] for w in step.narration] or None,
             "prompt": prompt_payload(tutorial, step.prompt)}
+
+
+def _keep_fading(final: Composition, start: Composition) -> None:
+    """Give what fades out during the step (shown at its start, opacity 0 at its end) FADED opacity at the end."""
+    from .adapters.drawcv import index_scene
+
+    before = index_scene(start.scene)
+    for drawable_id, obj in index_scene(final.scene).items():
+        was = before.get(drawable_id)
+        if (obj.visible and obj.opacity <= 0 and was is not None and was.effective_visible
+                and was.effective_opacity > 0):
+            obj.opacity = FADED
 
 
 def web_bundle(tutorial) -> dict:
