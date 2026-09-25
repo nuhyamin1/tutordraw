@@ -7,8 +7,9 @@
   which stays put; everything inside it scales too, its own text included
   (a graph's tick numbers), while labels, callouts and marks on its parts
   follow and keep their size. It glides like a move in an animated step, in
-  a straight line, so the player's one start frame is exact. For Illustrate's
-  full board, where a diagram makes room for the working. New lint warning
+  a straight line, so the player's one start frame is exact. Use it to make
+  room on a full board, to zoom into one part of a scene while the rest stays,
+  or to grow something as it is introduced. New lint warning
   `SCALED_TEXT_SMALL` when the drawing's own text ends under 12 px. **Lesson
   schema v12** saves `scale` and `pivot` on restyles and `obstacle` on
   targets; v1 to v11 still load.
