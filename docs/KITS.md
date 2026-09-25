@@ -41,6 +41,7 @@ step.show(on_curve.label("y = x²", anchor="left"))
 | `axes.clip(points, *, closed=False)` | Maths points as canvas points, cut exactly at the edges of the plot area: one piece for a closed shape, one per stretch inside for an open line, `[]` if none of it is inside. The geometry is cut, not masked, so bounds, labels and marks follow what is visible. |
 | `axes.add(drawable, *, name=None)` | Makes any DrawCV drawable part of the graph (it hides, fades and moves with the axes) and returns it as a target. Build it from `to_scene`, `to_scene_offset` or `clip`. |
 | `axes.to_scene_offset(dx, dy)`, `axes.contains(x, y)` | A maths displacement in canvas pixels (y flips), and whether a point is inside the ranges. |
+| `axes.along(f, x_from, x_to, *, samples=32, start=None)` | The way along y = f(x) as `samples` + 1 canvas offsets from `start` (a maths point; default the curve at x_from), for `restyle(dot, move=way[-1], via=way[1:-1])` on an animated step: the dot slides along the curve. Refuses a curve with no value on the way. |
 | `Axes.find(tutorial, name="axes")` | After `Tutorial.load_json`, reattach to saved axes to plot more. The settings travel in the group's DrawCV metadata. |
 
 Unnamed parts are called `<name>_plot1`, `<name>_point2` and so on. Tick

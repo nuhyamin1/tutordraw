@@ -81,13 +81,18 @@ step.restyle(sun, opacity=0.35)
 step.restyle(shadow, visible=False)
 ```
 
-`restyle(target, *, move=None, fill=None, opacity=None, visible=None) -> Step`
+`restyle(target, *, move=None, fill=None, opacity=None, visible=None, via=None) -> Step`
 changes a target's artwork for that step only, on the working copy, leaving the
 source drawing untouched. `move` is a `(dx, dy)` shift relative to the source
 placement; attached labels, leaders and highlights follow it. `fill` sets a
 shape's fill or a Text object's colour and is refused for Line and Group.
 `opacity` is absolute, and `dim_others` still multiplies on top of it.
 `visible=False` hides the target, after which emphasising it raises.
+
+`via` (unreleased, schema v10) lists `(dx, dy)` offsets an animated step's
+move passes through on its way to `move`, at an even speed; it needs `move`.
+`Axes.along(f, x_from, x_to, samples=32, start=None)` samples a curve into
+such offsets. See [ANIMATION.md](ANIMATION.md).
 
 At least one option is required, and repeating the call for a target replaces
 its settings entirely. `step.restyles` exposes the definitions. Restyles persist

@@ -385,7 +385,7 @@ class Tutorial:
         opacity and visibility do not move a label, so they are left out.
         """
         steps = tuple((s.id, tuple(label.id for label in s.labels),
-                       tuple((r.target.drawable_id, r.move) for r in s.restyles),
+                       tuple((r.target.drawable_id, r.move, r.via) for r in s.restyles),
                        s.highlights, tuple(mark.id for mark in s.marks), s.easing is not None, s.camera)
                       for s in self._steps[:index + 1])
         source = index_scene(self.scene)

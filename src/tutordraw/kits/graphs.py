@@ -404,6 +404,30 @@ class Axes:
 
     # --- drawing in maths coordinates ----------------------------------------
 
+    def along(self, f, x_from: float, x_to: float, *, samples: int = 32,
+              start=None) -> list[tuple[float, float]]:
+        """The way along y = f(x) from x_from to x_to, as canvas offsets for `Step.restyle`.
+
+        `samples` + 1 evenly spaced points, each as (dx, dy) pixels from
+        `start`, a maths point (default the curve's own point at x_from),
+        which is where the thing being moved was first drawn. So
+        `restyle(dot, move=way[-1], via=way[1:-1])` on an animated step
+        slides a dot drawn at (1, f(1)) along the curve, and the step after
+        it keeps `move=way[-1]`. Refuses a curve with no value on the way.
+        """
+        samples = _samples(samples)
+        x_from, x_to = finite_number(x_from, "x_from"), finite_number(x_to, "x_to")
+        xs = [x_from + (x_to - x_from) * k / samples for k in range(samples + 1)]
+        ys = [_value(f, x) for x in xs]
+        missing = next((x for x, y in zip(xs, ys) if math.isnan(y)), None)
+        if missing is not None:
+            raise ValidationError(f"The curve has no value at x = {missing:g}, so nothing can move along it there")
+        if start is None:
+            start = (x_from, ys[0])
+        sx, sy = (finite_number(v, "start") for v in start)
+        origin = self.to_scene(sx, sy)
+        return [(p.x - origin.x, p.y - origin.y) for p in (self.to_scene(x, y) for x, y in zip(xs, ys))]
+
     def to_scene_offset(self, dx: float, dy: float) -> tuple[float, float]:
         """A maths displacement (dx, dy) in canvas pixels; y points up in maths and down on the canvas."""
         (x0, x1), (y0, y1) = self.x_range, self.y_range

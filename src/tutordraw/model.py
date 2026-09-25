@@ -91,6 +91,8 @@ class Restyle:
     fill: tuple[int, int, int] | None
     opacity: float | None
     visible: bool | None
+    # Offsets an animated move passes through on its way to `move`, in order.
+    via: tuple[tuple[float, float], ...] | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -549,22 +551,39 @@ class Step:
 
     def restyle(self, target: Target, *, move: tuple[float, float] | None = None,
                 fill: tuple[int, int, int] | None = None, opacity: float | None = None,
-                visible: bool | None = None) -> Step:
+                visible: bool | None = None, via=None) -> Step:
         """Change this target's artwork for this step only, leaving the source alone.
 
         `move` shifts by (dx, dy) pixels relative to wherever the source placed
         it, so attached labels and highlights follow. Repeating this call for the
         same target replaces its settings, as `highlight` does.
+
+        `via` lists (dx, dy) offsets, like `move`, that an animated step's move
+        passes through on its way from the previous step's offset to `move`,
+        at an even speed along the whole polyline: sample a curve into it
+        (`Axes.along`) and a point slides along the curve. 1 to 256 points;
+        it needs `move`, and a step that is a hard cut simply ends at `move`.
         """
         from .adapters.drawcv import supports_fill
 
         self._check_target(target)
+        if via is not None and move is None:
+            raise ValidationError("via needs move: it is the path to that offset")
         if move is None and fill is None and opacity is None and visible is None:
             raise ValidationError("restyle needs at least one of move, fill, opacity or visible")
         if move is not None:
             if not isinstance(move, (tuple, list)) or len(move) != 2:
                 raise ValidationError("move must contain two finite numbers")
             move = tuple(finite_number(value, "move") for value in move)
+        if via is not None:
+            if not isinstance(via, (tuple, list)) or not 1 <= len(via) <= 256:
+                raise ValidationError("via must be a list of 1 to 256 (dx, dy) offsets")
+            points = []
+            for point in via:
+                if not isinstance(point, (tuple, list)) or len(point) != 2:
+                    raise ValidationError("each via point must be (dx, dy)")
+                points.append(tuple(finite_number(value, "via") for value in point))
+            via = tuple(points)
         if fill is not None:
             fill = rgb(fill, "fill")
             drawable = target.drawable
@@ -577,7 +596,7 @@ class Step:
                 raise ValidationError("opacity must be between 0 and 1")
         if visible is not None and not isinstance(visible, bool):
             raise ValidationError("visible must be a boolean")
-        self._restyles[target.id] = Restyle(target, move, fill, opacity, visible)
+        self._restyles[target.id] = Restyle(target, move, fill, opacity, visible, via)
         return self
 
     def dim_others(self, *targets: Target, opacity: float | None = None) -> Step:

@@ -23,8 +23,10 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 9
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, SCHEMA_VERSION)
+SCHEMA_VERSION = 10
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, SCHEMA_VERSION)
+# Restyle fields each schema version introduced.
+RESTYLE_FIELDS_ADDED = {10: ("via",)}
 PROMPT_FIELDS = {"text", "answer_ids", "correct", "wrong", "hint", "attempts"}
 # Theme fields each schema version introduced; older documents omit them and
 # load with the Theme default, exactly as older step fields do.
@@ -128,7 +130,8 @@ def to_dict(tutorial: Tutorial) -> dict:
                        "restyles": [{"target_id": r.target.id,
                                      "move": None if r.move is None else list(r.move),
                                      "fill": None if r.fill is None else list(r.fill),
-                                     "opacity": r.opacity, "visible": r.visible}
+                                     "opacity": r.opacity, "visible": r.visible,
+                                     "via": None if r.via is None else [list(p) for p in r.via]}
                                     for r in step.restyles],
                        "narration": [[w.text, w.start, w.end] for w in step.narration],
                        "prompt": _prompt(step.prompt)}
@@ -308,18 +311,23 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             restyled = set()
             for j, entry in enumerate(_list(item.get("restyles", []), f"{where}.restyles")):
                 location = f"{where}.restyles[{j}]"
-                _object(entry, {"target_id", "move", "fill", "opacity", "visible"}, location)
+                _object(entry, {"target_id", "move", "fill", "opacity", "visible"}
+                        | {name for newer, names in RESTYLE_FIELDS_ADDED.items() if newer <= version
+                           for name in names}, location)
                 target = reference(entry["target_id"], targets, f"{location}.target_id")
                 if target.id in restyled:
                     raise LessonFormatError(f"{location}: duplicate restyle for {target.id!r}")
                 restyled.add(target.id)
                 move = entry["move"]
                 fill = entry["fill"]
+                via = entry.get("via")
                 try:
                     step.restyle(target,
                                  move=None if move is None else tuple(_list(move, f"{location}.move")),
                                  fill=None if fill is None else tuple(_list(fill, f"{location}.fill")),
-                                 opacity=entry["opacity"], visible=entry["visible"])
+                                 opacity=entry["opacity"], visible=entry["visible"],
+                                 via=None if via is None else [tuple(_list(p, f"{location}.via"))
+                                                               for p in _list(via, f"{location}.via")])
                 except ValidationError as exc:
                     raise LessonFormatError(f"{location}: {exc}") from exc
             if item["dim"] is not None:

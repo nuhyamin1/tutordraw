@@ -25,8 +25,8 @@ AI_AUTHORING.md tells models never to shade or slice a graph in pixels.
   owner publishes; the version in pyproject is still 0.2.0a1. Nothing in the
   lesson schema changed: the constructions are ordinary DrawCV paths and
   lines in the axes' group.
-- **Next**: motion along a curve (ROADMAP P5): `Step.animate` eases in
-  straight lines, so a point cannot yet slide along y = f(x).
+- **Next**: see "TutorDraw's half of Illustrate's known weaknesses" below;
+  all five are done and unreleased.
 
 ## Next: TutorDraw's half of Illustrate's known weaknesses (2026-09-25)
 
@@ -53,7 +53,13 @@ list with evidence. The parts that belong here:
   come within `NUMBER_GAP` (2 px) of a number already written; the tick mark
   stays (`test_tick_numbers_never_touch_the_origin_or_each_other`, 6 cases).
   Goldens unchanged.
-- **Motion along a path** (above and ROADMAP P5).
+- **Motion along a path — done (2026-09-25).** `Restyle.via` /
+  `restyle(via=)`, `attention.offset_at` (even speed along the polyline),
+  `collision.PATH_SAMPLES` points judged for labels, `web.PATH_KEYFRAMES`
+  frames for the player, `Axes.along`, lesson schema v10 (additive; v1-v9
+  load; `lesson-v10.schema.json`, conftest `RESTYLE_FIELDS_ADDED`).
+  `tests/test_path_move.py`, 7 tests. A tangent still cannot sweep (no
+  rotation restyle).
 
 ## Current state
 

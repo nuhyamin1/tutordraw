@@ -24,6 +24,7 @@ from .svg import composition_svg
 
 EASING_SAMPLES = 64
 CAMERA_KEYFRAMES = 6
+PATH_KEYFRAMES = 12  # a move along a path, as a polyline the player walks
 PLAYER_VERSION = 1
 
 
@@ -72,11 +73,13 @@ def web_step(tutorial, index: int) -> dict:
     if step.easing is not None and index > 0:
         prior = tutorial.steps[index - 1]
         camera_moves = step.camera != prior.camera
-        count = CAMERA_KEYFRAMES if camera_moves else 1
+        # A move along a path is not a linear blend either: send it as keyframes too.
+        path = any(restyle.via for restyle in step.restyles)
+        count = max(CAMERA_KEYFRAMES if camera_moves else 1, PATH_KEYFRAMES if path else 1)
         # Everything present and drawn, so every element has a state to blend.
         frames = [frame_svg(tutorial, index, tutorial._compose(index, k / count, complete=True))
                   for k in range(count)]
-        easing = None if camera_moves else easing_table(step.easing)
+        easing = None if count > 1 else easing_table(step.easing)
     return {"index": index, "id": step.id, "title": step.title,
             "duration": step.duration, "pause": step.pause,
             "easing": easing, "frames": frames, "svg": end,

@@ -172,9 +172,10 @@ Design the whole batch before coding; persist it together.
   `clip` and `add` (unreleased).
 - [x] Placing blocks by relation from measured bounds (`tutordraw.arrange`:
   `place`, `clear`, `shift_to`; unreleased).
-- [ ] Motion along a curve: a point sliding along y = f(x), or a tangent
-  sweeping as x changes. `Step.animate` eases positions in straight lines, so
-  today this is one step per position.
+- [x] Motion along a curve: a point sliding along y = f(x) (`restyle(via=)`,
+  `Axes.along`, schema v10; unreleased).
+- [ ] A tangent sweeping as x changes: needs rotation (or reshaping) as a
+  restyle, which does not exist.
 - [x] Number line kit (`tutordraw.kits.NumberLine`), hops as step marks.
 - [x] More kits: flowcharts, timelines, cycles, force diagrams, labelled
   cross-sections (`Flowchart`, `Timeline`, `Cycle`, `ForceDiagram`,

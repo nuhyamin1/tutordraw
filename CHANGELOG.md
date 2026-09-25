@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Moving along a path.** `restyle(..., via=[(dx, dy), ...])` makes an
+  animated move run through those offsets, at an even speed along the
+  polyline, instead of in a straight line; `Axes.along(f, a, b)` samples a
+  curve into them, so a point slides along y = f(x). The player gets such a
+  step as 12 keyframes; label placement judges points along the way. **Lesson
+  schema v10** saves `via` on each restyle; v1 to v9 still load.
 - **Axes' numbers no longer collide at the origin.** With a range starting
   just below 0 on a small graph, the "−0.5" (or "−1", "−0.2") tick numbers
   sat on the "0" written below-left of the origin, and the x and y "−0.5"

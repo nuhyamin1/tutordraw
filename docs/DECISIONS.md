@@ -927,6 +927,30 @@ The owner approved one bump carrying both things the format lacked.
   modify DrawCV, so this is documented instead.
 
 
+## Motion along a path (unreleased, 2026-09-25)
+
+Illustrate's lessons could only show a point at one place per step:
+`Step.animate` eases moves in straight lines, and a calculus lesson wants a
+point to slide along the curve.
+
+- **A polyline of offsets on the restyle, not a function.** `via` is plain
+  data like `move`, so it saves, loads and validates like the rest of a
+  restyle and a model or author can write it; the curve's function stays in
+  the kit (`Axes.along` samples it). Offsets are from the source position,
+  as `move` is, so a path starts wherever the previous step left the target.
+- **Even speed along the length.** Parameterising by vertex index would make
+  a point race across long legs; walking by arc length, with the step's
+  easing applied to the distance, keeps a sampled curve smooth. Easing that
+  overshoots runs on along the first or last leg.
+- **Keyframes for the player.** The player tweens linearly between frames,
+  which is exact for straight moves but cuts a curve's corner; a path step
+  is sent as 12 evenly timed keyframes with easing applied, as a moving
+  camera already is. 12 is a size/smoothness trade: each keyframe is a whole
+  SVG of the step.
+- **Schema v10, additive.** `via` needed a field, so saving writes v10; every
+  older version still loads. Only moves are pathed: rotation is not a
+  restyle, so a tangent still cannot sweep round.
+
 ## Labels keep their place between steps (unreleased, 2026-09-25)
 
 Found in Illustrate: a crossing point's "meet" label jumped 222 px right in

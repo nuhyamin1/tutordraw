@@ -1,5 +1,7 @@
 """Step-local artwork changes, focus and emphasis, applied only to a working copy."""
 
+import math
+
 from drawcv import Color, Drawable, Group, Point, Rectangle, Scene, StrokeStyle
 
 from .adapters.drawcv import crisp_rect, current_fill, outline_path, rect_path, set_fill, translate
@@ -56,16 +58,47 @@ def _lerp(start: float, end: float, progress: float) -> float:
     return start + (end - start) * progress
 
 
+def offset_at(start, end, progress: float) -> tuple[float, float]:
+    """Where a target's move has got to at `progress` from the previous step's restyle to this one's.
+
+    A straight line between the two offsets, or with `end.via` a polyline
+    through them, walked at an even speed along its length. Progress outside
+    0..1 (an easing that overshoots) runs on along the first or last leg.
+    """
+    from_move = (0.0, 0.0) if start is None or start.move is None else start.move
+    to_move = (0.0, 0.0) if end is None or end.move is None else end.move
+    via = end.via if end is not None and end.via else ()
+    points = [from_move, *via, to_move]
+    legs = [math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(points, points[1:])]
+    total = sum(legs)
+    if len(points) == 2 or total == 0:
+        return (_lerp(from_move[0], to_move[0], progress), _lerp(from_move[1], to_move[1], progress))
+    distance = progress * total
+    moving = [index for index, length in enumerate(legs) if length > 0]
+    if distance <= 0:
+        index = moving[0]
+        t = distance / legs[index]
+    elif distance >= total:
+        index = moving[-1]
+        t = 1 + (distance - total) / legs[index]
+    else:
+        walked = 0.0
+        for index, length in enumerate(legs):
+            if length > 0 and distance <= walked + length:
+                t = (distance - walked) / length
+                break
+            walked += length
+    a, b = points[index], points[index + 1]
+    return (_lerp(a[0], b[0], t), _lerp(a[1], b[1], t))
+
+
 def _blend(obj: Drawable, start, end, progress: float) -> None:
     """Move one drawable from the previous step's state toward this step's.
 
     An unspecified property on either side means "whatever the source says",
     so a target restyled in one step slides back when the next leaves it alone.
     """
-    from_move = (0.0, 0.0) if start is None or start.move is None else start.move
-    to_move = (0.0, 0.0) if end is None or end.move is None else end.move
-    dx = _lerp(from_move[0], to_move[0], progress)
-    dy = _lerp(from_move[1], to_move[1], progress)
+    dx, dy = offset_at(start, end, progress)
     if dx or dy:
         translate(obj, dx, dy)
 
@@ -123,10 +156,8 @@ def residual_moves(step: Step, previous: Step | None, progress: float,
     result: dict[str, tuple[float, float]] = {}
     for drawable_id in {**earlier, **current}:
         start, end = earlier.get(drawable_id), current.get(drawable_id)
-        from_move = (0.0, 0.0) if start is None or start.move is None else start.move
-        to_move = (0.0, 0.0) if end is None or end.move is None else end.move
-        dx = _lerp(from_move[0], to_move[0], target) - _lerp(from_move[0], to_move[0], progress)
-        dy = _lerp(from_move[1], to_move[1], target) - _lerp(from_move[1], to_move[1], progress)
+        there, here = offset_at(start, end, target), offset_at(start, end, progress)
+        dx, dy = there[0] - here[0], there[1] - here[1]
         if dx or dy:
             result[drawable_id] = (dx, dy)
     return result

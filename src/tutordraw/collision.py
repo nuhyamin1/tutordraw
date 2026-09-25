@@ -27,6 +27,8 @@ SIDES = ("right", "bottom", "left", "top")
 SLOTS = (0, 1, -1, 2, -2, 3, -3)
 # Gap multipliers, tried only once the near ring around a target is full.
 RINGS = (1.0, 1.5, 2.25)
+# Points a move along a path is judged at between its ends (one fewer than this).
+PATH_SAMPLES = 8
 
 
 def overlap_area(box: BoundingBox, other: BoundingBox, margin: float = 0.0) -> float:
@@ -64,8 +66,9 @@ class Request:
     # sit on its own target; that target then stops being an obstacle for it.
     covers_target: bool = False
     # The same anchor points at the other end of an animated step, so a panel
-    # is judged over the whole path it travels. None when the step is a cut.
-    sweep_points: dict | None = None
+    # is judged over the whole path it travels. None when the step is a cut; a
+    # tuple of them, along the way too, when the target moves along a path.
+    sweep_points: dict | tuple | None = None
 
 
 def _sides(authored: str) -> tuple[str, ...]:
@@ -127,7 +130,10 @@ def footprint(request: Request, placement: Placement, width: float, height: floa
     panel = panel_for(request, placement, width, height)
     if request.sweep_points is None:
         return panel
-    return union(panel, _panel_at(request.sweep_points, request, placement, width, height))
+    points = request.sweep_points if isinstance(request.sweep_points, tuple) else (request.sweep_points,)
+    for where in points:
+        panel = union(panel, _panel_at(where, request, placement, width, height))
+    return panel
 
 
 def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
@@ -262,6 +268,14 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
             started = final_bounds(objects, wanted, residual_moves(step, previous, progress, 0.0))
     swept = bounds if started is None else {
         key: union(box, started[key]) for key, box in bounds.items()}
+    # A move along a path bulges away from the line between its ends: sample the way too.
+    along = []
+    if started is not None and any(r.via for r in step.restyles):
+        with held(1.0):
+            along = [final_bounds(objects, wanted, residual_moves(step, previous, progress, k / PATH_SAMPLES))
+                     for k in range(1, PATH_SAMPLES)]
+        for middle in along:
+            swept = {key: union(box, middle[key]) for key, box in swept.items()}
     requests, measured = [], {}
     for annotation in annotations:
         measured[annotation.id] = measure_label(annotation, theme, font)
@@ -271,7 +285,8 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
             annotation.anchor, annotation.gap, annotation.offset,
             anchor_points(bounds[target_id]), measured[annotation.id],
             annotation.anchor == "center",
-            None if started is None else anchor_points(started[target_id])))
+            None if started is None else (anchor_points(started[target_id]) if not along else
+                                          tuple(anchor_points(b[target_id]) for b in (started, *along)))))
     highlights = {}
     for highlight in step.highlights:
         box, pad = swept[highlight.target.drawable_id], highlight.padding

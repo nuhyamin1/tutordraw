@@ -42,6 +42,20 @@ because the next step's state is the source state.
 | `fill` | Interpolated channel by channel in plain RGB. A gradient fill blends from the mean of its stops; an image fill cuts. |
 | `visible` | **Not** interpolated. The step's own value applies throughout. |
 
+A `move` given `via` offsets (unreleased) runs along the polyline from the
+previous step's offset through them to `move`, at an even speed along its
+length, instead of in a straight line; sample a curve into it with
+`Axes.along`, so a point slides along y = f(x):
+
+```python
+way = axes.along(lambda x: x * x, 1, 2, samples=32)   # offsets from (1, 1)
+step.animate().restyle(dot, move=way[-1], via=way[1:-1])
+```
+
+The browser player gets such a step as 12 evenly timed keyframes with the
+easing applied (`web.PATH_KEYFRAMES`), and walks between them; collision
+avoidance judges labels over points along the way, not only its ends.
+
 Plain RGB is simple and predictable rather than perceptually even; a mid-point
 may look duller than you expect. Pair `visible=True` with `opacity` if you want
 something to fade in rather than appear.
@@ -83,6 +97,7 @@ with that in mind, or pre-render.
 ## Not implemented
 
 Interpolating anything `restyle` does not cover, such as stroke, scale and
-rotation. Per-property or staggered timing within a step. Motion paths other
-than a straight line. Fading annotations in: they can now be delayed with `at=` (see
+rotation (so a tangent cannot yet sweep round as its point slides). Per-property
+or staggered timing within a step. Motion paths are polylines: a curve is as
+smooth as it is sampled. Fading annotations in: they can now be delayed with `at=` (see
 [REVEAL.md](REVEAL.md)) but still appear whole rather than fading.
