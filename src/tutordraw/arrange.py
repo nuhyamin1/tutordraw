@@ -129,13 +129,12 @@ def clear(box: BoundingBox, obstacles, *, canvas, margin: float = MARGIN) -> Bou
     dx, dy = x - box.x, y - box.y
     # Shortest first; then prefer down over up and right over left, then the position itself.
     order = np.lexsort((x, y, dx < 0, dy < 0, np.round(dx * dx + dy * dy, 6)))
-    step = 4096
+    step, eps = 4096, 1e-6
     for start in range(0, len(order), step):
         chosen = order[start:start + step]
         cx, cy = x[chosen][:, None], y[chosen][:, None]
-        eps = 1e-6
         hit = ((cx < rights - eps) & (lefts + eps < cx + width)
-               & (cy < bottoms - eps) & (tops + eps < cy + height)).any(axis=1) if obstacles else             np.zeros(len(chosen), dtype=bool)
+               & (cy < bottoms - eps) & (tops + eps < cy + height)).any(axis=1)
         free = np.flatnonzero(~hit)
         if len(free):
             k = chosen[free[0]]
