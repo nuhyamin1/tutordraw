@@ -927,6 +927,35 @@ The owner approved one bump carrying both things the format lacked.
   modify DrawCV, so this is documented instead.
 
 
+## Labels keep their place between steps (unreleased, 2026-09-25)
+
+Found in Illustrate: a crossing point's "meet" label jumped 222 px right in
+the step that slid a marker along the curve, and back is never where it was.
+
+- **The cause was the animated step, not the marker.** An animated step
+  judged every stroke by its whole bounding box (`started is None` switched
+  chunked ink off for all targets), so the long diagonal curves beside the
+  label suddenly blocked its slot. Now only a stroke that moves in the step
+  uses its swept box.
+- **Keep the previous place while nothing new lands on it.** Strictly
+  "collision-free" is too strong: a label's best place often touches a curve
+  a little, and such a label would still move. The rule is: nothing solid
+  (another panel, a highlight, a mark, the canvas edge) over the step's
+  sweep, and no more end-state artwork under it than it covered in the
+  previous step. Passing through does not count; stopping on it does.
+- **Worked out forward, remembered per lesson.** Step i's preference is
+  step i-1's displayed placement, which depends on step i-2's, so placements
+  are computed forward on one working copy moved to each step's end state
+  (placement depends only on translations, not on fill, opacity or
+  visibility) and memoised on the tutorial. DrawCV has no change counter,
+  so the key is the steps' structure, the targets' source transforms, the
+  theme and the canvas; editing a source shape's geometry in place (not its
+  transform) after composing is not noticed. Illustrate compiles a fresh
+  lesson per beat, so it pays the forward pass each time: a 12-beat lesson
+  built in 2.3 s instead of 1.5 s.
+- **Cameras pass nothing on.** A zoomed step places labels in zoomed space,
+  so it neither keeps nor hands on a place.
+
 ## Placing blocks by relation (unreleased, 2026-09-25)
 
 Found in Illustrate: DeepSeek Flash placed equations and captions by absolute

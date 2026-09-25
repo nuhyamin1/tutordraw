@@ -4,7 +4,7 @@ from pathlib import Path
 
 from drawcv import Canvas, Drawable, Line, OpenCVRenderer, Scene
 
-from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, typography_errors
+from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, translate, typography_errors
 from .errors import ValidationError
 from .layout import label_artwork
 from .model import Callout, Label, Step, Target
@@ -36,6 +36,8 @@ class Tutorial:
         self._targets: dict[str, Target] = {}
         self._labels: dict[str, Label] = {}
         self._steps: list[Step] = []
+        # Where each step's labels were placed, keyed by everything that decides it (`_placements_before`).
+        self._placement_memo: dict = {}
 
     @property
     def font(self):
@@ -331,7 +333,8 @@ class Tutorial:
                     step, objects, [t.drawable_id for t in self._targets.values()],
                     width=width, height=height, theme=self.theme,
                     font=self._font, previous=prior, progress=eased,
-                    camera_at=camera_at, mark_boxes=mark_boxes if step.marks else None)
+                    camera_at=camera_at, mark_boxes=mark_boxes if step.marks else None,
+                    preferred=self._placements_before(index))
             for label in (*step.labels, *step.callouts):
                 # A delay past the step's duration simply reveals at its end.
                 drawn = step.draw_progress(label, elapsed)
@@ -373,6 +376,88 @@ class Tutorial:
         ids = {_name(t): t.drawable_id for t in self._targets.values()}
         return Composition(working, index, progress, tuple(annotations), tuple(highlights),
                            bounds, ids, tuple(marks), view)
+
+    def _layout_key(self, index: int):
+        """Everything label placement in steps 0..index depends on, as a hashable key.
+
+        The steps' labels, moves, highlights, marks, camera and animation, the
+        targets and their source transforms, the theme and the canvas. Fill,
+        opacity and visibility do not move a label, so they are left out.
+        """
+        steps = tuple((s.id, tuple(label.id for label in s.labels),
+                       tuple((r.target.drawable_id, r.move) for r in s.restyles),
+                       s.highlights, tuple(mark.id for mark in s.marks), s.easing is not None, s.camera)
+                      for s in self._steps[:index + 1])
+        source = index_scene(self.scene)
+        targets = tuple((t.drawable_id, repr(source[t.drawable_id].transform))
+                        for t in self._targets.values() if t.drawable_id in source)
+        return steps, targets, self.theme, id(self._font), self.scene.width, self.scene.height
+
+    def _placements_before(self, index: int) -> dict:
+        """Where each label of step `index - 1` was placed, and what it covered: {label ID: (placement, area)}.
+
+        For step `index` to keep while nothing new lands on it.
+
+        Worked out forward from the first step whose placements are not yet
+        known, each step keeping the one before's (so a chain of steps holds a
+        label still), on one working copy of the scene moved to each step's
+        end state; placement depends on nothing else a restyle changes.
+        Remembered per lesson, keyed by `_layout_key`, so the frames of a
+        video or a player export pay for it once. A step with a camera, and
+        the step animating out of one, place labels in zoomed space and pass
+        nothing on.
+        """
+        if index <= 0 or not self.theme.avoid_collisions:
+            return {}
+        from .collision import plan_annotations
+        from .marks import mark_drawing
+
+        memo = self._placement_memo
+        keys = {}
+
+        def key(p):
+            if p not in keys:
+                keys[p] = self._layout_key(p)
+            return keys[p]
+
+        if key(index - 1) in memo:
+            return memo[key(index - 1)]
+        start = index - 1
+        while start > 0 and key(start - 1) not in memo:
+            start -= 1
+        if len(memo) > 512:
+            memo.clear()
+        working = copy_scene(self.scene)
+        objects = index_scene(working)
+        home = {name: (obj.transform.translation_x, obj.transform.translation_y) for name, obj in objects.items()}
+        preferred = memo.get(key(start - 1), {}) if start else {}
+        width, height = working.width, working.height
+        targets = [t.drawable_id for t in self._targets.values()]
+        for p in range(start, index):
+            step = self._steps[p]
+            prior = self._steps[p - 1] if p else None
+            for restyle in (*(prior.restyles if prior else ()), *step.restyles):
+                obj = objects[restyle.target.drawable_id]
+                obj.transform.translation_x, obj.transform.translation_y = home[restyle.target.drawable_id]
+            for restyle in step.restyles:
+                if restyle.move is not None:
+                    translate(objects[restyle.target.drawable_id], *restyle.move)
+            placed = {}
+            if step.labels and step.camera is None and not (step.easing and prior is not None
+                                                            and prior.camera is not None):
+                def marks(bounds, step=step):
+                    return [mark_drawing(mark, bounds, None, self.theme, self._font, (width, height)).bounds
+                            for mark in step.marks]
+                costs = {}
+                with typography_errors():
+                    plan = plan_annotations(step, objects, targets, width=width, height=height,
+                                            theme=self.theme, font=self._font, previous=prior, progress=1.0,
+                                            mark_boxes=marks if step.marks else None, preferred=preferred,
+                                            costs=costs)
+                placed = {label.id: (plan[label.id][0], costs[label.id]) for label in step.labels
+                          if label.id in plan}
+            memo[key(p)] = preferred = placed
+        return preferred
 
     def export_steps(self, directory: str | Path, *, overwrite: bool = False,
                      alpha: bool = False) -> list[Path]:

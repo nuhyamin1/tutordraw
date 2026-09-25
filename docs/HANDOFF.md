@@ -42,9 +42,12 @@ list with evidence. The parts that belong here:
   `arrange.words`/`diagrams`/`collisions`; `occupied` + a numpy `clear` move
   a word clear (`tests/test_text_overlap.py`, 8 tests; AI_AUTHORING.md codes
   table). Illustrate nudges later beats' text with them.
-- **Stable labels.** Labels are re-placed each step, so one can leap across
-  the canvas when something else moves. Prefer the previous step's placement
-  while it stays collision-free.
+- **Stable labels — done (2026-09-25).** `collision.resolve(preferred=,
+  settled=, costs=)` keeps a label's previous place while nothing new lands
+  on it; `Tutorial._placements_before` works previous placements out forward
+  and memoises them (`_layout_key`); animated steps chunk still strokes
+  (`tests/test_stable_labels.py`, 6 tests; API.md "Across frames",
+  DECISIONS.md). Goldens unchanged.
 - **Origin numbers collide on Axes.** With a range starting just below 0
   (e.g. −0.5), the "−0.5" tick numbers and the "0" written below-left of the
   origin overlap (`kits/graphs.py`, `Axes._draw`).

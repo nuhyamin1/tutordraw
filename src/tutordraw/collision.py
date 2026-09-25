@@ -132,7 +132,9 @@ def footprint(request: Request, placement: Placement, width: float, height: floa
 
 def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
             blockers: dict[str, BoundingBox] | None = None, width: float, height: float,
-            margin: float = 6.0) -> dict[str, Placement]:
+            margin: float = 6.0, preferred: dict[str, tuple[Placement, float]] | None = None,
+            settled: dict[str, BoundingBox] | None = None,
+            costs: dict[str, float] | None = None) -> dict[str, Placement]:
     """Place each annotation in order, never displacing an already-placed one.
 
     Requests are considered in registration order, so the first annotation keeps
@@ -140,13 +142,41 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
     Candidates are scored lexicographically: panels must not overlap anything
     solid or leave the canvas, then they should avoid covering artwork, and
     ties go to the candidate closest to what the author asked for.
+
+    `preferred` maps a request's key to where it was in the previous step and
+    how much artwork it covered there. It is kept when nothing solid is in
+    its way over the whole step and it covers no more of the artwork where
+    the step ends (`settled`, the end-state boxes; `artwork` itself) than it
+    did: a label stays put while something only passes through its place,
+    rather than leaping across the canvas, and moves once something new
+    comes to rest on it. `costs`, when given, receives how much end-state
+    artwork each chosen placement covers, for the next step to compare with.
     """
     blockers = blockers or {}
+    preferred = preferred or {}
+    settled = artwork if settled is None else settled
     placed: list[BoundingBox] = []
     chosen: dict[str, Placement] = {}
     for request in requests:
         skip = request.target_id if request.covers_target else None
         solid = [box for key, box in blockers.items() if key != skip]
+        def covered(placement):
+            end = panel_for(request, placement, width, height)
+            return sum(overlap_area(end, box) for key, box in settled.items() if key.split("#")[0] != skip)
+
+        before, cost = preferred.get(request.key, (None, 0.0))
+        if before is not None:
+            panel = footprint(request, before, width, height)
+            hard = (sum(overlap_area(panel, other, margin) for other in placed)
+                    + sum(overlap_area(panel, other, margin) for other in solid)
+                    + outside_area(panel, width, height))
+            soft = covered(before)
+            if hard <= 0 and soft <= cost + 1.0:  # a square pixel of rounding
+                placed.append(panel)
+                chosen[request.key] = before
+                if costs is not None:
+                    costs[request.key] = soft
+                continue
         best: tuple[tuple[float, float, int], Placement, BoundingBox, float] | None = None
         for rank, placement in enumerate(candidates(request, margin)):
             panel = footprint(request, placement, width, height)
@@ -168,13 +198,17 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
                           "other annotations", LayoutWarning, stacklevel=4)
         placed.append(panel)
         chosen[request.key] = placement
+        if costs is not None:
+            costs[request.key] = covered(placement)
     return chosen
 
 
 def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Sequence[str], *,
                      width: float, height: float, theme: Theme, font=None,
                      previous: Step | None = None, progress: float = 1.0,
-                     camera_at=None, mark_boxes=None
+                     camera_at=None, mark_boxes=None,
+                     preferred: dict[str, tuple[Placement, float]] | None = None,
+                     costs: dict[str, float] | None = None
                      ) -> dict[str, tuple[Placement, Measured]]:
     """Decide every annotation's placement once, from the step's final geometry.
 
@@ -193,6 +227,9 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
     `camera_at(t)` holds the camera at the step's end (1) or start (0) while
     bounds are measured, so a zoom does not move the labels' slots either.
     `mark_boxes(bounds)` returns the step's marks at those bounds, as blockers.
+    `preferred` maps a label's ID to its placement in the previous step and
+    the artwork it covered there, which it keeps while nothing new lands on
+    it; `costs` receives the same for this step's placements (see `resolve`).
     """
     from contextlib import nullcontext
     from .attention import final_bounds, residual_moves
@@ -241,23 +278,28 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
         highlights[highlight.target.drawable_id] = BoundingBox(
             box.x - pad, box.y - pad, box.width + 2 * pad, box.height + 2 * pad)
     highlights.update({f"mark:{i}": box for i, box in enumerate(marks)})
-    artwork = {}
+    artwork, settled = {}, {}
     # Words in the drawing (titles, tick numbers, captions) are worth keeping
     # readable even when nobody registered them: covering them is a soft cost.
     # Annotations are not in the scene yet, so every Text here is artwork.
     from drawcv import Text
     for key, obj in objects.items():
         if isinstance(obj, Text) and key not in bounds and obj.visible and obj.text.strip():
-            artwork[f"text:{key}"] = obj.get_bounds()
+            artwork[f"text:{key}"] = settled[f"text:{key}"] = obj.get_bounds()
     for key in target_ids:
         if key not in swept:
             continue
-        if key in chunks and started is None:
+        if key in chunks:
+            settled.update({f"{key}#{i}": box for i, box in enumerate(chunks[key])})
+        else:
+            settled[key] = bounds[key]
+        # A stroke blocks along its ink, unless it moves in this step: then along its whole sweep.
+        if key in chunks and (started is None or started[key] == bounds[key]):
             artwork.update({f"{key}#{i}": box for i, box in enumerate(chunks[key])})
         else:
-            artwork[key] = swept[key]  # a moving stroke keeps its swept bounds
+            artwork[key] = swept[key]
     chosen = resolve(requests,
                      artwork=artwork,
                      blockers=highlights, width=width, height=height,
-                     margin=theme.collision_margin)
+                     margin=theme.collision_margin, preferred=preferred, settled=settled, costs=costs)
     return {key: (placement, measured[key]) for key, placement in chosen.items()}

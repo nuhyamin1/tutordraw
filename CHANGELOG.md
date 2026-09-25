@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Labels stay put between steps.** A label shown in consecutive steps keeps
+  its previous place while nothing new lands on it, instead of being placed
+  afresh each step: in Illustrate a point's label leapt 222 px across the
+  canvas in the step that slid a marker past it. And in an animated step a
+  stroke that does not move now blocks labels along its ink, as in a still
+  step, rather than with its whole bounding box, which was what pushed the
+  label away. Placements of earlier steps are remembered per lesson.
 - **Lint for the drawing's own words.** `TEXT_OVERLAP` (error): two of the
   scene's texts or equations lie on each other; `TEXT_ON_DIAGRAM` (warning):
   one lies on a kit's lines, text or shading; `TEXT_OFF_CANVAS` (warning).

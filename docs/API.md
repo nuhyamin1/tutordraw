@@ -167,6 +167,16 @@ Two consequences worth knowing:
 - Reveal delays are ignored when resolving. Every annotation holds its slot from
   the first frame, so nothing already on screen moves when a delayed one
   appears; the slot simply stays empty until it does.
+- A label shown in consecutive steps keeps the place it had in the previous
+  step while nothing new lands on it (unreleased): nothing solid in its way
+  over the whole step, and no more artwork under it where the step ends than
+  it had before. Something that only passes through its place does not move
+  it; something that comes to rest there does. The previous step's
+  placements are worked out forward from the first step and remembered per
+  lesson, keyed by the steps, targets, their source transforms and the theme.
+  A step with a camera passes nothing on.
+- In an animated step a stroke that does not move blocks labels along its ink,
+  as in a still step; only a moving one blocks its whole swept box.
 
 When even the best candidate still overlaps, rendering proceeds and issues a
 `LayoutWarning` naming the label, rather than failing or silently overlapping.
