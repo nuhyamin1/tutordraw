@@ -123,7 +123,14 @@ ticks and curve: `axes.plot(lambda x: x * x, name="parabola_curve")`. Point at
 places with `axes.point(x, y, name=...)` (`visible=False` for an anchor on a
 curve) and `axes.guide(x=, y=)`. Kit parts show in every step, so hide the
 ones a step should not show yet with `restyle(target, visible=False)`. Use
-`axes.to_scene(x, y)` for your own marks. For arithmetic, use
+`axes.to_scene(x, y)` for your own marks. **Never shade, slice or draw lines
+on a graph in canvas pixels**: give the curve's function to
+`axes.region(f, g=0, domain=(a, b))` (area under or between curves, or above
+a curve with g a number), `axes.rectangles(f, (a, b), n, rule="mid")`,
+`axes.tangent(f, x)`, `axes.secant(f, x1, x2)`, and find meeting points and
+roots with `axes.intersections(f, g)`; for any other shape in graph units, cut
+it with `axes.clip(points, closed=True)` and adopt it with `axes.add(shape)`.
+For arithmetic, use
 `NumberLine` and `line.hop(step, 2, 5, "+3")`: a hop is a step mark, so it
 draws on and can be a narration cue. See [kits](KITS.md).
 

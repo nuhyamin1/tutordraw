@@ -33,10 +33,33 @@ step.show(on_curve.label("y = x²", anchor="left"))
 | `axes.point(x, y, *, name=None, radius=5, color=..., visible=True)` | A dot. `visible=False` makes an invisible anchor, for labelling a curve at a chosen point rather than beside its bounding box. |
 | `axes.guide(*, x=None, y=None, name=None)` | Dashed lines: `x=a` vertical, `y=b` horizontal, both together drop from (a, b) to the axes. |
 | `axes.to_scene(x, y)` | The canvas point for maths coordinates, for your own marks: `step.connect(axes.to_scene(0, 8), vertex)`. |
+| `axes.region(f, g=0, *, domain=None, samples=240, color=..., opacity=0.3, name=None)` | Shades between y = f(x) and y = g(x): the area under a curve (g = 0), between two curves, or above or below a curve (g a number such as the top of the y range). f and g are functions or numbers. Sampled like `plot`, so it meets the curve exactly; cut to the ranges, broken where either has no value, and drawn beneath the grid and curves. |
+| `axes.rectangles(f, domain, count, *, rule="left", color=..., opacity=0.3, name=None)` | `count` equal rectangles from y = 0 up to f across `domain` (a Riemann sum); `rule` is `"left"`, `"right"` or `"mid"`. `domain` must lie inside the x range. One target for them all. |
+| `axes.tangent(f, x, *, span=None, color=..., width=2.5, name=None)` | The tangent at x, its slope worked out from f, drawn across `span` (default the whole x range) and cut to the ranges. Refused at a corner, a jump or where f has no value. |
+| `axes.secant(f, x1, x2, *, span=None, ...)` | The line through the curve at x1 and x2; `span=(x1, x2)` draws just the chord. |
+| `axes.intersections(f, g=0, *, domain=None, samples=2000)` | Where y = f(x) meets y = g(x), as (x, y) pairs from left to right (with g = 0, the roots). Finds touching points too, and ignores a jump across the other curve. Draws nothing: pass the points to `point`, or use their x as a `domain`. |
+| `axes.clip(points, *, closed=False)` | Maths points as canvas points, cut exactly at the edges of the plot area: one piece for a closed shape, one per stretch inside for an open line, `[]` if none of it is inside. The geometry is cut, not masked, so bounds, labels and marks follow what is visible. |
+| `axes.add(drawable, *, name=None)` | Makes any DrawCV drawable part of the graph (it hides, fades and moves with the axes) and returns it as a target. Build it from `to_scene`, `to_scene_offset` or `clip`. |
+| `axes.to_scene_offset(dx, dy)`, `axes.contains(x, y)` | A maths displacement in canvas pixels (y flips), and whether a point is inside the ranges. |
 | `Axes.find(tutorial, name="axes")` | After `Tutorial.load_json`, reattach to saved axes to plot more. The settings travel in the group's DrawCV metadata. |
 
 Unnamed parts are called `<name>_plot1`, `<name>_point2` and so on. Tick
 numbers use plain ASCII and as few decimals as the step needs.
+
+Everything on a graph should come from the graph's own mapping, never from
+canvas pixels worked out by hand: a region, rectangle or tangent computed
+from the curve's function meets the curve exactly, where a hand-placed
+polygon only ever approximates it.
+
+```python
+area = axes.region(lambda x: x * x, domain=(0, 2), name="area")      # the integral from 0 to 2
+riemann = axes.rectangles(lambda x: x * x, (0, 2), 8, rule="mid", name="riemann")
+touch = axes.tangent(lambda x: x * x, 1.5, name="tangent")
+(a, _), (b, _) = axes.intersections(lambda x: x * x, lambda x: x + 2)
+between = axes.region(lambda x: x + 2, lambda x: x * x, domain=(a, b), name="between")
+[wedge] = axes.clip([(0, 0), (2, 0), (2, 4)], closed=True)          # your own shape, in graph units
+axes.add(Polygon(vertices=wedge, fill=FillStyle(color=Color(250, 200, 120))), name="wedge")
+```
 
 ## Number line
 

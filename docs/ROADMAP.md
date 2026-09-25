@@ -167,6 +167,12 @@ Design the whole batch before coding; persist it together.
 
 ### P5 — Content and interaction
 - [x] Teaching kits: axes and graphs (`tutordraw.kits.Axes`).
+- [x] Graph constructions from the curve's function: `region`, `rectangles`,
+  `tangent`, `secant`, `intersections`; own shapes in graph units with
+  `clip` and `add` (unreleased).
+- [ ] Motion along a curve: a point sliding along y = f(x), or a tangent
+  sweeping as x changes. `Step.animate` eases positions in straight lines, so
+  today this is one step per position.
 - [x] Number line kit (`tutordraw.kits.NumberLine`), hops as step marks.
 - [x] More kits: flowcharts, timelines, cycles, force diagrams, labelled
   cross-sections (`Flowchart`, `Timeline`, `Cycle`, `ForceDiagram`,

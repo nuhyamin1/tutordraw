@@ -11,9 +11,116 @@ from drawcv import (Arrow, BoundingBox, Circle, Color, FillStyle, Group, Line, P
 from ..adapters.drawcv import fixed_pivot
 from ..errors import ValidationError
 from ..validation import finite_number, rgb
-from ._base import CURVE, GRID, INK, KIT_KEY, _pair
+from ._base import CURVE, GRID, INK, KIT_KEY, _pair, _point
 
 HOP_PEAK = 45.0  # px: the most a number-line hop rises above (or dips below) its line
+ACCENT = (214, 96, 50)  # tangents and secants: warm, so they stand apart from the curve
+SHADE = 0.3  # the fill opacity of regions and rectangles, so the grid and curve show through
+RULES = ("left", "right", "mid")
+
+
+def _value(f, x: float) -> float:
+    """f(x) as a float, or NaN where f fails or has no finite value."""
+    try:
+        y = float(f(x))
+    except (ArithmeticError, ValueError, TypeError):
+        return math.nan
+    return y if math.isfinite(y) else math.nan
+
+
+def _samples(samples) -> int:
+    if isinstance(samples, bool) or not isinstance(samples, int) or not 2 <= samples <= 5000:
+        raise ValidationError("samples must be an integer from 2 to 5000")
+    return samples
+
+
+def _slope(f, x: float) -> float:
+    """The derivative of f at x, or NaN where there is no single tangent (a corner, a jump, no value).
+
+    Both one-sided slopes are taken over a tiny step and must agree, so |x|
+    at 0 has none; the central difference over a slightly larger step is the
+    value, accurate to about 1e-9 for ordinary functions.
+    """
+    tiny = 1e-6 * max(1.0, abs(x))
+    here, left, right = _value(f, x), _value(f, x - tiny), _value(f, x + tiny)
+    if any(math.isnan(v) for v in (here, left, right)):
+        return math.nan
+    before, after = (here - left) / tiny, (right - here) / tiny
+    if abs(before - after) > 1e-3 * max(1.0, abs(before), abs(after)):
+        return math.nan
+    step = 1e-5 * max(1.0, abs(x))
+    a, b = _value(f, x - step), _value(f, x + step)
+    return math.nan if math.isnan(a) or math.isnan(b) else (b - a) / (2 * step)
+
+
+def _clip_polygon(points: list[Point], box: BoundingBox) -> list[Point]:
+    """A polygon cut to an axis-aligned box (Sutherland-Hodgman); [] if none of it is inside."""
+    def at_x(x):
+        return lambda p, q: Point(x, p.y + (q.y - p.y) * (x - p.x) / (q.x - p.x))
+
+    def at_y(y):
+        return lambda p, q: Point(p.x + (q.x - p.x) * (y - p.y) / (q.y - p.y), y)
+
+    edges = ((lambda p: p.x >= box.left, at_x(box.left)), (lambda p: p.x <= box.right, at_x(box.right)),
+             (lambda p: p.y >= box.top, at_y(box.top)), (lambda p: p.y <= box.bottom, at_y(box.bottom)))
+    for inside, cross in edges:
+        kept = []
+        for i, current in enumerate(points):
+            previous = points[i - 1]
+            if inside(current):
+                if not inside(previous):
+                    kept.append(cross(previous, current))
+                kept.append(current)
+            elif inside(previous):
+                kept.append(cross(previous, current))
+        points = kept
+        if not points:
+            return []
+    return points
+
+
+def _clip_segment(p: Point, q: Point, box: BoundingBox) -> tuple[Point, Point] | None:
+    """The part of segment pq inside an axis-aligned box (Liang-Barsky), or None."""
+    t0, t1 = 0.0, 1.0
+    dx, dy = q.x - p.x, q.y - p.y
+    for towards, room in ((-dx, p.x - box.left), (dx, box.right - p.x),
+                          (-dy, p.y - box.top), (dy, box.bottom - p.y)):
+        if towards == 0:
+            if room < 0:
+                return None
+            continue
+        t = room / towards
+        if towards < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return None
+    return Point(p.x + t0 * dx, p.y + t0 * dy), Point(p.x + t1 * dx, p.y + t1 * dy)
+
+
+def _clip_polyline(points: list[Point], box: BoundingBox) -> list[list[Point]]:
+    """An open line cut to a box: one piece for each stretch inside it."""
+    pieces, current = [], []
+    for p, q in zip(points, points[1:]):
+        segment = _clip_segment(p, q, box)
+        if segment is None:
+            if len(current) > 1:
+                pieces.append(current)
+            current = []
+            continue
+        a, b = segment
+        if not current or math.dist((current[-1].x, current[-1].y), (a.x, a.y)) > 1e-9:
+            if len(current) > 1:
+                pieces.append(current)
+            current = [a]
+        current.append(b)
+        if math.dist((b.x, b.y), (q.x, q.y)) > 1e-9:  # cut short: it leaves the box here
+            pieces.append(current)
+            current = []
+    if len(current) > 1:
+        pieces.append(current)
+    return pieces
 
 
 def nice_step(span: float, target_ticks: int = 8) -> float:
@@ -192,8 +299,7 @@ class Axes:
         if not callable(f):
             raise ValidationError("f must be a function of x")
         low, high = self.x_range if domain is None else _pair(domain, "domain")
-        if isinstance(samples, bool) or not isinstance(samples, int) or not 2 <= samples <= 5000:
-            raise ValidationError("samples must be an integer from 2 to 5000")
+        samples = _samples(samples)
         y0, y1 = self.y_range
         values = []
         for i in range(samples):
@@ -278,6 +384,275 @@ class Axes:
             path.line_to(self.to_scene(self.x_range[1], y))
         self.group.add(path, preserve_world_transform=False)
         return self.tutorial.target(path, name=self._name(name, "guide"))
+
+    # --- drawing in maths coordinates ----------------------------------------
+
+    def to_scene_offset(self, dx: float, dy: float) -> tuple[float, float]:
+        """A maths displacement (dx, dy) in canvas pixels; y points up in maths and down on the canvas."""
+        (x0, x1), (y0, y1) = self.x_range, self.y_range
+        return (finite_number(dx, "dx") * self.box.width / (x1 - x0),
+                -finite_number(dy, "dy") * self.box.height / (y1 - y0))
+
+    def contains(self, x: float, y: float) -> bool:
+        """Whether the maths point (x, y) is inside the axes' ranges."""
+        return (self.x_range[0] <= finite_number(x, "x") <= self.x_range[1]
+                and self.y_range[0] <= finite_number(y, "y") <= self.y_range[1])
+
+    def clip(self, points, *, closed: bool = False) -> list[list[Point]]:
+        """Maths points as canvas points, cut exactly where they leave the plot area.
+
+        For drawing your own shapes in the graph's coordinates: a closed shape
+        (a polygon) gives one piece, an open line one piece per stretch inside
+        the ranges, and nothing inside gives []. Cutting the geometry, rather
+        than masking it, keeps its bounds true, so labels and marks sit by
+        what is visible. Pass the pieces to DrawCV shapes and `add` them.
+        """
+        if not isinstance(closed, bool):
+            raise ValidationError("closed must be a boolean")
+        if not isinstance(points, (tuple, list)) or len(points) < (3 if closed else 2):
+            raise ValidationError(f"points must be a list of at least {3 if closed else 2} (x, y) pairs")
+        scene = [self.to_scene(q.x, q.y) for q in (_point(p, "points") for p in points)]
+        if closed:
+            shape = _clip_polygon(scene, self.box)
+            return [shape] if len(shape) >= 3 else []
+        return _clip_polyline(scene, self.box)
+
+    def add(self, drawable, *, name: str | None = None):
+        """Make a DrawCV drawable part of the graph and return it as a target.
+
+        It joins the axes' group, so it hides, fades and moves with the graph.
+        Build it from `to_scene`, `to_scene_offset` or `clip` so it lines up.
+        """
+        if not hasattr(drawable, "get_bounds") or not hasattr(drawable, "transform"):
+            raise ValidationError("add expects a DrawCV drawable")
+        self.group.add(drawable, preserve_world_transform=False)
+        return self.tutorial.target(drawable, name=self._name(name, "shape"))
+
+    # --- constructions -------------------------------------------------------
+
+    def _domain(self, domain) -> tuple[float, float]:
+        """`domain`, or the whole x range, cut to the x range."""
+        if domain is None:
+            return self.x_range
+        low, high = _pair(domain, "domain")
+        low, high = max(low, self.x_range[0]), min(high, self.x_range[1])
+        if not low < high:
+            raise ValidationError(f"domain {tuple(domain)} lies outside the axes' x range "
+                                  f"{self.x_range[0]:g} to {self.x_range[1]:g}")
+        return low, high
+
+    @staticmethod
+    def _boundary(value, what: str):
+        """A boundary of a region: a function of x, or a number for a horizontal line such as y = 0."""
+        if callable(value):
+            return value
+        height = finite_number(value, what)
+        return lambda x: height
+
+    @staticmethod
+    def _shade(color, opacity) -> tuple[tuple[int, int, int], float]:
+        opacity = finite_number(opacity, "opacity", minimum=0)
+        if opacity > 1:
+            raise ValidationError("opacity must be between 0 and 1")
+        return rgb(color, "color"), opacity
+
+    def region(self, f, g=0.0, *, domain=None, samples: int = 240, color=CURVE, opacity: float = SHADE,
+               name: str | None = None):
+        """Shade between y = f(x) and y = g(x) and return it as a target.
+
+        With the default g = 0 it is the area under a curve; with two curves
+        the area between them; with a number, everything above or below a
+        level (g = 9 on axes up to 9 shades y > f(x)). Both are sampled like
+        `plot`, so the shading meets the curve exactly; it is cut to the
+        ranges, breaks where either has no value, and sits beneath the grid
+        and curves. `domain` limits it in x (the whole x range by default).
+        """
+        top, bottom = self._boundary(f, "f"), self._boundary(g, "g")
+        low, high = self._domain(domain)
+        samples = _samples(samples)
+        tint, opacity = self._shade(color, opacity)
+        y0, y1 = self.y_range
+        runs, run = [], []
+        for i in range(samples):
+            x = low + (high - low) * i / (samples - 1)
+            a, b = _value(top, x), _value(bottom, x)
+            if math.isnan(a) or math.isnan(b):
+                if len(run) > 1:
+                    runs.append(run)
+                run = []
+                continue
+            run.append((x, min(max(a, y0), y1), min(max(b, y0), y1)))
+        if len(run) > 1:
+            runs.append(run)
+        runs = [run for run in runs if any(a != b for _, a, b in run)]
+        if not runs:
+            raise ValidationError(f"Nothing to shade: the two boundaries have no values, or no gap between them "
+                                  f"inside the axes, from x = {low:g} to {high:g}")
+        path = Path(fill=FillStyle(color=Color(*tint), opacity=opacity), z_index=-1, transform=fixed_pivot())
+        for run in runs:
+            path.move_to(self.to_scene(run[0][0], run[0][1]))
+            for x, a, _ in run[1:]:
+                path.line_to(self.to_scene(x, a))
+            for x, _, b in reversed(run):
+                path.line_to(self.to_scene(x, b))
+            path.close()
+        self.group.add(path, preserve_world_transform=False)
+        return self.tutorial.target(path, name=self._name(name, "region"))
+
+    def rectangles(self, f, domain, count: int, *, rule: str = "left", color=CURVE, opacity: float = SHADE,
+                   name: str | None = None):
+        """`count` equal rectangles from y = 0 up to f, across `domain`: a Riemann sum.
+
+        `rule` picks where each rectangle meets the curve: its "left" edge,
+        its "right" edge or its "mid"point. Heights are cut to the y range, and
+        a rectangle where f has no value is left out. One target for them all.
+        """
+        if not callable(f):
+            raise ValidationError("f must be a function of x")
+        a, b = _pair(domain, "domain")
+        x0, x1 = self.x_range
+        if a < x0 or b > x1:
+            raise ValidationError(f"domain ({a:g}, {b:g}) must lie inside the axes' x range {x0:g} to {x1:g}")
+        if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 500:
+            raise ValidationError("count must be a whole number from 1 to 500")
+        if rule not in RULES:
+            raise ValidationError(f"rule must be one of {', '.join(RULES)}")
+        tint, opacity = self._shade(color, opacity)
+        y0, y1 = self.y_range
+        base = min(max(0.0, y0), y1)
+        path = Path(fill=FillStyle(color=Color(*tint), opacity=opacity),
+                    stroke=StrokeStyle(color=Color(*tint), width=1.5), z_index=-1, transform=fixed_pivot())
+        drawn = 0
+        for i in range(count):
+            left, right = a + (b - a) * i / count, a + (b - a) * (i + 1) / count
+            height = _value(f, {"left": left, "right": right, "mid": (left + right) / 2}[rule])
+            if math.isnan(height) or min(max(height, y0), y1) == base:
+                continue
+            top = min(max(height, y0), y1)
+            path.move_to(self.to_scene(left, base))
+            for corner in ((right, base), (right, top), (left, top)):
+                path.line_to(self.to_scene(*corner))
+            path.close()
+            drawn += 1
+        if not drawn:
+            raise ValidationError(f"No rectangles to draw: f has no value, or is 0, at every {rule} point")
+        self.group.add(path, preserve_world_transform=False)
+        return self.tutorial.target(path, name=self._name(name, "rectangles"))
+
+    def _straight(self, x: float, y: float, slope: float, span, color, width, name, kind: str):
+        """The line through (x, y) with this slope, across `span`, cut to the plot area."""
+        low, high = self._domain(span)
+        stroke = StrokeStyle(color=Color(*rgb(color, "color")), width=finite_number(width, "width", minimum=0))
+        pieces = _clip_polyline([self.to_scene(low, y + slope * (low - x)),
+                                 self.to_scene(high, y + slope * (high - x))], self.box)
+        if not pieces:
+            raise ValidationError(f"None of the {kind} lies inside the axes from x = {low:g} to {high:g}; "
+                                  "widen the span or the y range")
+        line = Line(start=pieces[0][0], end=pieces[0][-1], stroke=stroke)
+        self.group.add(line, preserve_world_transform=False)
+        return self.tutorial.target(line, name=self._name(name, kind))
+
+    def _on_curve(self, f, x, what: str) -> tuple[float, float]:
+        if not callable(f):
+            raise ValidationError("f must be a function of x")
+        x = finite_number(x, what)
+        y = _value(f, x)
+        if math.isnan(y):
+            raise ValidationError(f"The curve has no value at {what} = {x:g}")
+        return x, y
+
+    def tangent(self, f, x: float, *, span=None, color=ACCENT, width: float = 2.5, name: str | None = None):
+        """The tangent to y = f(x) at x, drawn across `span` (the whole x range by default).
+
+        The slope is worked out from f, so the line touches the curve exactly.
+        It is refused where the curve has no single tangent: a corner, a jump,
+        or no value there. (x, f(x)) must be inside the ranges.
+        """
+        x, y = self._on_curve(f, x, "x")
+        if not self.contains(x, y):
+            raise ValidationError(f"({x:g}, {y:g}) is outside the axes' ranges")
+        slope = _slope(f, x)
+        if math.isnan(slope):
+            raise ValidationError(f"The curve has no single tangent at x = {x:g}: it has a corner, a jump "
+                                  "or a vertical tangent there")
+        return self._straight(x, y, slope, span, color, width, name, "tangent")
+
+    def secant(self, f, x1: float, x2: float, *, span=None, color=ACCENT, width: float = 2.5,
+               name: str | None = None):
+        """The straight line through the curve at x1 and x2, across `span` (the whole x range by default).
+
+        Give `span=(x1, x2)` for just the chord between the two points.
+        """
+        a, fa = self._on_curve(f, x1, "x1")
+        b, fb = self._on_curve(f, x2, "x2")
+        if a == b:
+            raise ValidationError("a secant needs two different x values; use tangent for one")
+        return self._straight(a, fa, (fb - fa) / (b - a), span, color, width, name, "secant")
+
+    def intersections(self, f, g=0.0, *, domain=None, samples: int = 2000) -> list[tuple[float, float]]:
+        """Where y = f(x) meets y = g(x), as (x, y) pairs from left to right; with g = 0, f's roots.
+
+        Crossings are found where f - g changes sign and refined by bisection;
+        a curve that only touches the other (x^2 and 0 at 0) is found too. A
+        jump across the other curve (tan x at pi/2) is not a meeting point.
+        The points may lie outside the y range; `contains` says.
+        """
+        top, bottom = self._boundary(f, "f"), self._boundary(g, "g")
+        low, high = self._domain(domain)
+        if isinstance(samples, bool) or not isinstance(samples, int) or not 10 <= samples <= 20000:
+            raise ValidationError("samples must be an integer from 10 to 20000")
+        xs = [low + (high - low) * i / (samples - 1) for i in range(samples)]
+        gap = [_value(top, x) - _value(bottom, x) for x in xs]
+        close = 1e-6 * (self.y_range[1] - self.y_range[0])
+
+        def difference(x):
+            return _value(top, x) - _value(bottom, x)
+
+        found = []
+        for i, d in enumerate(gap):
+            if d == 0:
+                found.append(xs[i])
+        for i in range(samples - 1):
+            a, b = gap[i], gap[i + 1]
+            if math.isnan(a) or math.isnan(b) or a * b >= 0:
+                continue
+            left, right = xs[i], xs[i + 1]
+            for _ in range(80):
+                middle = (left + right) / 2
+                d = difference(middle)
+                if math.isnan(d):
+                    break
+                if (d < 0) == (a < 0):
+                    left = middle
+                else:
+                    right = middle
+            x = (left + right) / 2
+            if abs(difference(x)) <= close:
+                found.append(x)
+        for i in range(1, samples - 1):
+            a, b, c = gap[i - 1], gap[i], gap[i + 1]
+            if any(math.isnan(v) for v in (a, b, c)) or not (a * b > 0 and b * c > 0) \
+                    or not abs(b) <= min(abs(a), abs(c)):
+                continue
+            left, right = xs[i - 1], xs[i + 1]  # a touch: the gap's smallest size, by golden-section search
+            for _ in range(100):
+                m1, m2 = left + (right - left) * 0.382, left + (right - left) * 0.618
+                if abs(difference(m1)) < abs(difference(m2)):
+                    right = m2
+                else:
+                    left = m1
+            x = (left + right) / 2
+            if abs(difference(x)) <= close:
+                found.append(x)
+        found.sort()
+        merged = []
+        for x in found:
+            if not merged or x - merged[-1] > 1.5 * (high - low) / samples:
+                merged.append(x)
+
+        def tidy(value, span):  # rounding error around 0 reads as 0, not 7e-25
+            return 0.0 if abs(value) < 1e-12 * span else value
+        return [(tidy(x, high - low), tidy(_value(top, x), self.y_range[1] - self.y_range[0])) for x in merged]
 
     # --- after reloading a lesson -------------------------------------------
 

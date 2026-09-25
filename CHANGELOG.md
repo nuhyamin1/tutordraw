@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Graphs you can draw into.** `Axes` gains constructions computed from the
+  curve's own function, so they meet it exactly: `region(f, g=0)` shades the
+  area under a curve, between two curves, or above or below one;
+  `rectangles(f, domain, count, rule=)` draws a Riemann sum; `tangent(f, x)`
+  and `secant(f, x1, x2)` draw lines through the curve; `intersections(f, g=0)`
+  finds where curves meet (roots with g = 0), touching points included. For
+  shapes of your own in the graph's units, `clip(points, closed=)` cuts them
+  exactly at the plot area and `add(drawable)` makes them part of the graph;
+  `to_scene_offset` and `contains` convert sizes and test points. Regions and
+  rectangles sit beneath the grid and curves. Nothing new in the lesson
+  schema: they are ordinary DrawCV paths and lines in the axes' group.
+
 ## 0.2.0a1 — third alpha (published 2026-09-24)
 
 A new minor version because the change from 0.1.0a11 is large: this is the

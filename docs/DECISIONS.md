@@ -926,3 +926,34 @@ The owner approved one bump carrying both things the format lacked.
   one matrix per mapper call would make this near free. TutorDraw does not
   modify DrawCV, so this is documented instead.
 
+
+## Graph constructions and shapes in graph units (unreleased, 2026-09-25)
+
+Found in Illustrate: asked to explain integrals, a model shaded "the area
+under y = x²" with a polygon it placed in canvas pixels, and it ended at
+x ≈ 1.6 instead of 2. The model cannot know the pixel mapping the axes work
+out, and it cannot sample the curve; the kit can do both.
+
+- **Constructions take the curve's function, not its drawing.** `region`,
+  `rectangles`, `tangent`, `secant` and `intersections` evaluate f (and g)
+  themselves, with the same sampling and `to_scene` as `plot`, so they meet
+  the curve by construction. A boundary may be a number (g = 0, or the top of
+  the range for y > f(x)), which covers the area under a curve, between
+  curves and inequality shading with one call.
+- **Cut, don't mask.** DrawCV's `ClipRect` exports to SVG, but it leaves an
+  object's bounds unchanged, and TutorDraw places labels, marks and
+  highlights from bounds. So shapes are clipped geometrically: regions and
+  rectangles clamp y to the range (exact for a region between two
+  functions), lines use Liang-Barsky, polygons Sutherland-Hodgman
+  (`clip`). Curved shapes are the caller's to keep inside (`contains`).
+- **Tangents refuse corners.** The two one-sided slopes over a 1e-6 step must
+  agree to 0.1 %, or there is no single tangent (|x| at 0); the slope is the
+  central difference over 1e-5. A central difference alone gives |x| a
+  tangent of slope 0 at its corner.
+- **Intersections**: sign changes of f - g, refined by 80 bisections, are
+  kept only where f - g is within 1e-6 of the y span, which drops a jump
+  across the other curve (tan x at pi/2); a local minimum of |f - g| near
+  zero without a sign change is refined by golden-section search, which
+  finds a curve touching another (x² and 0 at 0).
+- **Beneath the curve.** Regions and rectangles use z_index -1, so the grid,
+  axes and curve are drawn over the shading.

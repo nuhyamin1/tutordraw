@@ -215,7 +215,10 @@ reference is [VOCABULARY.md](VOCABULARY.md).
 
 `tutordraw.kits.Axes(tutorial, box=..., x_range=..., y_range=...)` draws
 labelled axes from DrawCV objects; `plot(f)`, `point(x, y)`, `guide(x=, y=)`
-return named targets and `to_scene(x, y)` maps coordinates.
+return named targets and `to_scene(x, y)` maps coordinates. `region(f, g)`,
+`rectangles(f, domain, n)`, `tangent(f, x)` and `secant(f, x1, x2)` are drawn
+from the curve's function; `intersections(f, g)` returns meeting points;
+`clip(points)` and `add(drawable)` put your own shapes in graph units.
 `tutordraw.kits.NumberLine(tutorial, start=..., length=..., value_range=...)`
 adds `point`, `interval`, and `hop(step, a, b, text)`, a step mark.
 `Flowchart` (`node(name, text, at=(col, row), shape=)`, `link(a, b, text)`),

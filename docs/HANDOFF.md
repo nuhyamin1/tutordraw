@@ -1,6 +1,32 @@
 # AI handoff — start here
 
-Last updated: **2026-09-24**, DrawCV 0.11.0 upgrade, program P1-P4 and P5 kits (Claude Code).
+Last updated: **2026-09-25**, graph constructions (Claude Code).
+
+## Unreleased: graphs you can draw into (2026-09-25)
+
+**Why**: in Illustrate, a model asked about integrals shaded the area under
+y = x² with a polygon it placed in canvas pixels, ending at x ≈ 1.6 instead
+of 2. The kit owns the pixel mapping and the curve's function, so it now
+builds what follows from a curve. On `Axes` (`src/tutordraw/kits/graphs.py`):
+`region(f, g=0)`, `rectangles(f, domain, count, rule=)`, `tangent(f, x)`,
+`secant(f, x1, x2)`, `intersections(f, g=0)`; for own shapes in graph units
+`clip(points, closed=)` and `add(drawable)`; `to_scene_offset`, `contains`.
+Rationale in DECISIONS.md ("Graph constructions"), reference in KITS.md, and
+AI_AUTHORING.md tells models never to shade or slice a graph in pixels.
+
+- Tests: `tests/test_graph_constructions.py` (14 tests: a region's top edge
+  lies on y = x², rectangles meet the curve at their rule point, tangent and
+  secant slopes, intersections including a touching root and tan's pole,
+  exact clipping, save and load). **Ran: `python -m pytest tests -q -p
+  no:cacheprovider`: 561 passed, 1 skipped.** Also rendered and inspected by
+  eye (area under a curve, Riemann sum, region between curves with tangent
+  and chord, a clipped triangle).
+- **Not released.** Illustrate installs this checkout editable until the
+  owner publishes; the version in pyproject is still 0.2.0a1. Nothing in the
+  lesson schema changed: the constructions are ordinary DrawCV paths and
+  lines in the axes' group.
+- **Next**: motion along a curve (ROADMAP P5): `Step.animate` eases in
+  straight lines, so a point cannot yet slide along y = f(x).
 
 ## Current state
 
