@@ -247,7 +247,9 @@ def _ink(group, near: BoundingBox) -> list[BoundingBox]:
         if not _shown(obj):
             return
         box = obj.get_bounds()
-        if near is not None and not _overlap(box, near):
+        # Loosely: a hairline's bounds are about 1 px thick, and its ink boxes are padded below.
+        if near is not None and not (box.left <= near.right + 2 and near.left <= box.right + 2
+                                     and box.top <= near.bottom + 2 and near.top <= box.bottom + 2):
             return
         if isinstance(obj, Group) and _kit(obj) != "equation":
             for child in obj.children:

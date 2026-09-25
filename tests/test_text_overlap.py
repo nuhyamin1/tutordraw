@@ -120,3 +120,11 @@ def test_a_word_on_a_graph_moves_just_clear_of_its_ink():
     shift_to(title, moved.x, moved.y)
     assert collisions(tutorial.layout(0).scene) == []
     assert not [i for i in tutorial.lint(0) if i.code.startswith("TEXT_")]
+
+
+def test_hairlines_count_as_ink():
+    # A grid line's bounds are about 1 px thick; an equation lying across only grid lines is on the graph.
+    scene, tutorial, graph = lesson()
+    Equation(tutorial, r"\sum_{i=1}^{n} f(x_i)", position=(500, 130), size=40, name="riemann")
+    tutorial.step("One")
+    assert [issue.targets for issue in issues(tutorial, "TEXT_ON_DIAGRAM")] == [("riemann", "graph")]
