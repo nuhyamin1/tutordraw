@@ -127,7 +127,10 @@ def _centre(restyle, anchors) -> tuple[float, float]:
     s = _scale(restyle)
     if s == 1.0:
         return 0.0, 0.0
-    x, y = pivot_point(anchors[restyle.target.drawable_id], restyle.pivot)
+    if isinstance(restyle.pivot, tuple):  # a point, already in the parent's space
+        x, y = restyle.pivot
+    else:
+        x, y = pivot_point(anchors[restyle.target.drawable_id], restyle.pivot)
     return (1 - s) * x, (1 - s) * y
 
 

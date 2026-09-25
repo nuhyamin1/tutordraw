@@ -300,6 +300,7 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 "narration or split it across steps.", [a.target], [a.text])
 
     _lint_words(composition, add)
+    _lint_charts(composition, add)
     _lint_scaled_text(tutorial, step, objects, add)
 
     shown = len(annotations) + len(composition.marks)
@@ -315,6 +316,46 @@ def lint_step(tutorial, index: int) -> list[Issue]:
 
     order = {severity: i for i, severity in enumerate(SEVERITIES)}
     return sorted(issues, key=lambda issue: order[issue.severity])
+
+
+CHARTS = ("axes", "number_line")  # kits read on their own, by their grid and numbers
+CHART_COVER = 0.25  # of a shape's area under a chart, from which the chart is said to cover it
+CHART_BACKDROP = 0.75  # of a chart's area on one shape, which is then the panel it sits on
+
+
+def _lint_charts(composition, add) -> None:
+    """A graph or number line drawn over other artwork, which it hides and which garbles it.
+
+    Text under a chart is TEXT_ON_DIAGRAM. Not reported: a shape the chart
+    lies on (CHART_BACKDROP of its area or more: a panel or card), one with
+    less than CHART_COVER of its area under the chart's bounds, and anything
+    drawn as part of it.
+    """
+    from .arrange import _artwork, _kit, _shown, diagrams, words
+
+    scene = composition.scene
+    names = {drawable_id: name for name, drawable_id in composition.drawables.items()}
+    free = {word.id for word, _ in words(scene)}
+
+    def called(drawable) -> str:
+        return names.get(drawable.id) or drawable.name or f"a {type(drawable).__name__.lower()}"
+
+    shapes = [(obj, obj.get_bounds()) for obj in _artwork(scene) if _shown(obj) and obj.id not in free]
+    for chart, box in diagrams(scene):
+        if _kit(chart) not in CHARTS:
+            continue
+        for obj, other in shapes:
+            wide = min(box.right, other.right) - max(box.left, other.left)
+            tall = min(box.bottom, other.bottom) - max(box.top, other.top)
+            area = other.width * other.height
+            if obj is chart or wide <= 0 or tall <= 0 or wide * tall >= CHART_BACKDROP * box.width * box.height:
+                continue  # the chart itself, apart from it, or a panel it (mostly) sits on
+            if area > 0 and wide * tall >= CHART_COVER * area:
+                add("CHART_OVER_ARTWORK", "warning",
+                    f"The {_kit(chart).replace('_', ' ')} {called(chart)!r} is drawn over {called(obj)!r} "
+                    f"({wide * tall / area:.0%} of it).",
+                    f"Move {called(chart)!r} or {called(obj)!r} so they do not overlap, or make one smaller; "
+                    "a chart is read on its own.", [called(chart), called(obj)])
 
 
 def _lint_scaled_text(tutorial, step, objects, add) -> None:

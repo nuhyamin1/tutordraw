@@ -1101,3 +1101,22 @@ The camera scales the whole board, so a per-target scale was needed.
 - Not done: stroke widths are scaled by DrawCV's transform but its bounds
   keep an unscaled half stroke of padding (about 1 px); DrawCV's raster
   text is clipped when scaled (PNG and video only).
+
+## A pivot point, and charts over artwork (unreleased, 2026-09-25)
+
+**Why**: a picture is often several targets (a wall, a pen, their labels). To
+shrink it into an inset, each must scale about the same point, or the gaps
+between them keep their size and the picture comes apart. A named pivot is a
+point of each target's own bounds, so `pivot` also takes a point `(x, y)`, in
+the parent's coordinates, the same space `move` is in. It rides in the same
+pose (`(1 - scale) * pivot`), so everything said for named pivots holds:
+straight-line motion, one exact player start frame. Schema v12 (still
+unreleased) takes `pivot` as a name or `[x, y]`.
+
+`CHART_OVER_ARTWORK`: a graph or number line is read by its own grid and
+numbers, so one drawn over another shape hides the shape and garbles itself;
+`TEXT_ON_DIAGRAM` already covered text. Deliberately narrow, because shapes
+overlap on purpose all the time (a scene in layers, forces drawn on a body):
+only these two kits, only a quarter or more of the shape under the chart, and
+not a shape three quarters of the chart lies on (a panel or card). Found in
+an author's lesson where a graph was drawn over a pen drawn two steps before.

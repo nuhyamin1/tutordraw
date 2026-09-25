@@ -53,6 +53,9 @@ its bounds that stays put, for a board that makes room:
 
 ```python
 step.animate("ease_in_out", seconds=0.8).restyle(graph, scale=0.8, pivot="top_left")
+# A picture of several shapes, shrunk together into an inset toward (40, 40):
+for part in (wall, pen, caption):
+    step.restyle(part, scale=0.5, pivot=(40, 40))
 ```
 
 Register a graph to scale with `tutorial.target(axes.group, obstacle=False)`,

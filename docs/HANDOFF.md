@@ -34,6 +34,13 @@ for the next line of working, a diagram shrinks a little or slides aside.
   glide). **Ran: `.venv\Scripts\python.exe -m pytest tests -q -p
   no:cacheprovider`: 622 passed, 1 skipped.** Rendered by eye: a 540 px graph
   shrinking to 75 % about its top left, labels riding with their dots.
+- Then (2026-09-25): `pivot` may be a point `(x, y)` in the parent's
+  coordinates, so several targets scale together as one picture
+  (`attention._centre`, model validation, schema v12 `pivot` name or
+  `[x, y]`); lint `CHART_OVER_ARTWORK` (`lint._lint_charts`, CHARTS =
+  axes and number_line, CHART_COVER 0.25, CHART_BACKDROP 0.75). Tests: 2 in
+  `test_scale_restyle.py`, `tests/test_chart_over_artwork.py` (6). 630
+  passed, 1 skipped.
 - Known: DrawCV's raster renderer clips scaled built-in text (PNG and video
   only; the browser player writes native text). Bounds keep an unscaled half
   stroke of padding (about 1 px).

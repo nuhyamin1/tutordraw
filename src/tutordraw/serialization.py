@@ -136,7 +136,8 @@ def to_dict(tutorial: Tutorial) -> dict:
                                      "fill": None if r.fill is None else list(r.fill),
                                      "opacity": r.opacity, "visible": r.visible,
                                      "via": None if r.via is None else [list(p) for p in r.via],
-                                     "scale": r.scale, "pivot": r.pivot}
+                                     "scale": r.scale,
+                                     "pivot": list(r.pivot) if isinstance(r.pivot, tuple) else r.pivot}
                                     for r in step.restyles],
                        "narration": [[w.text, w.start, w.end] for w in step.narration],
                        "prompt": _prompt(step.prompt)}

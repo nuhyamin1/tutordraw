@@ -102,7 +102,7 @@ Prioritized after the first release to support continuation across AI sessions.
 - [x] Animate between beats with `Step.animate` and DrawCV's easing curves,
   opt-in per step so hard cuts stay the default (a10).
 - [x] Scale override: `restyle(scale=, pivot=)` about a point of a target's
-  bounds, schema v12 (unreleased).
+  bounds or a given point (several targets together), schema v12 (unreleased).
 - [ ] Stroke and rotation overrides.
 
 ## Text and languages

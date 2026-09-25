@@ -40,6 +40,8 @@ steps exactly as rendering does and never changes the lesson or its output.
 | `TEXT_OVERLAP` | error | Two of the drawing's own texts or equations lie on each other |
 | `TEXT_ON_DIAGRAM` | warning | A text or equation lies on a kit's lines, text or shading (a graph's tick numbers, its curve) |
 | `TEXT_OFF_CANVAS` | warning | A text or equation runs past the canvas edge |
+| `CHART_OVER_ARTWORK` | warning | A graph or number line covers a quarter or more of another shape; a panel the chart sits on is fine |
+| `SCALED_TEXT_SMALL` | warning | A target scaled down (`restyle(scale=)`) makes its own text (tick numbers) under 12 px |
 
 The `TEXT_` codes are about the scene's own words, not annotations: every
 visible `Text` and `Equation` that is not part of another kit (tick numbers

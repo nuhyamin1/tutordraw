@@ -220,3 +220,38 @@ def test_point_labels_keep_their_side_through_the_glide():
     sides = {a.anchor for t in (0.0, 0.1, 0.2, 0.27, 0.4, 0.53, 0.7, 0.8, 2.0)
              for a in tutorial.layout(1, time=t).annotations}
     assert sides == {"bottom"}
+
+
+def test_several_targets_scale_together_about_one_point():
+    # A picture made of separate shapes shrinks as one: every shape scales about the same point, so the
+    # gaps between them shrink too and the picture keeps its shape (an inset in a corner of the board).
+    scene = Scene(800, 500, background=Color.white())
+    left = Rectangle(position=Point(100, 100), width=100, height=60, fill=FillStyle(color=Color(90, 140, 90)))
+    right = Circle(center=Point(400, 300), radius=40, fill=FillStyle(color=Color(200, 90, 60)))
+    scene.add(left)
+    scene.add(right)
+    tutorial = Tutorial(scene)
+    a, b = tutorial.target(left, name="left"), tutorial.target(right, name="right")
+    tutorial.step("Whole", duration=1)
+    step = tutorial.step("Inset", duration=1).animate("linear")
+    for target in (a, b):
+        step.restyle(target, scale=0.5, pivot=(100, 100))
+    before, after = tutorial.layout(0).targets, tutorial.layout(1).targets
+    for name in ("left", "right"):
+        for side in ("left", "top", "right", "bottom"):
+            assert getattr(after[name], side) == pytest.approx(
+                (100 if side in ("left", "right") else 100) + (getattr(before[name], side) - 100) * 0.5, abs=1.5)
+    document = tutorial.to_dict()
+    assert document["steps"][1]["restyles"][0]["pivot"] == [100, 100]
+    import jsonschema
+    jsonschema.validate(document, packaged_schema())
+    assert Tutorial.from_dict(document).layout(1).targets["right"] == after["right"]
+
+
+def test_a_pivot_point_must_be_two_numbers():
+    tutorial, diagram, *_ = scaled()
+    step = tutorial.step("More")
+    for bad in ((1,), (1, 2, 3), (1, float("nan")), ("a", 2), [True, 2]):
+        with pytest.raises(ValidationError, match="pivot"):
+            step.restyle(diagram, scale=0.5, pivot=bad)
+    assert step.restyle(diagram, scale=0.5, pivot=[10, 20]).restyles[0].pivot == (10.0, 20.0)

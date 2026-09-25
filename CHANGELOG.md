@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Scale several targets together.** A `restyle` pivot can also be a point
+  `(x, y)`, in the coordinates of the target's parent; targets given the same
+  point and scale shrink or grow as one picture, for an inset.
+- **Lint `CHART_OVER_ARTWORK`** (warning): a graph or number line drawn over a
+  quarter or more of another shape, which it hides and which garbles its
+  grid. A panel the chart sits on (three quarters of the chart on it) is not
+  reported, nor anything drawn as part of the chart.
+
 - **Scaling one target.** `restyle(..., scale=0.8, pivot="top_left")` makes a
   target's artwork smaller or larger about one of nine points of its bounds,
   which stays put; everything inside it scales too, its own text included

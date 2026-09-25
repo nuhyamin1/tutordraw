@@ -90,9 +90,12 @@ shape's fill or a Text object's colour and is refused for Line and Group.
 `visible=False` hides the target, after which emphasising it raises.
 
 `scale` (unreleased, schema v12) multiplies the artwork's size, above 0 and
-at most 10, about `pivot`: one of `top_left`, `top`, `top_right`, `left`,
-`center` (the default), `right`, `bottom_left`, `bottom`, `bottom_right`,
-a point of the target's bounds as the source draws it, which stays put.
+at most 10, about `pivot`, which stays put: one of `top_left`, `top`,
+`top_right`, `left`, `center` (the default), `right`, `bottom_left`,
+`bottom`, `bottom_right`, a point of the target's bounds as the source draws
+it; or a point `(x, y)` in the coordinates of the target's parent (the
+scene's, for a top-level drawable). Give several targets the same point and
+the same scale and they shrink or grow together, as one picture (an inset).
 Everything inside the target scales, its own text included; labels, callouts,
 highlights and marks on it or its parts follow but keep their size. Combine
 with `move` to slide it too. Like `move`, a later step that leaves it out

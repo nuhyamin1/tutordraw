@@ -96,9 +96,10 @@ class Restyle:
     visible: bool | None
     # Offsets an animated move passes through on its way to `move`, in order.
     via: tuple[tuple[float, float], ...] | None = None
-    # A factor on the artwork's size, about the anchor of its bounds named by `pivot`.
+    # A factor on the artwork's size, about the anchor of its bounds named by `pivot`, or about the
+    # point (x, y) `pivot` gives, in the target's parent's coordinates.
     scale: float | None = None
-    pivot: str | None = None
+    pivot: str | tuple[float, float] | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -577,7 +578,7 @@ class Step:
     def restyle(self, target: Target, *, move: tuple[float, float] | None = None,
                 fill: tuple[int, int, int] | None = None, opacity: float | None = None,
                 visible: bool | None = None, via=None, scale: float | None = None,
-                pivot: str | None = None) -> Step:
+                pivot=None) -> Step:
         """Change this target's artwork for this step only, leaving the source alone.
 
         `move` shifts by (dx, dy) pixels relative to wherever the source placed
@@ -591,8 +592,11 @@ class Step:
         it needs `move`, and a step that is a hard cut simply ends at `move`.
 
         `scale` multiplies the artwork's size (0 < scale <= 10) about `pivot`,
-        one of PIVOTS naming a point of its bounds as drawn, which stays put
-        (default "center"). Everything inside it scales too, its own text
+        which stays put: one of PIVOTS naming a point of its bounds as drawn
+        (default "center"), or a point (x, y) in the coordinates of the
+        target's parent (the scene's, for a drawable at the top level). Give
+        several targets the same point and they scale together, as one
+        picture. Everything inside it scales too, its own text
         included; labels, callouts and marks on it follow but keep their size.
         Like `move`, a later step that leaves it out shows the source size.
         """
@@ -612,8 +616,12 @@ class Step:
             if not 0 < scale <= MAX_SCALE:
                 raise ValidationError(f"scale must be above 0 and at most {MAX_SCALE:g}")
             pivot = "center" if pivot is None else pivot
-            if pivot not in PIVOTS:
-                raise ValidationError(f"pivot must be one of {', '.join(PIVOTS)}")
+            if isinstance(pivot, (tuple, list)):
+                if len(pivot) != 2 or any(isinstance(value, bool) for value in pivot):
+                    raise ValidationError("a pivot point must be (x, y)")
+                pivot = tuple(finite_number(value, "pivot") for value in pivot)
+            elif pivot not in PIVOTS:
+                raise ValidationError(f"pivot must be one of {', '.join(PIVOTS)}, or a point (x, y)")
         if move is not None:
             if not isinstance(move, (tuple, list)) or len(move) != 2:
                 raise ValidationError("move must contain two finite numbers")
