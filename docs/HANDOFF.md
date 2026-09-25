@@ -28,6 +28,26 @@ AI_AUTHORING.md tells models never to shade or slice a graph in pixels.
 - **Next**: motion along a curve (ROADMAP P5): `Step.animate` eases in
   straight lines, so a point cannot yet slide along y = f(x).
 
+## Next: TutorDraw's half of Illustrate's known weaknesses (2026-09-25)
+
+Illustrate's `HANDOFF.md` ("Next: known weaknesses to fix") has the full
+list with evidence. The parts that belong here:
+
+- **Measured relative placement.** Models placing text and equations by
+  pixels overlap them (they guess sizes TutorDraw knows exactly). Add a
+  layout helper that places blocks beside or below a target, or stacks them
+  in a column, from their real bounds with a gap.
+- **Artwork overlap in `lint()`.** Its codes cover annotations only; nothing
+  flags text on text, an equation on an equation, or either on a kit's group.
+  Add a code for that, with a `fix` a model can act on.
+- **Stable labels.** Labels are re-placed each step, so one can leap across
+  the canvas when something else moves. Prefer the previous step's placement
+  while it stays collision-free.
+- **Origin numbers collide on Axes.** With a range starting just below 0
+  (e.g. −0.5), the "−0.5" tick numbers and the "0" written below-left of the
+  origin overlap (`kits/graphs.py`, `Axes._draw`).
+- **Motion along a path** (above and ROADMAP P5).
+
 ## Current state
 
 **Published: 0.2.0a1 (2026-09-24)**, the milestone first called 0.1.0a12,
