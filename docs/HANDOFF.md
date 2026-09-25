@@ -37,9 +37,11 @@ list with evidence. The parts that belong here:
   (`place`, `clear`, `shift_to`; `tests/test_arrange.py`, 10 tests; API.md,
   DECISIONS.md). Illustrate's `placing.py` resolves `"beside"`/`"below"`/
   `"above"` on text and equations with it. Unreleased; no schema change.
-- **Artwork overlap in `lint()`.** Its codes cover annotations only; nothing
-  flags text on text, an equation on an equation, or either on a kit's group.
-  Add a code for that, with a `fix` a model can act on.
+- **Artwork overlap in `lint()` — done (2026-09-25).** `TEXT_OVERLAP`,
+  `TEXT_ON_DIAGRAM`, `TEXT_OFF_CANVAS` (`lint._lint_words`), from
+  `arrange.words`/`diagrams`/`collisions`; `occupied` + a numpy `clear` move
+  a word clear (`tests/test_text_overlap.py`, 8 tests; AI_AUTHORING.md codes
+  table). Illustrate nudges later beats' text with them.
 - **Stable labels.** Labels are re-placed each step, so one can leap across
   the canvas when something else moves. Prefer the previous step's placement
   while it stays collision-free.

@@ -945,6 +945,16 @@ guess how big typeset text is; TutorDraw measures it.
   block pushed across would land on its reference, the very overlap this
   exists to prevent; one left running off the canvas is visible to lint and
   to the caller, who can report it.
+- **Lint the drawing's own words, but not a kit's.** `TEXT_OVERLAP` and
+  `TEXT_ON_DIAGRAM` cover free `Text` and equation groups only. A kit lays
+  out its own text (tick numbers, node text), which its tests check;
+  reporting it here would make every author answer for the kit.
+- **Against a kit, its ink, not its box.** A caption in the empty corner of a
+  graph's box is readable; one on the grid, a tick number or the curve is
+  not. Kit leaves are measured as text boxes, filled bounds and chunked
+  strokes (`stroke_boxes`), only near the word, so the check stays cheap.
+  `occupied` gives the same ink to `clear`, so a word slides just off a
+  graph's y-axis name rather than jumping past the whole graph.
 - **`clear` searches edge-aligned candidates.** The x positions just past an
   obstacle's or the canvas's edges, crossed with the same in y, include the
   nearest free position for axis-aligned boxes, and there are few of them,

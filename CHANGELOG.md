@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Lint for the drawing's own words.** `TEXT_OVERLAP` (error): two of the
+  scene's texts or equations lie on each other; `TEXT_ON_DIAGRAM` (warning):
+  one lies on a kit's lines, text or shading; `TEXT_OFF_CANVAS` (warning).
+  Text inside a kit is the kit's own layout and is not reported. The scan is
+  public in `tutordraw.arrange` (`words`, `diagrams`, `collisions`), with
+  `occupied` giving the boxes `clear` needs to move a word off everything.
+  `clear` now tests its candidates with numpy, so a graph's hundreds of ink
+  boxes are fast.
 - **Placing blocks by relation: `tutordraw.arrange`.** `place(size, reference,
   side, gap=, canvas=)` puts a block of a measured size to the right, left,
   below or above another's real bounds ("beside" picks the side with room),

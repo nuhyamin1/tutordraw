@@ -279,6 +279,15 @@ drawable so its measured bounds start at (x, y): text by its position,
 anything else (an equation's group) by its transform. Plain geometry: none
 of it changes a lesson or its schema.
 
+`words(scene)` lists the drawing's free words on screen, each (drawable,
+bounds): visible `Text` and equation groups not inside another kit, outside
+the annotation layer. `diagrams(scene)` lists the other kits' groups.
+`collisions(scene)` is every (word, what it lies on): another word, or a
+kit's group whose ink (text, filled shapes, strokes in small chunks) it
+touches. `occupied(scene, exclude=())` is the boxes a word must keep off,
+for `clear`. Pass `tutorial.layout(i).scene`. Lint reports the same as
+`TEXT_OVERLAP`, `TEXT_ON_DIAGRAM` and `TEXT_OFF_CANVAS`.
+
 ## Layout and lint (new in 0.2.0a1)
 
 `tutorial.layout(index, *, time=None) -> Composition` reports where everything

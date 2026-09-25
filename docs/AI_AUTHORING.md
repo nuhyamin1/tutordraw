@@ -37,6 +37,15 @@ steps exactly as rendering does and never changes the lesson or its output.
 | `LONG_CALLOUT` | info | A callout over 40 words |
 | `EMPTY_MARK` | warning | A mark has nothing to draw, e.g. an arrow between two shapes that share a centre |
 | `BUSY_STEP` | info | More than 6 annotations visible at once |
+| `TEXT_OVERLAP` | error | Two of the drawing's own texts or equations lie on each other |
+| `TEXT_ON_DIAGRAM` | warning | A text or equation lies on a kit's lines, text or shading (a graph's tick numbers, its curve) |
+| `TEXT_OFF_CANVAS` | warning | A text or equation runs past the canvas edge |
+
+The `TEXT_` codes are about the scene's own words, not annotations: every
+visible `Text` and `Equation` that is not part of another kit (tick numbers
+and a caption added to a graph belong to the graph). `tutordraw.arrange`
+has the same scan (`words`, `diagrams`, `collisions`) and `occupied` plus
+`clear` to move a word to the nearest free spot.
 
 A typical loop: author the steps, `issues = tutorial.lint()`, apply each `fix`
 (change an `anchor`, stagger with `show(..., at=)`, split a step, keep a panel),

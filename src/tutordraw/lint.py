@@ -297,6 +297,8 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 f"Keep a callout under {MAX_CALLOUT_WORDS} words; say the rest in "
                 "narration or split it across steps.", [a.target], [a.text])
 
+    _lint_words(composition, add)
+
     shown = len(annotations) + len(composition.marks)
     if shown > MAX_ANNOTATIONS:
         add("BUSY_STEP", "info",
@@ -310,6 +312,45 @@ def lint_step(tutorial, index: int) -> list[Issue]:
 
     order = {severity: i for i, severity in enumerate(SEVERITIES)}
     return sorted(issues, key=lambda issue: order[issue.severity])
+
+
+def _lint_words(composition, add) -> None:
+    """The drawing's own text and equations on each other, on a kit, or off the canvas.
+
+    Annotations keep themselves clear; a scene's captions, titles and
+    equations are placed by their author, who cannot see where they land.
+    """
+    from drawcv import Text
+
+    from .arrange import collisions, words
+
+    scene = composition.scene
+    names = {drawable_id: name for name, drawable_id in composition.drawables.items()}
+
+    def called(drawable) -> str:
+        if drawable.id in names:
+            return names[drawable.id]
+        return repr(drawable.text) if isinstance(drawable, Text) else (drawable.name or drawable.id)
+
+    free = words(scene)
+    free_ids = {word.id for word, _ in free}
+    for word, other in collisions(scene):
+        if other.id in free_ids:
+            add("TEXT_OVERLAP", "error",
+                f"{called(word)} and {called(other)} are drawn on top of each other.",
+                "Move one of them: put it beside, below or above the other instead of on it, "
+                "or make it smaller.", [called(word), called(other)])
+        else:
+            add("TEXT_ON_DIAGRAM", "warning",
+                f"{called(word)} is drawn over {called(other)}, on its lines or its own text.",
+                f"Put it beside, below or above {called(other)} instead of on it, or make "
+                f"{called(other)} smaller to leave room.", [called(word), called(other)])
+    for word, box in free:
+        if outside_area(box, scene.width, scene.height) > AREA_EPSILON:
+            add("TEXT_OFF_CANVAS", "warning",
+                f"{called(word)} runs past the canvas edge.",
+                "Move it onto the canvas, place it by something with room on that side, "
+                "or make it smaller.", [called(word)])
 
 
 def _lint_prompt(tutorial, index, step, composition, objects, labels, add) -> None:
