@@ -2,6 +2,20 @@
 
 Last updated: **2026-09-25**, Illustrate's known weaknesses (Claude Code).
 
+## Next: a scale restyle for Illustrate's phase 3 (2026-09-25)
+
+Illustrate's `HANDOFF.md` ("Next: phase 3") has the plan: when a board is
+full, an existing diagram scales down smoothly (to no less than about 70 %)
+or moves aside to make room. TutorDraw has no per-object scale today (the
+camera scales the whole board). A `scale` restyle would touch `model.Restyle`
+and `Step.restyle`, `attention._blend`/`residual_moves`/`final_bounds`,
+`collision.plan_annotations` and `Tutorial._placements_before` (placement
+uses translations only), the player's keyframes, serialization (schema v12,
+additive) and lint. Kit text (tick numbers) scales with its kit, so keep a
+readable floor; annotations stay full size. Unreleased so far: `arrange`,
+text lint, stable labels, origin numbers, `via`/`Axes.along` (v10),
+`animate(seconds=)` (v11). 606 tests pass.
+
 ## Unreleased: graphs you can draw into (2026-09-25)
 
 **Why**: in Illustrate, a model asked about integrals shaded the area under
