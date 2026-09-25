@@ -41,6 +41,10 @@ for the next line of working, a diagram shrinks a little or slides aside.
   axes and number_line, CHART_COVER 0.25, CHART_BACKDROP 0.75). Tests: 2 in
   `test_scale_restyle.py`, `tests/test_chart_over_artwork.py` (6). 630
   passed, 1 skipped.
+- Then (2026-09-25, from the owner's report): leaders end on the shape
+  (`layout.ink_point`, `INK_GAP` 6 px; not for text, equation pieces or
+  groups). `tests/test_leader_ink.py` (4). 634 passed, 1 skipped; golden
+  frames unchanged.
 - Known: DrawCV's raster renderer clips scaled built-in text (PNG and video
   only; the browser player writes native text). Bounds keep an unscaled half
   stroke of padding (about 1 px).

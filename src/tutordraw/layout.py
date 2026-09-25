@@ -14,6 +14,8 @@ from .themes import Theme
 # A font-engine size in pixels that matches the built-in renderer's height for
 # the same font_scale, measured on this DrawCV release.
 FONT_SIZE_PER_SCALE = 24
+# px a leader may stop short of its target's outline before it is taken on to it (`ink_point`).
+INK_GAP = 6.0
 
 
 def annotation_text(content: str, font_scale: float, theme: Theme, font) -> Text:
@@ -66,6 +68,50 @@ def anchor_points(bounds: BoundingBox) -> dict[str, Point]:
         "top": Point(cx, bounds.top), "bottom": Point(cx, bounds.bottom),
         "center": Point(cx, cy),
     }
+
+
+def ink_point(target: Drawable, point: Point) -> Point:
+    """The point of the target's own outline nearest `point`, where a leader to it should end.
+
+    A bounds point (`anchor_points`) is on a rectangle or a circle, but can be
+    in empty space beside a triangle, a slanted line or any irregular shape.
+    A point already on the target's fill or its stroke's ink, or within
+    INK_GAP of it, keeps `point`; so do a group (a kit: its bounds describe
+    it), text and a piece of an equation (a leader goes to text as a block),
+    and a target whose outline cannot be traced.
+    """
+    from drawcv import Group
+
+    from .arrange import _kit
+
+    if isinstance(target, (Group, Text)):
+        return point
+    parent = target.parent
+    while parent is not None:  # typeset maths is text too: a leader goes to its block
+        if _kit(parent) == "equation":
+            return point
+        parent = getattr(parent, "parent", None)
+    try:
+        if getattr(target, "fill", None) is not None and target.contains_point(point):
+            return point
+        contours = target.to_path(preserve_world_transform=True).flatten_world(tolerance=1.0)
+    except Exception:
+        return point
+    best, nearest = point, float("inf")
+    for points in contours:
+        for a, b in zip(points, points[1:]):
+            dx, dy = b.x - a.x, b.y - a.y
+            length = dx * dx + dy * dy
+            t = 0.0 if not length else max(0.0, min(1.0, ((point.x - a.x) * dx + (point.y - a.y) * dy) / length))
+            x, y = a.x + t * dx, a.y + t * dy
+            distance = (point.x - x) ** 2 + (point.y - y) ** 2
+            if distance < nearest:
+                best, nearest = Point(x, y), distance
+    # A point on the stroke's ink (bounds include half its width), or no farther off it than INK_GAP (the
+    # opening of a letter, a rounded corner), is on the shape already: unchanged.
+    stroke = getattr(target, "stroke", None)
+    half = (getattr(stroke, "width", 1.0) or 1.0) / 2 if stroke is not None else 0.0
+    return point if nearest <= (half + INK_GAP) ** 2 else best
 
 
 def measure_label(label: Label, theme: Theme | None = None, font=None) -> Measured:
@@ -180,6 +226,9 @@ def label_artwork(label: Label, target: Drawable, width: int, height: int,
         # Only under collision avoidance; without it the authored offset stands.
         panel = clamp_panel(panel, width, height)
     x, y = panel.x, panel.y
+    # The panel sits by a point of the target's bounds; the leader goes on to the shape itself.
+    if label.leader:
+        anchor = ink_point(target, anchor)
     # Intersect the ray from the panel center toward the target with its edge.
     dx, dy = anchor.x - panel.center.x, anchor.y - panel.center.y
     ratio = max(abs(dx) / (w / 2), abs(dy) / (h / 2))

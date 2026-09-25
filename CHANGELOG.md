@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Leaders end on the shape.** A label's or callout's leader was drawn to a
+  point of its target's bounding box (its top, its right, ...), which lies on
+  a rectangle or a circle but can be in empty space beside a triangle, a
+  slanted line or any irregular outline: a callout on a right triangle ended
+  in the air above the hypotenuse. It now ends at the point of the target's
+  own outline nearest that bounds point (`layout.ink_point`). The panel is
+  placed as before. Unchanged where the bounds point is already on the shape
+  (within 6 px of its ink), for text and pieces of an equation (a leader goes
+  to text as a block) and for groups.
+
 - **Scale several targets together.** A `restyle` pivot can also be a point
   `(x, y)`, in the coordinates of the target's parent; targets given the same
   point and scale shrink or grow as one picture, for an inset.

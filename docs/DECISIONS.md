@@ -1120,3 +1120,21 @@ overlap on purpose all the time (a scene in layers, forces drawn on a body):
 only these two kits, only a quarter or more of the shape under the chart, and
 not a shape three quarters of the chart lies on (a panel or card). Found in
 an author's lesson where a graph was drawn over a pen drawn two steps before.
+
+## Leaders end on the shape (unreleased, 2026-09-25)
+
+**Why**: an author saw a callout on a right triangle whose leader stopped in
+empty space above the hypotenuse: the leader went to the top middle of the
+triangle's bounding box. Placement stays bounds-based (the panel's slot, the
+collision search and the saved placements are all in terms of bounds
+anchors, and changing them would move every label); only the leader's end
+is taken on to the target's own outline, the point nearest the bounds anchor,
+traced with DrawCV's `to_path(...).flatten_world()`.
+
+- A bounds point within `INK_GAP` = 6 px of the ink (plus half the stroke,
+  which bounds include) is left alone, so rectangles, circles and ellipses
+  render exactly as before (every golden frame is unchanged).
+- Text is a block: `Text`, a piece of an equation (the formula's glyphs are
+  one path, and a letter's opening is not where a leader should go) and
+  groups (a kit's bounds describe it) keep the bounds point.
+- A point on the target's fill is already on it.
