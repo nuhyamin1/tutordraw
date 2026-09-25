@@ -927,6 +927,30 @@ The owner approved one bump carrying both things the format lacked.
   modify DrawCV, so this is documented instead.
 
 
+## Placing blocks by relation (unreleased, 2026-09-25)
+
+Found in Illustrate: DeepSeek Flash placed equations and captions by absolute
+pixels and stacked two equations on each other, one over a graph's axes, a
+caption on the tick numbers and a title on the y-axis name. The model has to
+guess how big typeset text is; TutorDraw measures it.
+
+- **By relation, from measured bounds.** `arrange.place` takes a size and the
+  reference's real bounds (for a kit that includes its tick numbers and axis
+  names), so a gap is a gap. It is plain geometry over `BoundingBox`, not a
+  new drawable or a lesson field, so any caller can use it for any block.
+- **Start-aligned, so blocks form columns.** Right/left line up tops,
+  below/above line up left edges: a chain of `below`s is a column of notes
+  without any column object.
+- **Slide, never cross.** Canvas limits move a block along its side only. A
+  block pushed across would land on its reference, the very overlap this
+  exists to prevent; one left running off the canvas is visible to lint and
+  to the caller, who can report it.
+- **`clear` searches edge-aligned candidates.** The x positions just past an
+  obstacle's or the canvas's edges, crossed with the same in y, include the
+  nearest free position for axis-aligned boxes, and there are few of them,
+  so the search is exact and deterministic rather than a spiral or a force
+  simulation. Ties go down, then right, to keep reading order.
+
 ## Graph constructions and shapes in graph units (unreleased, 2026-09-25)
 
 Found in Illustrate: asked to explain integrals, a model shaded "the area

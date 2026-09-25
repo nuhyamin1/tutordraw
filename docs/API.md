@@ -262,6 +262,23 @@ text. `tutorial.web_step(index)` returns one step's player payload, and
 player. Stream a lesson by sending each `web_step` as it is authored to a page
 running `TutorDrawPlayer`. See [WEB.md](WEB.md).
 
+## Placing blocks by relation (unreleased)
+
+`tutordraw.arrange.place(size, reference, side, *, gap=16, canvas=None,
+margin=8) -> BoundingBox` is where a block of `size` (width, height) goes on
+`side` of the `reference` box: `"right"` or `"left"` with tops level,
+`"below"` or `"above"` with left edges in line, or `"beside"` (right if it
+fits the canvas, else left if that fits, else the roomier side). With
+`canvas` it slides along its side to stay `margin` inside, but never crosses
+to the other side of the reference: a block with no room runs off the canvas
+for the caller to report. `clear(box, obstacles, *, canvas, margin=8)` is the
+nearest same-size box keeping `margin` from every obstacle and inside the
+canvas (the box itself when it is already clear; None when nothing fits),
+ties going to a move down, then right. `shift_to(drawable, x, y)` moves a
+drawable so its measured bounds start at (x, y): text by its position,
+anything else (an equation's group) by its transform. Plain geometry: none
+of it changes a lesson or its schema.
+
 ## Layout and lint (new in 0.2.0a1)
 
 `tutorial.layout(index, *, time=None) -> Composition` reports where everything

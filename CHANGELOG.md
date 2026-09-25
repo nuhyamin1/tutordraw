@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Placing blocks by relation: `tutordraw.arrange`.** `place(size, reference,
+  side, gap=, canvas=)` puts a block of a measured size to the right, left,
+  below or above another's real bounds ("beside" picks the side with room),
+  lined up on the top or left edge so a chain of blocks forms a column, and
+  slides it along that side to stay on the canvas. `clear(box, obstacles,
+  canvas=)` finds the nearest spot for a block that covers something, and
+  `shift_to(drawable, x, y)` moves a drawable's measured bounds there. For
+  callers (and models) that place text and equations: they no longer have to
+  guess sizes TutorDraw knows exactly.
 - **Graphs you can draw into.** `Axes` gains constructions computed from the
   curve's own function, so they meet it exactly: `region(f, g=0)` shades the
   area under a curve, between two curves, or above or below one;

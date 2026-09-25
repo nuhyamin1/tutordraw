@@ -1,6 +1,6 @@
 # AI handoff — start here
 
-Last updated: **2026-09-25**, graph constructions (Claude Code).
+Last updated: **2026-09-25**, Illustrate's known weaknesses (Claude Code).
 
 ## Unreleased: graphs you can draw into (2026-09-25)
 
@@ -33,10 +33,10 @@ AI_AUTHORING.md tells models never to shade or slice a graph in pixels.
 Illustrate's `HANDOFF.md` ("Next: known weaknesses to fix") has the full
 list with evidence. The parts that belong here:
 
-- **Measured relative placement.** Models placing text and equations by
-  pixels overlap them (they guess sizes TutorDraw knows exactly). Add a
-  layout helper that places blocks beside or below a target, or stacks them
-  in a column, from their real bounds with a gap.
+- **Measured relative placement — done (2026-09-25).** `tutordraw.arrange`
+  (`place`, `clear`, `shift_to`; `tests/test_arrange.py`, 10 tests; API.md,
+  DECISIONS.md). Illustrate's `placing.py` resolves `"beside"`/`"below"`/
+  `"above"` on text and equations with it. Unreleased; no schema change.
 - **Artwork overlap in `lint()`.** Its codes cover annotations only; nothing
   flags text on text, an equation on an equation, or either on a kit's group.
   Add a code for that, with a `fix` a model can act on.

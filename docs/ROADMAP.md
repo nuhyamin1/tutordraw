@@ -170,6 +170,8 @@ Design the whole batch before coding; persist it together.
 - [x] Graph constructions from the curve's function: `region`, `rectangles`,
   `tangent`, `secant`, `intersections`; own shapes in graph units with
   `clip` and `add` (unreleased).
+- [x] Placing blocks by relation from measured bounds (`tutordraw.arrange`:
+  `place`, `clear`, `shift_to`; unreleased).
 - [ ] Motion along a curve: a point sliding along y = f(x), or a tangent
   sweeping as x changes. `Step.animate` eases positions in straight lines, so
   today this is one step per position.
