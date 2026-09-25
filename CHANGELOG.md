@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Axes' numbers no longer collide at the origin.** With a range starting
+  just below 0 on a small graph, the "−0.5" (or "−1", "−0.2") tick numbers
+  sat on the "0" written below-left of the origin, and the x and y "−0.5"
+  met at the corner. A tick number that would touch one already written
+  (the origin's first) is now left out; its tick mark is still drawn.
 - **Labels stay put between steps.** A label shown in consecutive steps keeps
   its previous place while nothing new lands on it, instead of being placed
   afresh each step: in Illustrate a point's label leapt 222 px across the

@@ -179,3 +179,31 @@ def test_constructions_survive_save_and_load(axes, tmp_path):
     again = Axes.find(loaded)
     assert again.rectangles(square, (0, 2), 4).name.startswith("axes_rectangles")
     assert isinstance(loaded.get_target("area").drawable, Path)
+
+
+@pytest.mark.parametrize("box, x_range, y_range", [
+    ((100, 50, 400, 300), (-0.5, 2.5), (-0.5, 5)),
+    ((100, 50, 300, 200), (-0.5, 2.5), (-0.5, 5)),
+    ((100, 50, 300, 200), (-1, 3), (-1, 9)),
+    ((100, 50, 300, 200), (-0.2, 2), (-0.2, 4)),
+    ((100, 50, 300, 200), (-0.5, 5), (-2, 25)),
+    ((110, 40, 560, 440), (-0.5, 2.5), (-0.5, 5)),
+])
+def test_tick_numbers_never_touch_the_origin_or_each_other(box, x_range, y_range):
+    # With a range starting just below 0, the "-0.5" numbers sat on the "0" written below-left of the origin.
+    from drawcv import Text
+
+    tutorial = Tutorial(Scene(960, 540, background=Color.white()))
+    graph = Axes(tutorial, box=box, x_range=x_range, y_range=y_range)
+    texts = [child for child in graph.group.children if isinstance(child, Text)]
+    for index, first in enumerate(texts):
+        for second in texts[index + 1:]:
+            a, b = first.get_bounds(), second.get_bounds()
+            touching = (min(a.right, b.right) - max(a.left, b.left) > -2
+                        and min(a.bottom, b.bottom) - max(a.top, b.top) > -2)
+            assert not touching, (first.text, second.text)
+    assert "0" in [text.text for text in texts]  # the origin keeps its number
+    ticks = [child for child in graph.group.children if isinstance(child, Line)
+             and abs(child.start.x - child.end.x) < 1e-9 and abs(child.end.y - child.start.y) == 8]
+    xs = graph._ticks(graph.x_range, graph.x_step)
+    assert len(ticks) == len([x for x in xs if abs(x) >= graph.x_step / 2])  # every tick mark is still drawn

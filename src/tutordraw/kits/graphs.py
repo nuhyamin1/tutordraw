@@ -139,6 +139,9 @@ def format_number(value: float, step: float) -> str:
     return "0" if text in ("-0", "-0.0", "-0.00") or float(text) == 0 else text
 
 
+NUMBER_GAP = 2.0  # px kept between two tick numbers on Axes
+
+
 class Axes:
     """A pair of labelled axes with a coordinate system you can plot into.
 
@@ -250,20 +253,34 @@ class Axes:
                              fill=FillStyle(color=Color(*self.color)), head_length=10, head_width=8)
         parts += [self._x_axis, self._y_axis]
         crossing = (self.x_range[0] < 0 < self.x_range[1]) and (self.y_range[0] < 0 < self.y_range[1])
+        origin = self._text("0", self.to_scene(0, 0), "below-left") if crossing else None
+        # A number that would touch one already written is left out, its tick still drawn: with a
+        # range starting just below 0, "-0.5" sat on the origin's "0", and the two "-0.5"s met at
+        # the corner. The origin's number is written first, then x's, then y's.
+        written = [origin.get_bounds()] if origin is not None else []
+
+        def number(text: Text) -> None:
+            box = text.get_bounds()
+            if not any(box.left < b.right + NUMBER_GAP and b.left < box.right + NUMBER_GAP
+                       and box.top < b.bottom + NUMBER_GAP and b.top < box.bottom + NUMBER_GAP
+                       for b in written):
+                written.append(box)
+                parts.append(text)
+
         for x in xs:
             if crossing and abs(x) < self.x_step / 2:
                 continue  # the origin is labelled once, below
             p = self.to_scene(x, oy)
             parts.append(Line(start=Point(p.x, p.y - 4), end=Point(p.x, p.y + 4), stroke=thin))
-            parts.append(self._text(format_number(x, self.x_step), p, "below"))
+            number(self._text(format_number(x, self.x_step), p, "below"))
         for y in ys:
             if crossing and abs(y) < self.y_step / 2:
                 continue
             p = self.to_scene(ox, y)
             parts.append(Line(start=Point(p.x - 4, p.y), end=Point(p.x + 4, p.y), stroke=thin))
-            parts.append(self._text(format_number(y, self.y_step), p, "left"))
-        if crossing:
-            parts.append(self._text("0", self.to_scene(0, 0), "below-left"))
+            number(self._text(format_number(y, self.y_step), p, "left"))
+        if origin is not None:
+            parts.append(origin)
         if x_label:
             end = self.to_scene(self.x_range[1], oy)
             label = Text(text=x_label, position=Point(end.x + 18, end.y - 10),

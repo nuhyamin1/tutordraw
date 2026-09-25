@@ -48,9 +48,11 @@ list with evidence. The parts that belong here:
   and memoises them (`_layout_key`); animated steps chunk still strokes
   (`tests/test_stable_labels.py`, 6 tests; API.md "Across frames",
   DECISIONS.md). Goldens unchanged.
-- **Origin numbers collide on Axes.** With a range starting just below 0
-  (e.g. −0.5), the "−0.5" tick numbers and the "0" written below-left of the
-  origin overlap (`kits/graphs.py`, `Axes._draw`).
+- **Origin numbers collide on Axes — done (2026-09-25).** `Axes._draw`
+  writes the origin's "0" first and leaves out any tick number that would
+  come within `NUMBER_GAP` (2 px) of a number already written; the tick mark
+  stays (`test_tick_numbers_never_touch_the_origin_or_each_other`, 6 cases).
+  Goldens unchanged.
 - **Motion along a path** (above and ROADMAP P5).
 
 ## Current state
