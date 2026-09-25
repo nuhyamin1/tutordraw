@@ -271,9 +271,12 @@ class Tutorial:
         width, height = working.width, working.height
         # Easing shapes the artwork blend; reveals use plain elapsed seconds.
         eased = progress
-        if step.easing is not None and progress < 1.0:
+        if step.easing is not None and step.motion is not None and step.motion < step.duration:
+            # The motion takes only the step's first `motion` seconds, then holds.
+            eased = min(1.0, progress * step.duration / step.motion)
+        if step.easing is not None and eased < 1.0:
             from drawcv import get_easing
-            eased = get_easing(step.easing)(progress)
+            eased = get_easing(step.easing)(eased)
         elif step.easing is None:
             eased = 1.0
         # Artwork changes land before emphasis, so attached annotations follow them.

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Quick motion in a longer step.** `animate(easing, seconds=)` finishes the
+  step's motion that long after it starts and holds still for the rest, so
+  a tutor can slide its working up and fade old lines in a moment, then
+  write. The player reads `motion` from the step payload. **Lesson schema
+  v11** saves it per step; v1 to v10 still load.
 - **Moving along a path.** `restyle(..., via=[(dx, dy), ...])` makes an
   animated move run through those offsets, at an even speed along the
   polyline, instead of in a straight line; `Axes.along(f, a, b)` samples a

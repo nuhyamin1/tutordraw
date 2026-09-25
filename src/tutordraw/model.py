@@ -174,6 +174,7 @@ class Step:
         self._highlights: dict[str, Highlight] = {}
         self._restyles: dict[str, Restyle] = {}
         self._easing: str | None = None
+        self._motion: float | None = None
         self._reveals: dict[str, float] = {}
         self._marks: list[Mark] = []
         self._draw: set[str] = set()
@@ -520,15 +521,29 @@ class Step:
         """The easing curve name when this step animates, otherwise None."""
         return self._easing
 
-    def animate(self, easing: str = "ease_in_out") -> Step:
+    @property
+    def motion(self) -> float | None:
+        """Seconds the animation takes from the start of the step, or None for its whole duration."""
+        return self._motion
+
+    def animate(self, easing: str = "ease_in_out", *, seconds: float | None = None) -> Step:
         """Interpolate into this step's restyled state over its duration.
 
         Without this the step is a hard cut, which stays the default. The
         animation runs from the previous step's state, holds through any
         pause, and does not change what `render_step` produces.
+
+        `seconds` finishes the motion that long after the step starts and
+        holds still for the rest, so a step can make room in a moment and
+        then write; reveals and draw-on keep the step's own clock. Longer
+        than the step, it takes the whole step.
         """
         from drawcv import get_easing
 
+        if seconds is not None:
+            seconds = finite_number(seconds, "seconds", minimum=0)
+            if seconds == 0:
+                raise ValidationError("seconds must be positive")
         if not isinstance(easing, str):
             raise ValidationError("easing must be a string")
         try:
@@ -538,11 +553,13 @@ class Step:
         # DrawCV matches names case-insensitively; store one canonical spelling
         # so saved lessons and step.easing are predictable.
         self._easing = easing.lower()
+        self._motion = seconds
         return self
 
     def hard_cut(self) -> Step:
         """Undo animate(); the step snaps to its state at the cut."""
         self._easing = None
+        self._motion = None
         return self
 
     @property

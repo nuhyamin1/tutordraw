@@ -89,6 +89,9 @@ shape's fill or a Text object's colour and is refused for Line and Group.
 `opacity` is absolute, and `dim_others` still multiplies on top of it.
 `visible=False` hides the target, after which emphasising it raises.
 
+`step.animate(easing, seconds=...)` (unreleased, schema v11) finishes a step's
+motion in its first `seconds` and holds for the rest (`step.motion`).
+
 `via` (unreleased, schema v10) lists `(dx, dy)` offsets an animated step's
 move passes through on its way to `move`, at an even speed; it needs `move`.
 `Axes.along(f, x_from, x_to, samples=32, start=None)` samples a curve into

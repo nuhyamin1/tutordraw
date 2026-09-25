@@ -23,8 +23,8 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 10
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, SCHEMA_VERSION)
+SCHEMA_VERSION = 11
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, SCHEMA_VERSION)
 # Restyle fields each schema version introduced.
 RESTYLE_FIELDS_ADDED = {10: ("via",)}
 PROMPT_FIELDS = {"text", "answer_ids", "correct", "wrong", "hint", "attempts"}
@@ -126,6 +126,7 @@ def to_dict(tutorial: Tutorial) -> dict:
                        "dim": None if step._dim_opacity is None else {
                            "target_ids": [t.id for t in step._focus], "opacity": step._dim_opacity},
                        "easing": step.easing,
+                       "motion": step.motion,
                        "reveals": step.reveals,
                        "restyles": [{"target_id": r.target.id,
                                      "move": None if r.move is None else list(r.move),
@@ -246,9 +247,10 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             reveal_fields = {"reveals"} if version >= 5 else set()
             mark_fields = {"marks", "draw", "camera"} if version >= 8 else set()
             spoken_fields = {"narration", "prompt"} if version >= 9 else set()
+            motion_fields = {"motion"} if version >= 11 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
                     | timing_fields | restyle_fields | easing_fields | reveal_fields | mark_fields
-                    | spoken_fields, where)
+                    | spoken_fields | motion_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -305,7 +307,7 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                     raise LessonFormatError(f"{where}.camera: {exc}") from exc
             if item.get("easing") is not None:
                 try:
-                    step.animate(item["easing"])
+                    step.animate(item["easing"], seconds=item.get("motion"))
                 except ValidationError as exc:
                     raise LessonFormatError(f"{where}.easing: {exc}") from exc
             restyled = set()

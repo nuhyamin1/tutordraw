@@ -14,8 +14,13 @@ Moon slides into the shadow and fades to red.
 
 ## API
 
-`step.animate(easing="ease_in_out") -> Step` marks the step animated.
-`step.hard_cut() -> Step` undoes it. `step.easing` reports the curve or `None`.
+`step.animate(easing="ease_in_out", *, seconds=None) -> Step` marks the step
+animated. `step.hard_cut() -> Step` undoes it. `step.easing` reports the curve
+or `None`. With `seconds` (unreleased, schema v11) the motion finishes that
+long after the step starts and the rest of the step holds still
+(`step.motion`), so a step can make room on a full board in a moment and
+then write; reveals and draw-on keep the step's own clock, and the player
+gets `motion` in the step payload.
 
 Easing names come from DrawCV, which owns both the curves and their
 validation: `linear`, `ease_in`, `ease_out`, `ease_in_out` and their `_quad`,

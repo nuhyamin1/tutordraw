@@ -83,7 +83,7 @@ def test_the_player_gets_keyframes_along_the_path():
 def test_via_is_saved_and_loaded(tmp_path):
     tutorial, _ = lesson()
     document = tutorial.to_dict()
-    assert document["schema_version"] == SCHEMA_VERSION == 10
+    assert document["schema_version"] == SCHEMA_VERSION >= 10  # via came in v10
     jsonschema = pytest.importorskip("jsonschema")
     jsonschema.validate(document, packaged_schema())
     restyle = document["steps"][1]["restyles"][0]

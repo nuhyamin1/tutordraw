@@ -28,6 +28,14 @@ AI_AUTHORING.md tells models never to shade or slice a graph in pixels.
 - **Next**: see "TutorDraw's half of Illustrate's known weaknesses" below;
   all five are done and unreleased.
 
+## Unreleased: motion in a step's first seconds (2026-09-25)
+
+`Step.animate(easing, seconds=)` / `step.motion` (`tutorial._compose` rescales
+the eased progress; `web.web_step` sends `motion` and spans keyframes over it;
+`player.js` holds after it; schema v11, `lesson-v11.schema.json`, conftest
+`STEP_FIELDS_ADDED[11]`). For Illustrate's board that glides its working up to
+make room. `tests/test_motion_seconds.py`, 5 tests; 606 pass.
+
 ## Next: TutorDraw's half of Illustrate's known weaknesses (2026-09-25)
 
 Illustrate's `HANDOFF.md` ("Next: known weaknesses to fix") has the full

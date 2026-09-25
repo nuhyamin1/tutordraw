@@ -290,12 +290,14 @@
     _apply() {
       const step = this.steps[this.index];
       const t = this.time, done = t >= step.duration;
+      // The motion may take only the step's first seconds (`motion`); it then holds while the step goes on.
+      const span = step.motion || step.duration, moved = t >= span;
       // One earlier frame eases toward the final one with DrawCV's curve;
       // several are evenly timed with easing applied, so blend neighbours.
       const segments = step.frames ? step.frames.length : 0;
       let seg = Math.max(segments - 1, 0), local = 1;
-      if (!done && segments) {
-        const p = Math.max(t / step.duration, 0);
+      if (!moved && segments) {
+        const p = Math.max(t / span, 0);
         if (segments === 1) {
           seg = 0;
           local = ease(step.easing, p);

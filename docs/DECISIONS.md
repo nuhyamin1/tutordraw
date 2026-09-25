@@ -927,6 +927,22 @@ The owner approved one bump carrying both things the format lacked.
   modify DrawCV, so this is documented instead.
 
 
+## Motion in the first seconds of a step (unreleased, 2026-09-25)
+
+Illustrate makes room on a full board by gliding its working column up and
+fading the oldest line before it writes the next. An animated step eased
+over its whole duration, so that glide would crawl for eight seconds under
+the writing.
+
+- **A property of the animation, not an extra step.** A separate short step
+  would shift every step index a caller keeps (Illustrate maps beats to
+  steps one to one) and show up in the player's step dots. `seconds` only
+  rescales the eased progress; reveals, draw-on and pauses keep the step's
+  clock, and a value longer than the step is the whole step.
+- **The player gets it as data** (`motion`), and keyframes span only the
+  motion, so the browser and `render_at_time` agree.
+- **Schema v11, additive**, like v10.
+
 ## Motion along a path (unreleased, 2026-09-25)
 
 Illustrate's lessons could only show a point at one place per step:

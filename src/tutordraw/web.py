@@ -76,13 +76,17 @@ def web_step(tutorial, index: int) -> dict:
         # A move along a path is not a linear blend either: send it as keyframes too.
         path = any(restyle.via for restyle in step.restyles)
         count = max(CAMERA_KEYFRAMES if camera_moves else 1, PATH_KEYFRAMES if path else 1)
-        # Everything present and drawn, so every element has a state to blend.
-        frames = [frame_svg(tutorial, index, tutorial._compose(index, k / count, complete=True))
+        # Everything present and drawn, so every element has a state to blend. Frames span the motion,
+        # which may be only the step's first seconds (`motion`, which the player reads).
+        span = min(1.0, step.motion / step.duration) if step.motion is not None else 1.0
+        frames = [frame_svg(tutorial, index, tutorial._compose(index, span * k / count, complete=True))
                   for k in range(count)]
         easing = None if count > 1 else easing_table(step.easing)
     return {"index": index, "id": step.id, "title": step.title,
             "duration": step.duration, "pause": step.pause,
             "easing": easing, "frames": frames, "svg": end,
+            "motion": step.motion if step.easing is not None and step.motion is not None
+            and step.motion < step.duration else None,
             "description": tutorial.describe(index),
             "narration": [[w.text, w.start, w.end] for w in step.narration] or None,
             "prompt": prompt_payload(tutorial, step.prompt)}

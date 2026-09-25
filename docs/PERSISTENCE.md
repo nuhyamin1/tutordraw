@@ -55,10 +55,17 @@ revised.save_json("lesson-revised.tutordraw.json")
 
 This fragment assumes a second step with a callout. The original lesson object and file remain unchanged. For adding teaching content, prefer the regular `step`, `show`, `highlight`, `explain`, and `dim_others` methods.
 
-## Current format: v10
+## Current format: v11
 
-New saves write lesson schema v10, packaged as `lesson-v10.schema.json`. v10
-adds one restyle field, `via`: null, or the 1-256 `[dx, dy]` offsets an
+New saves write lesson schema v11, packaged as `lesson-v11.schema.json`. v11
+adds one step field, `motion`: null, or the seconds an animated step's motion
+takes from its start (`animate(seconds=)`). v1 to v10 still load, with
+motion over the whole step. A v11 file cannot be opened by a build that only
+knows v10.
+
+### v10
+
+v10 adds one restyle field, `via`: null, or the 1-256 `[dx, dy]` offsets an
 animated move passes through (see [ANIMATION.md](ANIMATION.md)). v1 to v9
 still load, with straight moves. A v10 file cannot be opened by a build that
 only knows v9.
