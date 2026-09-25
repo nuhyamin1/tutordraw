@@ -4,12 +4,12 @@ from pathlib import Path
 
 from drawcv import Canvas, Drawable, Line, OpenCVRenderer, Scene
 
-from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, translate, typography_errors
+from .adapters.drawcv import copy_scene, index_scene, load_font, overlay_layer, typography_errors
 from .errors import ValidationError
 from .layout import label_artwork
 from .model import Callout, Label, Step, Target
-from .attention import (apply_attention, apply_restyles, final_bounds, highlight_artwork,
-                        residual_moves)
+from .attention import (apply_attention, apply_pose, apply_restyles, final_bounds, highlight_artwork,
+                        pose_at, residual_moves, restyle_anchors)
 from .collision import plan_annotations
 from .composition import AnnotationLayout, Composition, HighlightLayout, MarkLayout
 from .lint import Issue
@@ -97,8 +97,15 @@ class Tutorial:
         from .serialization import load_json
         return load_json(path, tutorial_type=cls, font=font)
 
-    def target(self, drawable: Drawable, *, name: str | None = None) -> Target:
-        """Register a scene member, including a nested group child."""
+    def target(self, drawable: Drawable, *, name: str | None = None, obstacle: bool | None = None) -> Target:
+        """Register a scene member, including a nested group child.
+
+        A registered target keeps labels off its artwork. With obstacle=False it
+        does not: for a group registered only to restyle it (scale, move) that
+        stands for the targets inside it, which keep labels off themselves.
+        """
+        if obstacle is not None and not isinstance(obstacle, bool):
+            raise ValidationError("obstacle must be a boolean")
         if not isinstance(drawable, Drawable) or index_scene(self.scene).get(drawable.id) is not drawable:
             raise ValidationError("Target drawable must belong to the source scene")
         if name is not None and (not isinstance(name, str) or not name.strip()):
@@ -107,10 +114,12 @@ class Tutorial:
         if existing is not None:
             if name is not None and name != existing.name:
                 raise ValidationError("Drawable is already registered with a different name")
+            if obstacle is not None and obstacle != existing.obstacle:
+                raise ValidationError("Drawable is already registered with a different obstacle setting")
             return existing
         if name is not None and any(t.name == name for t in self._targets.values()):
             raise ValidationError(f"Target name is already in use: {name!r}")
-        target = Target(self, drawable.id, name)
+        target = Target(self, drawable.id, name, obstacle=obstacle is not False)
         self._targets[drawable.id] = target
         return target
 
@@ -284,7 +293,9 @@ class Tutorial:
         # that is the other end of the sweep, so every frame plans identically.
         prior = self._steps[index - 1] if index else None
         animating = eased < 1.0
-        apply_restyles(objects, step, prior if animating else None, eased)
+        # The points scaled targets scale about, from the source, before anything moves.
+        anchors = restyle_anchors(objects, step, prior)
+        apply_restyles(objects, step, prior if animating else None, eased, anchors)
 
         # Frame the artwork. Each end is fitted to its own step's end-state
         # bounds, measured before the camera exists, so zooming never feeds back.
@@ -292,11 +303,11 @@ class Tutorial:
         if step.camera is not None or (animating and prior is not None and prior.camera is not None):
             wanted = {t.drawable_id for t in (step.camera.targets if step.camera else ())}
             end_view = cam.fit(step.camera, final_bounds(
-                objects, wanted, residual_moves(step, prior, eased)), width, height)
+                objects, wanted, residual_moves(step, prior, eased, anchors=anchors)), width, height)
             if animating and prior is not None and prior.camera is not None:
                 earlier = {t.drawable_id for t in prior.camera.targets}
                 start_view = cam.fit(prior.camera, final_bounds(
-                    objects, earlier, residual_moves(step, prior, eased, 0.0)), width, height)
+                    objects, earlier, residual_moves(step, prior, eased, 0.0, anchors)), width, height)
         view = None
         groups = []
         if end_view is not None or start_view is not None:
@@ -333,11 +344,11 @@ class Tutorial:
             plan = {}
             if self.theme.avoid_collisions:
                 plan = plan_annotations(
-                    step, objects, [t.drawable_id for t in self._targets.values()],
+                    step, objects, [t.drawable_id for t in self._targets.values() if t.obstacle],
                     width=width, height=height, theme=self.theme,
                     font=self._font, previous=prior, progress=eased,
                     camera_at=camera_at, mark_boxes=mark_boxes if step.marks else None,
-                    preferred=self._placements_before(index))
+                    preferred=self._placements_before(index), anchors=anchors)
             for label in (*step.labels, *step.callouts):
                 # A delay past the step's duration simply reveals at its end.
                 drawn = step.draw_progress(label, elapsed)
@@ -388,11 +399,11 @@ class Tutorial:
         opacity and visibility do not move a label, so they are left out.
         """
         steps = tuple((s.id, tuple(label.id for label in s.labels),
-                       tuple((r.target.drawable_id, r.move, r.via) for r in s.restyles),
+                       tuple((r.target.drawable_id, r.move, r.via, r.scale, r.pivot) for r in s.restyles),
                        s.highlights, tuple(mark.id for mark in s.marks), s.easing is not None, s.camera)
                       for s in self._steps[:index + 1])
         source = index_scene(self.scene)
-        targets = tuple((t.drawable_id, repr(source[t.drawable_id].transform))
+        targets = tuple((t.drawable_id, repr(source[t.drawable_id].transform), t.obstacle)
                         for t in self._targets.values() if t.drawable_id in source)
         return steps, targets, self.theme, id(self._font), self.scene.width, self.scene.height
 
@@ -432,19 +443,21 @@ class Tutorial:
             memo.clear()
         working = copy_scene(self.scene)
         objects = index_scene(working)
-        home = {name: (obj.transform.translation_x, obj.transform.translation_y) for name, obj in objects.items()}
+        home = {name: (obj.transform.translation_x, obj.transform.translation_y, obj.transform.scale_x,
+                       obj.transform.scale_y, obj.transform.pivot) for name, obj in objects.items()}
         preferred = memo.get(key(start - 1), {}) if start else {}
         width, height = working.width, working.height
-        targets = [t.drawable_id for t in self._targets.values()]
+        targets = [t.drawable_id for t in self._targets.values() if t.obstacle]
         for p in range(start, index):
             step = self._steps[p]
             prior = self._steps[p - 1] if p else None
             for restyle in (*(prior.restyles if prior else ()), *step.restyles):
-                obj = objects[restyle.target.drawable_id]
-                obj.transform.translation_x, obj.transform.translation_y = home[restyle.target.drawable_id]
-            for restyle in step.restyles:
-                if restyle.move is not None:
-                    translate(objects[restyle.target.drawable_id], *restyle.move)
+                t = objects[restyle.target.drawable_id].transform
+                (t.translation_x, t.translation_y, t.scale_x, t.scale_y,
+                 t.pivot) = home[restyle.target.drawable_id]
+            anchors = restyle_anchors(objects, step, prior)
+            for restyle in step.restyles:  # where the step ends: its moves and scales, nothing else
+                apply_pose(objects[restyle.target.drawable_id], *pose_at(None, restyle, 1.0, anchors))
             placed = {}
             if step.labels and step.camera is None and not (step.easing and prior is not None
                                                             and prior.camera is not None):
@@ -456,7 +469,7 @@ class Tutorial:
                     plan = plan_annotations(step, objects, targets, width=width, height=height,
                                             theme=self.theme, font=self._font, previous=prior, progress=1.0,
                                             mark_boxes=marks if step.marks else None, preferred=preferred,
-                                            costs=costs)
+                                            costs=costs, anchors=anchors)
                 placed = {label.id: (plan[label.id][0], costs[label.id]) for label in step.labels
                           if label.id in plan}
             memo[key(p)] = preferred = placed

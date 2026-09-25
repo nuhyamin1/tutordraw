@@ -55,9 +55,18 @@ revised.save_json("lesson-revised.tutordraw.json")
 
 This fragment assumes a second step with a callout. The original lesson object and file remain unchanged. For adding teaching content, prefer the regular `step`, `show`, `highlight`, `explain`, and `dim_others` methods.
 
-## Current format: v11
+## Current format: v12
 
-New saves write lesson schema v11, packaged as `lesson-v11.schema.json`. v11
+New saves write lesson schema v12, packaged as `lesson-v12.schema.json`. v12
+adds two restyle fields, `scale` (null, or a factor above 0 and at most 10)
+and `pivot` (null, or the point of the target's bounds it scales about), and
+one target field, `obstacle` (whether its artwork keeps labels off). v1 to
+v11 still load, with no scaling and every target an obstacle. A v12 file
+cannot be opened by a build that only knows v11.
+
+### v11
+
+v11, packaged as `lesson-v11.schema.json`. v11
 adds one step field, `motion`: null, or the seconds an animated step's motion
 takes from its start (`animate(seconds=)`). v1 to v10 still load, with
 motion over the whole step. A v11 file cannot be opened by a build that only

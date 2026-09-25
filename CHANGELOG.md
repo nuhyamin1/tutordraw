@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- **Scaling one target.** `restyle(..., scale=0.8, pivot="top_left")` makes a
+  target's artwork smaller or larger about one of nine points of its bounds,
+  which stays put; everything inside it scales too, its own text included
+  (a graph's tick numbers), while labels, callouts and marks on its parts
+  follow and keep their size. It glides like a move in an animated step, in
+  a straight line, so the player's one start frame is exact. For Illustrate's
+  full board, where a diagram makes room for the working. New lint warning
+  `SCALED_TEXT_SMALL` when the drawing's own text ends under 12 px. **Lesson
+  schema v12** saves `scale` and `pivot` on restyles and `obstacle` on
+  targets; v1 to v11 still load.
+- **Targets that are not obstacles.** `tutorial.target(group, obstacle=False)`
+  registers a group (to restyle it) without making its whole box keep labels
+  off: the targets inside it still do. Registering a graph used to push its
+  own points' labels off it.
+- **Labels no longer jump during a move of a graph.** The drawing's own words
+  (tick numbers), which labels try not to cover, were measured where the
+  frame had them rather than where the step ends, so a label on a graph
+  that was moving or shrinking could switch sides for a frame or two.
+
 - **Quick motion in a longer step.** `animate(easing, seconds=)` finishes the
   step's motion that long after it starts and holds still for the rest, so
   a tutor can slide its working up and fade old lines in a moment, then

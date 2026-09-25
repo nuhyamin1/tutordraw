@@ -1,5 +1,6 @@
 """Step-local artwork changes, focus and emphasis, applied only to a working copy."""
 
+from contextlib import contextmanager
 import math
 
 from drawcv import Color, Drawable, Group, Point, Rectangle, Scene, StrokeStyle
@@ -92,15 +93,83 @@ def offset_at(start, end, progress: float) -> tuple[float, float]:
     return (_lerp(a[0], b[0], t), _lerp(a[1], b[1], t))
 
 
-def _blend(obj: Drawable, start, end, progress: float) -> None:
+def _scale(restyle) -> float:
+    return 1.0 if restyle is None or restyle.scale is None else restyle.scale
+
+
+def pivot_point(box, pivot: str) -> tuple[float, float]:
+    """The point of `box` a pivot name picks: "top_left", "center", "bottom", ..."""
+    vertical, horizontal = {"top": ("top", "center"), "bottom": ("bottom", "center"),
+                            "left": ("center", "left"), "right": ("center", "right"),
+                            "center": ("center", "center")}.get(pivot) or pivot.split("_")
+    x = {"left": box.x, "center": box.x + box.width / 2, "right": box.x + box.width}[horizontal]
+    y = {"top": box.y, "center": box.y + box.height / 2, "bottom": box.y + box.height}[vertical]
+    return x, y
+
+
+def restyle_anchors(objects: dict[str, Drawable], *steps) -> dict[str, "BoundingBox"]:
+    """Each scaled target's bounds in its parent's space, as the source draws it.
+
+    A pivot names a point of these, so call this before any restyle is
+    applied: the point a target scales about never depends on the frame.
+    """
+    anchors = {}
+    for step in steps:
+        for restyle in (step.restyles if step is not None else ()):
+            key = restyle.target.drawable_id
+            if restyle.scale is not None and key not in anchors and key in objects:
+                anchors[key] = objects[key].get_bounds_in_parent()
+    return anchors
+
+
+def _centre(restyle, anchors) -> tuple[float, float]:
+    """(1 - scale) times the pivot: the shift that keeps the pivot in place as the target scales."""
+    s = _scale(restyle)
+    if s == 1.0:
+        return 0.0, 0.0
+    x, y = pivot_point(anchors[restyle.target.drawable_id], restyle.pivot)
+    return (1 - s) * x, (1 - s) * y
+
+
+def pose_at(start, end, progress: float, anchors=None) -> tuple[float, float, float]:
+    """(scale, dx, dy): where a target's pose has got to at `progress`, in its parent's space.
+
+    A point the source draws at u is drawn at scale * u + (dx, dy). Scale,
+    the pivot's shift and the move each go in a straight line (the move along
+    `via` when it has one), so every point of the artwork does too, and a
+    player blending the two end frames linearly shows exactly this.
+    """
+    anchors = anchors or {}
+    s = _lerp(_scale(start), _scale(end), progress)
+    c0, c1 = _centre(start, anchors), _centre(end, anchors)
+    dx, dy = offset_at(start, end, progress)
+    return s, _lerp(c0[0], c1[0], progress) + dx, _lerp(c0[1], c1[1], progress) + dy
+
+
+def apply_pose(obj: Drawable, ratio: float, dx: float, dy: float) -> None:
+    """Map a drawable's artwork by x -> ratio * x + (dx, dy) in its parent's space."""
+    if ratio == 1.0:
+        if dx or dy:
+            translate(obj, dx, dy)
+        return
+    transform = obj.transform
+    if transform.pivot is None:  # fix DrawCV's dynamic pivot where it is now, so nothing jumps
+        transform.pivot = obj.get_geometry_bounds().center
+    pivot = transform.pivot
+    tx, ty = transform.translation_x, transform.translation_y
+    transform.translation_x = tx + (ratio - 1) * (tx + pivot.x) + dx
+    transform.translation_y = ty + (ratio - 1) * (ty + pivot.y) + dy
+    transform.scale_x *= ratio
+    transform.scale_y *= ratio
+
+
+def _blend(obj: Drawable, start, end, progress: float, anchors=None) -> None:
     """Move one drawable from the previous step's state toward this step's.
 
     An unspecified property on either side means "whatever the source says",
     so a target restyled in one step slides back when the next leaves it alone.
     """
-    dx, dy = offset_at(start, end, progress)
-    if dx or dy:
-        translate(obj, dx, dy)
+    apply_pose(obj, *pose_at(start, end, progress, anchors))
 
     if (start is not None and start.opacity is not None) or             (end is not None and end.opacity is not None):
         base = obj.opacity
@@ -127,64 +196,81 @@ def _blend(obj: Drawable, start, end, progress: float) -> None:
 
 
 def apply_restyles(objects: dict[str, Drawable], step: Step, previous: Step | None = None,
-                   progress: float = 1.0) -> None:
+                   progress: float = 1.0, anchors=None) -> None:
     """Apply artwork changes first, so labels, highlights and dimming see them.
 
     `previous` and `progress` are supplied only while animating; at progress 1
-    the result is exactly the step's own restyled state.
+    the result is exactly the step's own restyled state. `anchors` are the
+    `restyle_anchors` of both steps; by default they are taken from the
+    objects as they are, which must then be as the source draws them.
     """
+    if anchors is None:
+        anchors = restyle_anchors(objects, step, previous)
     current = {r.target.drawable_id: r for r in step.restyles}
     earlier = {r.target.drawable_id: r
                for r in (previous.restyles if previous is not None else ())}
     for drawable_id in {**earlier, **current}:
         _blend(objects[drawable_id], earlier.get(drawable_id),
-               current.get(drawable_id), progress)
+               current.get(drawable_id), progress, anchors)
 
 
 def residual_moves(step: Step, previous: Step | None, progress: float,
-                   target: float = 1.0) -> dict[str, tuple[float, float]]:
-    """The translation taking each restyled target from `progress` to `target`.
+                   target: float = 1.0, anchors=None) -> dict[str, tuple[float, float, float]]:
+    """(dx, dy, ratio) taking each restyled target from `progress` to `target`.
 
-    Adding it to the current frame puts a target where the step ends, which is
-    the geometry label placement is decided against; `target=0` reaches the
-    other end of an animated step instead. At progress 1 the default is empty,
-    so a static render pays nothing for it.
+    Applied to the current frame (`posed`), it puts a target where the step
+    ends, which is the geometry label placement is decided against;
+    `target=0` reaches the other end of an animated step instead. At
+    progress 1 the default is empty, so a static render pays nothing for it.
+    `anchors` as for `apply_restyles`; only a restyle that scales needs them.
     """
     current = {r.target.drawable_id: r for r in step.restyles}
     earlier = {r.target.drawable_id: r
                for r in (previous.restyles if previous is not None else ())}
-    result: dict[str, tuple[float, float]] = {}
+    result: dict[str, tuple[float, float, float]] = {}
     for drawable_id in {**earlier, **current}:
         start, end = earlier.get(drawable_id), current.get(drawable_id)
-        there, here = offset_at(start, end, target), offset_at(start, end, progress)
-        dx, dy = there[0] - here[0], there[1] - here[1]
-        if dx or dy:
-            result[drawable_id] = (dx, dy)
+        s_there, x_there, y_there = pose_at(start, end, target, anchors)
+        s_here, x_here, y_here = pose_at(start, end, progress, anchors)
+        ratio = s_there / s_here
+        dx, dy = x_there - ratio * x_here, y_there - ratio * y_here
+        if dx or dy or ratio != 1.0:
+            result[drawable_id] = (dx, dy, ratio)
     return result
 
 
-def final_bounds(objects: dict[str, Drawable], ids, moves: dict[str, tuple[float, float]]
-                 ) -> dict[str, "BoundingBox"]:
-    """Bounds these drawables will have at the end of the step.
+@contextmanager
+def posed(objects: dict[str, Drawable], moves: dict[str, tuple[float, ...]]):
+    """The objects with `residual_moves` applied while the block runs, then put back exactly.
 
-    The moves are applied through the real transform pipeline, so a target
-    inside a rotated or scaled group measures correctly, then the saved
-    translations are restored by assignment rather than by subtracting back.
-    Only translation is touched; nothing else here changes a bounding box.
+    The moves go through the real transform pipeline, so a target inside a
+    rotated or scaled group, and everything inside a scaled target, measure
+    correctly; the saved transforms are restored by assignment rather than
+    by undoing the arithmetic.
     """
+    saved = {}
+    for key in moves:
+        if key in objects:
+            t = objects[key].transform
+            saved[key] = (t.translation_x, t.translation_y, t.scale_x, t.scale_y, t.pivot)
+    try:
+        for key, move in moves.items():
+            if key in objects:
+                apply_pose(objects[key], move[2] if len(move) > 2 else 1.0, move[0], move[1])
+        yield objects
+    finally:
+        for key, (x, y, sx, sy, pivot) in saved.items():
+            t = objects[key].transform
+            t.translation_x, t.translation_y, t.scale_x, t.scale_y, t.pivot = x, y, sx, sy, pivot
+
+
+def final_bounds(objects: dict[str, Drawable], ids, moves: dict[str, tuple[float, ...]]
+                 ) -> dict[str, "BoundingBox"]:
+    """Bounds these drawables will have at the end of the step (see `posed`)."""
     if not moves:
         return {key: objects[key].get_bounds() for key in ids if key in objects}
-    saved = {key: (objects[key].transform.translation_x, objects[key].transform.translation_y)
-             for key in moves if key in objects}
-    try:
-        for key, (dx, dy) in moves.items():
-            if key in objects:
-                translate(objects[key], dx, dy)
+    with posed(objects, moves):
         return {key: objects[key].get_bounds() for key in ids if key in objects}
-    finally:
-        for key, (x, y) in saved.items():
-            objects[key].transform.translation_x = x
-            objects[key].transform.translation_y = y
 
 
 def apply_attention(scene: Scene, step: Step) -> None:

@@ -1,20 +1,45 @@
 # AI handoff — start here
 
-Last updated: **2026-09-25**, Illustrate's known weaknesses (Claude Code).
+Last updated: **2026-09-25**, the scale restyle for Illustrate's phase 3 (Claude Code).
 
-## Next: a scale restyle for Illustrate's phase 3 (2026-09-25)
+## Unreleased: a scale restyle, for Illustrate's phase 3 (2026-09-25)
 
-Illustrate's `HANDOFF.md` ("Next: phase 3") has the plan: when a board is
-full, an existing diagram scales down smoothly (to no less than about 70 %)
-or moves aside to make room. TutorDraw has no per-object scale today (the
-camera scales the whole board). A `scale` restyle would touch `model.Restyle`
-and `Step.restyle`, `attention._blend`/`residual_moves`/`final_bounds`,
-`collision.plan_annotations` and `Tutorial._placements_before` (placement
-uses translations only), the player's keyframes, serialization (schema v12,
-additive) and lint. Kit text (tick numbers) scales with its kit, so keep a
-readable floor; annotations stay full size. Unreleased so far: `arrange`,
-text lint, stable labels, origin numbers, `via`/`Axes.along` (v10),
-`animate(seconds=)` (v11). 606 tests pass.
+Illustrate's full board (its `HANDOFF.md`, "phase 3"): when there is no room
+for the next line of working, a diagram shrinks a little or slides aside.
+
+- `Step.restyle(target, scale=, pivot=)` (`model.Restyle.scale/pivot`,
+  `model.PIVOTS`, 0 < scale <= 10, default pivot "center"). `attention`:
+  `pose_at` (scale, the pivot's shift and the move, each linear),
+  `apply_pose`, `restyle_anchors` (pivots from the source bounds, taken before
+  any restyle), `residual_moves` now returns `(dx, dy, ratio)`, `posed`
+  (a context applying them, restoring the transforms), `final_bounds` uses it.
+  `collision.plan_annotations(anchors=)` measures bounds, stroke chunks and
+  the drawing's own words at the step's end (the words were measured in the
+  current frame: a label on a moving graph switched sides mid-glide).
+  `Tutorial._compose`/`_placements_before` pass anchors and apply the whole
+  pose; the layout memo key includes scale, pivot and obstacle.
+- `Tutorial.target(obstacle=False)` / `Target.obstacle`: registered but not a
+  label obstacle (a graph registered only to scale it); lint's COVERS_TARGET
+  and leader checks skip it.
+- `describe`: "The graph shrinks to 80%", "returns to its full size". Lint:
+  `SCALED_TEXT_SMALL` for drawing text a scale took under 12 px.
+- Schema v12 (`lesson-v12.schema.json`, pyproject package data): restyle
+  `scale`, `pivot`; target `obstacle`. conftest `RESTYLE_FIELDS_ADDED[12]`,
+  new `TARGET_FIELDS_ADDED`.
+- Tests: `tests/test_scale_restyle.py` (15: pivots, straight-line glide,
+  move + scale, a child's label follows at full size, text scales, back to
+  full size, a new pivot starts where the last left it, a graph's point stays
+  on the curve, one player start frame, validation, save/load and JSON
+  schema, describe, lint, obstacle=False, labels keep their side through the
+  glide). **Ran: `.venv\Scripts\python.exe -m pytest tests -q -p
+  no:cacheprovider`: 622 passed, 1 skipped.** Rendered by eye: a 540 px graph
+  shrinking to 75 % about its top left, labels riding with their dots.
+- Known: DrawCV's raster renderer clips scaled built-in text (PNG and video
+  only; the browser player writes native text). Bounds keep an unscaled half
+  stroke of padding (about 1 px).
+- Unreleased so far: `arrange`, text lint, stable labels, origin numbers,
+  `via`/`Axes.along` (v10), `animate(seconds=)` (v11), scale and obstacle
+  (v12). Next: see Illustrate's HANDOFF for how phase 3 uses it.
 
 ## Unreleased: graphs you can draw into (2026-09-25)
 

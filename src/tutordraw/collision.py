@@ -214,7 +214,7 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
                      previous: Step | None = None, progress: float = 1.0,
                      camera_at=None, mark_boxes=None,
                      preferred: dict[str, tuple[Placement, float]] | None = None,
-                     costs: dict[str, float] | None = None
+                     costs: dict[str, float] | None = None, anchors=None
                      ) -> dict[str, tuple[Placement, Measured]]:
     """Decide every annotation's placement once, from the step's final geometry.
 
@@ -236,9 +236,10 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
     `preferred` maps a label's ID to its placement in the previous step and
     the artwork it covered there, which it keeps while nothing new lands on
     it; `costs` receives the same for this step's placements (see `resolve`).
+    `anchors` are the step's `restyle_anchors`, needed when a restyle scales.
     """
     from contextlib import nullcontext
-    from .attention import final_bounds, residual_moves
+    from .attention import final_bounds, posed, residual_moves
 
     annotations = (*step.labels, *step.callouts)
     if not annotations:
@@ -248,31 +249,36 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
               | {ref.drawable_id for mark in step.marks for ref in mark.refs
                  if hasattr(ref, "drawable_id")})
     held = camera_at or (lambda t: nullcontext())
-    with held(1.0):
-        bounds = final_bounds(objects, wanted, residual_moves(step, previous, progress))
+    with held(1.0), posed(objects, residual_moves(step, previous, progress, anchors=anchors)):
+        bounds = {key: objects[key].get_bounds() for key in wanted if key in objects}
         marks = mark_boxes(bounds) if mark_boxes is not None else []
-        # Unfilled strokes block only along their ink; chunks are measured now
-        # and shifted to where each target ends up, as its bounds were.
+        # Unfilled strokes block only along their ink, measured where each target ends up.
         chunks = {}
         for key in target_ids:
             if key in bounds and key in objects:
                 pieces = stroke_boxes(objects[key])
                 if pieces:
-                    now = objects[key].get_bounds()
-                    dx, dy = bounds[key].x - now.x, bounds[key].y - now.y
-                    chunks[key] = [BoundingBox(b.x + dx, b.y + dy, b.width, b.height) for b in pieces]
+                    chunks[key] = pieces
+        # Words in the drawing (titles, tick numbers, captions) are worth keeping
+        # readable even when nobody registered them: covering them is a soft cost.
+        # Annotations are not in the scene yet, so every Text here is artwork.
+        # Measured at the end too: a moved or scaled graph carries its tick numbers.
+        from drawcv import Text
+        words = {f"text:{key}": obj.get_bounds() for key, obj in objects.items()
+                 if isinstance(obj, Text) and key not in bounds and obj.visible and obj.text.strip()}
     # An animated step also has a start, and its targets sweep between the two.
     started = None
     if step.easing is not None:
         with held(0.0):
-            started = final_bounds(objects, wanted, residual_moves(step, previous, progress, 0.0))
+            started = final_bounds(objects, wanted, residual_moves(step, previous, progress, 0.0, anchors))
     swept = bounds if started is None else {
         key: union(box, started[key]) for key, box in bounds.items()}
     # A move along a path bulges away from the line between its ends: sample the way too.
     along = []
     if started is not None and any(r.via for r in step.restyles):
         with held(1.0):
-            along = [final_bounds(objects, wanted, residual_moves(step, previous, progress, k / PATH_SAMPLES))
+            along = [final_bounds(objects, wanted, residual_moves(step, previous, progress, k / PATH_SAMPLES,
+                                                                  anchors))
                      for k in range(1, PATH_SAMPLES)]
         for middle in along:
             swept = {key: union(box, middle[key]) for key, box in swept.items()}
@@ -293,14 +299,7 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
         highlights[highlight.target.drawable_id] = BoundingBox(
             box.x - pad, box.y - pad, box.width + 2 * pad, box.height + 2 * pad)
     highlights.update({f"mark:{i}": box for i, box in enumerate(marks)})
-    artwork, settled = {}, {}
-    # Words in the drawing (titles, tick numbers, captions) are worth keeping
-    # readable even when nobody registered them: covering them is a soft cost.
-    # Annotations are not in the scene yet, so every Text here is artwork.
-    from drawcv import Text
-    for key, obj in objects.items():
-        if isinstance(obj, Text) and key not in bounds and obj.visible and obj.text.strip():
-            artwork[f"text:{key}"] = settled[f"text:{key}"] = obj.get_bounds()
+    artwork, settled = dict(words), dict(words)
     for key in target_ids:
         if key not in swept:
             continue

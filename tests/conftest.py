@@ -36,6 +36,12 @@ ANNOTATION_FIELDS_ADDED = {
 # The same, for restyle fields, which live inside each step.
 RESTYLE_FIELDS_ADDED = {
     10: ("via",),
+    12: ("scale", "pivot"),
+}
+
+# The same, for target fields.
+TARGET_FIELDS_ADDED = {
+    12: ("obstacle",),
 }
 
 LEGACY_VERSIONS = tuple(v for v in SUPPORTED_VERSIONS if v != SCHEMA_VERSION)
@@ -55,6 +61,9 @@ def downgrade(document: dict, version: int) -> dict:
     for newer in newer_versions:
         for field in THEME_FIELDS_ADDED.get(newer, ()):
             legacy["theme"].pop(field, None)
+        for target in legacy["targets"]:
+            for field in TARGET_FIELDS_ADDED.get(newer, ()):
+                target.pop(field, None)
     annotations = list(legacy["labels"])
     for step in legacy["steps"]:
         annotations.extend(step["callouts"])
@@ -79,5 +88,5 @@ def fields_after(version: int) -> tuple[str, ...]:
     return tuple(field
                  for newer in range(version + 1, SCHEMA_VERSION + 1)
                  for table in (STEP_FIELDS_ADDED, THEME_FIELDS_ADDED, ANNOTATION_FIELDS_ADDED,
-                               HIGHLIGHT_FIELDS_ADDED, RESTYLE_FIELDS_ADDED)
+                               HIGHLIGHT_FIELDS_ADDED, RESTYLE_FIELDS_ADDED, TARGET_FIELDS_ADDED)
                  for field in table.get(newer, ()))

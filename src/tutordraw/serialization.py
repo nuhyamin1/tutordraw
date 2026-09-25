@@ -23,10 +23,12 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 11
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, SCHEMA_VERSION)
+SCHEMA_VERSION = 12
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, SCHEMA_VERSION)
 # Restyle fields each schema version introduced.
-RESTYLE_FIELDS_ADDED = {10: ("via",)}
+RESTYLE_FIELDS_ADDED = {10: ("via",), 12: ("scale", "pivot")}
+# The same, for target fields.
+TARGET_FIELDS_ADDED = {12: ("obstacle",)}
 PROMPT_FIELDS = {"text", "answer_ids", "correct", "wrong", "hint", "attempts"}
 # Theme fields each schema version introduced; older documents omit them and
 # load with the Theme default, exactly as older step fields do.
@@ -109,7 +111,8 @@ def to_dict(tutorial: Tutorial) -> dict:
         document = {
             "format": FORMAT, "schema_version": SCHEMA_VERSION, "title": tutorial.title,
             "theme": asdict(tutorial.theme), "scene": tutorial.scene.to_dict(),
-            "targets": [{"id": t.id, "drawable_id": t.drawable_id, "name": t.name} for t in tutorial.targets],
+            "targets": [{"id": t.id, "drawable_id": t.drawable_id, "name": t.name, "obstacle": t.obstacle}
+                        for t in tutorial.targets],
             "labels": [_annotation(label) for label in tutorial.labels],
             "steps": [{"id": step.id, "title": step.title,
                        "duration": step.duration, "pause": step.pause,
@@ -132,7 +135,8 @@ def to_dict(tutorial: Tutorial) -> dict:
                                      "move": None if r.move is None else list(r.move),
                                      "fill": None if r.fill is None else list(r.fill),
                                      "opacity": r.opacity, "visible": r.visible,
-                                     "via": None if r.via is None else [list(p) for p in r.via]}
+                                     "via": None if r.via is None else [list(p) for p in r.via],
+                                     "scale": r.scale, "pivot": r.pivot}
                                     for r in step.restyles],
                        "narration": [[w.text, w.start, w.end] for w in step.narration],
                        "prompt": _prompt(step.prompt)}
@@ -186,7 +190,12 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
         seen_drawables: set[str] = set()
         for i, item in enumerate(_list(data["targets"], "targets")):
             where = f"targets[{i}]"
-            _object(item, {"id", "drawable_id", "name"}, where)
+            _object(item, {"id", "drawable_id", "name"}
+                    | {name for newer, names in TARGET_FIELDS_ADDED.items() if newer <= version for name in names},
+                    where)
+            obstacle = item.get("obstacle", True)
+            if not isinstance(obstacle, bool):
+                raise LessonFormatError(f"{where}.obstacle must be a boolean")
             tid = identity(item["id"], f"{where}.id")
             did = _string(item["drawable_id"], f"{where}.drawable_id")
             if did not in objects:
@@ -194,7 +203,7 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             if did in seen_drawables:
                 raise LessonFormatError(f"{where}: duplicate target drawable {did!r}")
             seen_drawables.add(did)
-            target = replace(tutorial.target(objects[did], name=item["name"]), id=tid)
+            target = replace(tutorial.target(objects[did], name=item["name"], obstacle=obstacle), id=tid)
             tutorial._targets[did] = target
             targets[tid] = target
 
@@ -329,7 +338,8 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                                  fill=None if fill is None else tuple(_list(fill, f"{location}.fill")),
                                  opacity=entry["opacity"], visible=entry["visible"],
                                  via=None if via is None else [tuple(_list(p, f"{location}.via"))
-                                                               for p in _list(via, f"{location}.via")])
+                                                               for p in _list(via, f"{location}.via")],
+                                 scale=entry.get("scale"), pivot=entry.get("pivot"))
                 except ValidationError as exc:
                     raise LessonFormatError(f"{location}: {exc}") from exc
             if item["dim"] is not None:

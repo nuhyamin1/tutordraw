@@ -62,7 +62,7 @@ def test_the_player_is_told_how_long_the_motion_takes():
 def test_motion_seconds_are_saved_and_loaded():
     tutorial, _ = lesson()
     document = tutorial.to_dict()
-    assert document["schema_version"] == SCHEMA_VERSION == 11
+    assert document["schema_version"] == SCHEMA_VERSION >= 11  # motion came in v11
     assert document["steps"][1]["motion"] == 0.5 and document["steps"][0]["motion"] is None
     jsonschema = pytest.importorskip("jsonschema")
     jsonschema.validate(document, packaged_schema())

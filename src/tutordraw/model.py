@@ -19,6 +19,9 @@ Side = Literal["left", "right", "top", "bottom"]
 Corner = Literal["top_left", "top_right", "bottom_left", "bottom_right"]
 MARK_KINDS = ("arrow", "brace", "measure", "angle", "number")
 HIGHLIGHT_SHAPES = ("box", "outline")
+# Points of a target's bounds a scale can keep in place; MAX_SCALE bounds the factor.
+PIVOTS = ("top_left", "top", "top_right", "left", "center", "right", "bottom_left", "bottom", "bottom_right")
+MAX_SCALE = 10.0
 
 
 @dataclass(frozen=True, eq=False)
@@ -93,6 +96,9 @@ class Restyle:
     visible: bool | None
     # Offsets an animated move passes through on its way to `move`, in order.
     via: tuple[tuple[float, float], ...] | None = None
+    # A factor on the artwork's size, about the anchor of its bounds named by `pivot`.
+    scale: float | None = None
+    pivot: str | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -103,6 +109,8 @@ class Target:
     drawable_id: str
     name: str | None = None
     id: str = field(default_factory=lambda: str(uuid4()))
+    # False: its artwork does not keep labels off (a group standing for the targets it holds).
+    obstacle: bool = True
 
     @property
     def drawable(self) -> Drawable:
@@ -568,7 +576,8 @@ class Step:
 
     def restyle(self, target: Target, *, move: tuple[float, float] | None = None,
                 fill: tuple[int, int, int] | None = None, opacity: float | None = None,
-                visible: bool | None = None, via=None) -> Step:
+                visible: bool | None = None, via=None, scale: float | None = None,
+                pivot: str | None = None) -> Step:
         """Change this target's artwork for this step only, leaving the source alone.
 
         `move` shifts by (dx, dy) pixels relative to wherever the source placed
@@ -580,14 +589,31 @@ class Step:
         at an even speed along the whole polyline: sample a curve into it
         (`Axes.along`) and a point slides along the curve. 1 to 256 points;
         it needs `move`, and a step that is a hard cut simply ends at `move`.
+
+        `scale` multiplies the artwork's size (0 < scale <= 10) about `pivot`,
+        one of PIVOTS naming a point of its bounds as drawn, which stays put
+        (default "center"). Everything inside it scales too, its own text
+        included; labels, callouts and marks on it follow but keep their size.
+        Like `move`, a later step that leaves it out shows the source size.
         """
         from .adapters.drawcv import supports_fill
 
         self._check_target(target)
         if via is not None and move is None:
             raise ValidationError("via needs move: it is the path to that offset")
-        if move is None and fill is None and opacity is None and visible is None:
-            raise ValidationError("restyle needs at least one of move, fill, opacity or visible")
+        if pivot is not None and scale is None:
+            raise ValidationError("pivot needs scale: it is the point the target scales about")
+        if move is None and fill is None and opacity is None and visible is None and scale is None:
+            raise ValidationError("restyle needs at least one of move, fill, opacity, visible or scale")
+        if scale is not None:
+            if isinstance(scale, bool) or not isinstance(scale, (int, float)):
+                raise ValidationError("scale must be a number")
+            scale = finite_number(scale, "scale")
+            if not 0 < scale <= MAX_SCALE:
+                raise ValidationError(f"scale must be above 0 and at most {MAX_SCALE:g}")
+            pivot = "center" if pivot is None else pivot
+            if pivot not in PIVOTS:
+                raise ValidationError(f"pivot must be one of {', '.join(PIVOTS)}")
         if move is not None:
             if not isinstance(move, (tuple, list)) or len(move) != 2:
                 raise ValidationError("move must contain two finite numbers")
@@ -613,7 +639,7 @@ class Step:
                 raise ValidationError("opacity must be between 0 and 1")
         if visible is not None and not isinstance(visible, bool):
             raise ValidationError("visible must be a boolean")
-        self._restyles[target.id] = Restyle(target, move, fill, opacity, visible, via)
+        self._restyles[target.id] = Restyle(target, move, fill, opacity, visible, via, scale, pivot)
         return self
 
     def dim_others(self, *targets: Target, opacity: float | None = None) -> Step:

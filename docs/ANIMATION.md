@@ -46,6 +46,21 @@ because the next step's state is the source state.
 | `opacity` | Interpolated from the previous value, or the source's. |
 | `fill` | Interpolated channel by channel in plain RGB. A gradient fill blends from the mean of its stops; an image fill cuts. |
 | `visible` | **Not** interpolated. The step's own value applies throughout. |
+| `scale` | Interpolated with its pivot's shift, so every point moves in a straight line; the player's one start frame is exact. Kit text scales; labels keep their size. |
+
+`scale` (unreleased, schema v12) shrinks or grows a target about a point of
+its bounds that stays put, for a board that makes room:
+
+```python
+step.animate("ease_in_out", seconds=0.8).restyle(graph, scale=0.8, pivot="top_left")
+```
+
+Register a graph to scale with `tutorial.target(axes.group, obstacle=False)`,
+so its own points' labels may still sit on it. A new pivot in a later step
+starts where the last step left the target; lint's `SCALED_TEXT_SMALL` warns
+when the drawing's own text ends under 12 px. DrawCV's raster renderer draws
+scaled built-in text clipped (tick numbers in a PNG or video); the browser
+player writes native text and is unaffected.
 
 A `move` given `via` offsets (unreleased) runs along the polyline from the
 previous step's offset through them to `move`, at an even speed along its
@@ -101,7 +116,7 @@ with that in mind, or pre-render.
 
 ## Not implemented
 
-Interpolating anything `restyle` does not cover, such as stroke, scale and
+Interpolating anything `restyle` does not cover, such as stroke and
 rotation (so a tangent cannot yet sweep round as its point slides). Per-property
 or staggered timing within a step. Motion paths are polylines: a curve is as
 smooth as it is sampled. Fading annotations in: they can now be delayed with `at=` (see

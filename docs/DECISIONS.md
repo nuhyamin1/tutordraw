@@ -1060,3 +1060,44 @@ out, and it cannot sample the curve; the kit can do both.
   finds a curve touching another (x² and 0 at 0).
 - **Beneath the curve.** Regions and rectangles use z_index -1, so the grid,
   axes and curve are drawn over the shading.
+
+## Scaling one target (unreleased, 2026-09-25)
+
+**Why**: Illustrate's full board (its phase 3): when there is no room left
+for the next line of working, a big diagram makes room by shrinking a little
+(to no less than 75 %) or sliding aside, the way a produced tutorial does.
+The camera scales the whole board, so a per-target scale was needed.
+
+- **Pose, not transform fields.** A restyle's state is a pose in the parent's
+  space: a point the source draws at u is drawn at `scale * u + shift`, where
+  the shift is `(1 - scale) * pivot + move`. Scale, shift and move are each
+  interpolated linearly, so every point of the artwork moves in a straight
+  line: the browser player's linear blend of one start frame and the end
+  frame is exact (no keyframes, unlike a camera zoom), and a new pivot in a
+  later step starts where the last step left the target instead of jumping.
+  `apply_pose` writes it into DrawCV's transform (fixing a dynamic pivot
+  first, so a child moving later cannot shift it).
+- **The pivot is a point of the source bounds** (`restyle_anchors`, taken
+  before any restyle applies), named like label anchors plus corners. A
+  point in pixels would have to be recomputed by every author; a named
+  corner says what a tutor means ("shrink toward the top left").
+- **End state by applying, not by adding.** `residual_moves` was a
+  translation added to the current frame; with scale it is a ratio and a
+  shift, and `posed` applies it to the real transforms for the block and
+  restores them. Label placement measures bounds, stroke chunks and the
+  drawing's own words inside it, so a label's side is the same in every
+  frame (the words were measured in the frame before, which made a label
+  on a moving graph switch sides for a frame; that was a latent bug for
+  moves too).
+- **Annotations keep their size.** Labels, callouts and marks are overlay
+  artwork measured from the target's world bounds, so they follow its parts
+  without scaling. Kit text (tick numbers, axis names) is drawing and scales:
+  lint's `SCALED_TEXT_SMALL` reports text the scale took under 12 px.
+- **`obstacle=False` targets**, opt-in. Restyling a group needs it
+  registered, and a registered group keeps labels off its whole box, which
+  pushed a graph's point labels off the graph. Changing that for every
+  group would move labels in saved lessons that move a graph, so it is a
+  per-target flag (schema v12) instead; nothing already saved changes.
+- Not done: stroke widths are scaled by DrawCV's transform but its bounds
+  keep an unscaled half stroke of padding (about 1 px); DrawCV's raster
+  text is clipped when scaled (PNG and video only).

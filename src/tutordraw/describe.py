@@ -138,6 +138,13 @@ def describe_step(tutorial, index: int) -> str:
             back = "back " if move == (0.0, 0.0) else ""
             verb = _verb(target, "slides", "slide") if moving else _verb(target, "moves", "move")
             changes.append(f"{verb} {back}{heading}")
+        size = now.scale if now is not None and now.scale is not None else 1.0
+        was_size = before.scale if before is not None and before.scale is not None else 1.0
+        if size != was_size and shown_now:
+            percent = f"{round(size * 100)}%"
+            changes.append(_verb(target, "returns to its full size", "return to their full size") if size == 1
+                           else f"{_verb(target, 'shrinks', 'shrink')} to {percent}" if size < was_size
+                           else f"{_verb(target, 'grows', 'grow')} to {percent}")
         fill = now.fill if now is not None else None
         old_fill = before.fill if before is not None else None
         if fill != old_fill and shown_now:

@@ -101,7 +101,9 @@ Prioritized after the first release to support continuation across AI sessions.
 - [x] Per-step artwork changes through `Step.restyle`, persisted in schema v3 (a8).
 - [x] Animate between beats with `Step.animate` and DrawCV's easing curves,
   opt-in per step so hard cuts stay the default (a10).
-- [ ] Stroke, scale and rotation overrides; today only move, fill, opacity, visible.
+- [x] Scale override: `restyle(scale=, pivot=)`, schema v12 (unreleased), for
+  Illustrate's full board.
+- [ ] Stroke and rotation overrides.
 
 ## Text and languages
 

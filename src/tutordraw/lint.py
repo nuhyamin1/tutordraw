@@ -174,7 +174,9 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 "with at=, move it to its own step, or give the canvas more room.")
 
     objects = index_scene(composition.scene)
-    drawables = {name: objects[drawable_id] for name, drawable_id in composition.drawables.items()}
+    # A target that is not an obstacle stands for the targets inside it, so labels may lie on it.
+    drawables = {name: objects[drawable_id] for name, drawable_id in composition.drawables.items()
+                 if tutorial._targets[drawable_id].obstacle}
     # Unfilled strokes are judged by their ink boxes, computed once per step.
     ink = {name: stroke_boxes(drawable) for name, drawable in drawables.items()}
     width, height = composition.scene.width, composition.scene.height
@@ -298,6 +300,7 @@ def lint_step(tutorial, index: int) -> list[Issue]:
                 "narration or split it across steps.", [a.target], [a.text])
 
     _lint_words(composition, add)
+    _lint_scaled_text(tutorial, step, objects, add)
 
     shown = len(annotations) + len(composition.marks)
     if shown > MAX_ANNOTATIONS:
@@ -312,6 +315,39 @@ def lint_step(tutorial, index: int) -> list[Issue]:
 
     order = {severity: i for i, severity in enumerate(SEVERITIES)}
     return sorted(issues, key=lambda issue: order[issue.severity])
+
+
+def _lint_scaled_text(tutorial, step, objects, add) -> None:
+    """Text inside a target this step scales down (a graph's tick numbers) that ends too small to read.
+
+    Labels and callouts keep their size; the drawing's own text shrinks with it.
+    Only text the scale made small is reported: what was small before is the
+    author's choice.
+    """
+    from drawcv import Group, Text
+
+    source = index_scene(tutorial.scene)
+
+    def texts(obj):
+        if isinstance(obj, Text):
+            yield obj
+        elif isinstance(obj, Group):
+            for child in obj.children:
+                yield from texts(child)
+
+    for restyle in step.restyles:
+        if restyle.scale is None or restyle.scale >= 1 or restyle.target.drawable_id not in objects:
+            continue
+        small = [text for text in texts(objects[restyle.target.drawable_id])
+                 if text.visible and text.text.strip() and text.get_bounds().height < MIN_LINE_HEIGHT
+                 and text.id in source and source[text.id].get_bounds().height >= MIN_LINE_HEIGHT]
+        if small:
+            name = restyle.target.name or restyle.target.id
+            add("SCALED_TEXT_SMALL", "warning",
+                f"Scaled to {restyle.scale:.0%}, {name!r} draws its own text "
+                f"({', '.join(repr(t.text) for t in small[:3])}) under {MIN_LINE_HEIGHT:.0f} px tall.",
+                f"Scale {name!r} less, or make its text larger before scaling it.",
+                [name], [t.text for t in small[:3]])
 
 
 def _lint_words(composition, add) -> None:

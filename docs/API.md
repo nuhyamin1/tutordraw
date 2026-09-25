@@ -6,7 +6,7 @@ Public symbols import from `tutordraw`. Create targets/annotations/steps through
 
 `Tutorial(scene, *, title="", theme=None, font=None)` holds a DrawCV Scene reference and a Theme (defaults to `Theme()`). `font` accepts a path, bytes or a DrawCV `FontAsset` and enables Thai and Arabic; see [TEXT.md](TEXT.md). `tutorial.font` exposes it. The scene is read at each render. Titles are metadata, not automatically drawn text.
 
-`tutorial.target(drawable, *, name=None) -> Target` registers an existing object/group, including nested children. Re-registration returns the same target. Explicit names must be nonempty and unique; conflicting names raise `ValidationError`.
+`tutorial.target(drawable, *, name=None, obstacle=None) -> Target` registers an existing object/group, including nested children. Re-registration returns the same target. Explicit names must be nonempty and unique; conflicting names raise `ValidationError`. A registered target keeps labels off its artwork; `obstacle=False` (unreleased, schema v12) does not, for a group registered only to restyle it (a graph to scale) whose own parts are targets that keep labels off themselves.
 
 `tutorial.step(title) -> Step` appends an independent step. Nonempty titles are required; duplicate titles are allowed. `tutorial.steps` returns a tuple.
 
@@ -81,13 +81,22 @@ step.restyle(sun, opacity=0.35)
 step.restyle(shadow, visible=False)
 ```
 
-`restyle(target, *, move=None, fill=None, opacity=None, visible=None, via=None) -> Step`
+`restyle(target, *, move=None, fill=None, opacity=None, visible=None, via=None, scale=None, pivot=None) -> Step`
 changes a target's artwork for that step only, on the working copy, leaving the
 source drawing untouched. `move` is a `(dx, dy)` shift relative to the source
 placement; attached labels, leaders and highlights follow it. `fill` sets a
 shape's fill or a Text object's colour and is refused for Line and Group.
 `opacity` is absolute, and `dim_others` still multiplies on top of it.
 `visible=False` hides the target, after which emphasising it raises.
+
+`scale` (unreleased, schema v12) multiplies the artwork's size, above 0 and
+at most 10, about `pivot`: one of `top_left`, `top`, `top_right`, `left`,
+`center` (the default), `right`, `bottom_left`, `bottom`, `bottom_right`,
+a point of the target's bounds as the source draws it, which stays put.
+Everything inside the target scales, its own text included; labels, callouts,
+highlights and marks on it or its parts follow but keep their size. Combine
+with `move` to slide it too. Like `move`, a later step that leaves it out
+shows the source size, so repeat it to hold it.
 
 `step.animate(easing, seconds=...)` (unreleased, schema v11) finishes a step's
 motion in its first `seconds` and holds for the rest (`step.motion`).
