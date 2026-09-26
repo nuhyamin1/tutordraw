@@ -36,9 +36,9 @@
    "kind": "label",
    "text": "Body",
    "target": "body",
-   "anchor": "right",
+   "anchor": "left",
    "panel": [
-    640.0,
+    372.0,
     58.0,
     68.0,
     44.0
@@ -46,11 +46,11 @@
    "boxed": true,
    "leader": [
     [
-     568.0,
+     512.0,
      230.0
     ],
     [
-     658.45,
+     421.55,
      102.0
     ]
    ]

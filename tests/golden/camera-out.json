@@ -31,22 +31,22 @@
    "kind": "label",
    "text": "Ribosome",
    "target": "ribosome",
-   "anchor": "bottom",
+   "anchor": "left",
    "panel": [
-    10.5,
-    320.0,
+    109.0,
+    258.0,
     111.0,
     44.0
    ],
    "boxed": true,
    "leader": [
     [
-     300.0,
-     288.0
+     292.0,
+     280.0
     ],
     [
-     121.5,
-     329.19
+     220.0,
+     280.0
     ]
    ]
   }

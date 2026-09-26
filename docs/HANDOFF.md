@@ -1,6 +1,26 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, timed captions (Claude Code).
+Last updated: **2026-09-26**, leaders weighed in placement (Claude Code).
+
+## Unreleased: placement weighs the leader (2026-09-26)
+
+Owner's report: a callout on a vector on a graph dropped below the graph,
+its leader across the x-axis. `collision.outside_area` returned a ~7e-12
+residue for an in-canvas panel (a hard cost), now exactly 0.
+`collision.resolve` adds the leader to the soft cost (`leader_of`,
+`segment_in_box`, `_cross`; `Request.tips` from `ink_point` per anchor in
+`plan_annotations`); see DECISIONS.md for the weights. Golden frames changed
+and reviewed side by side: camera-out, cell-step2/3, crowded-step1,
+edges-step1, motion-mid/end (all shorter or uncrossed leaders). `cell` and
+`crowded` now lint clean, so `tests/test_lint.py` tests the detectors on
+verbatim placement and a built crossing. New `tests/test_leader_placement.py`
+(4). **Ran: `python -m pytest -q`: 646 passed, 11 skipped.** Rendered the
+graph scene with anchors right and bottom: callout beside the tip, lint clean.
+Not done: grid lines of a graph are not obstacles (not targets); routed
+(bent) leaders.
+**Next**: owner review; version bump and 0.2.0a1 tag when asked.
+
+
 
 ## Unreleased: timed captions (2026-09-26)
 
@@ -23,7 +43,7 @@ web export in headless Chromium: written caption shown with its line break,
 narrated step still word by word, no page errors.
 Not done: a Theme option for caption styling (constants in `captions.py`),
 burned-in captions avoiding artwork, and running on Windows.
-**Next**: owner review; then the leader-crossing-a-chart lint/placement.
+**Next**: done: leaders weighed in placement (above).
 
 
 

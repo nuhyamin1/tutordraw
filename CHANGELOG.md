@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Leaders stay clear of charts and each other.** Placement now weighs a
+  panel's leader as well as the panel: its length over other artwork (a
+  graph's axes, tick numbers, other shapes) and other panels, its crossings
+  with other leaders, and its length beyond the authored placement's. A
+  callout on a vector drawn on a graph stays beside the arrow's tip instead
+  of dropping below the graph with its leader across the x-axis. Also fixed:
+  a rounding residue of about 1e-11 px² counted a panel inside the canvas as
+  partly off it, so a free authored placement could lose to a worse one. The
+  golden lessons `cell` and `crowded` now lint clean; seven golden frames
+  changed (reviewed side by side).
 - **Timed captions.** `step.caption(text, at=, until=)` writes captions for
   any step; a narrated step without them gets captions from its words, one
   sentence per cue, long sentences split to fit two lines.

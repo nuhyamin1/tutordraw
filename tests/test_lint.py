@@ -1,5 +1,6 @@
 """Tutorial.layout and Tutorial.lint: the author -> lint -> fix loop."""
 
+from dataclasses import replace
 import json
 import warnings
 
@@ -28,14 +29,44 @@ def test_clean_lessons_report_nothing():
         assert LESSONS[name][0]().lint() == [], name
 
 
+def verbatim(name):
+    """A golden lesson placed exactly as authored, collision avoidance off."""
+    tutorial = LESSONS[name][0]()
+    tutorial.theme = replace(tutorial.theme, avoid_collisions=False)
+    return tutorial
+
+
+def test_placement_keeps_the_golden_lessons_leaders_clear():
+    # They crossed each other, other targets and panels before leaders were weighed in placement.
+    for name in ("cell", "crowded"):
+        assert LESSONS[name][0]().lint() == [], name
+
+
 def test_real_problems_in_the_golden_lessons_are_found():
-    cell = LESSONS["cell"][0]().lint()
-    assert ("LEADERS_CROSS", 2) in {(i.code, i.step) for i in cell}
-    crowded = LESSONS["crowded"][0]().lint()
-    crossing = [i for i in crowded if i.code == "LEADER_CROSSES_TARGET"]
-    assert crossing and crossing[0].targets == ("ball_b", "ball_c")
+    crowded = verbatim("crowded").lint()
     assert "LEADER_CROSSES_PANEL" in codes(crowded)
+    assert "ANNOTATION_OVERLAP" in codes(crowded)
     assert "UNPLACEABLE" in codes(LESSONS["motion"][0]().lint(1))
+
+
+def test_leaders_crossing_each_other_or_another_target_are_found():
+    scene, tutorial = lesson(Theme(avoid_collisions=False))
+    dots = [Circle(center=Point(80, y), radius=12, fill=FillStyle(color=Color(40, 90, 160))) for y in (100, 260)]
+    post = Rectangle(position=Point(150, 110), width=20, height=40, fill=FillStyle(color=Color(160, 90, 40)))
+    for shape in (*dots, post):
+        scene.add(shape)
+    upper, lower = (tutorial.target(d, name=n) for d, n in zip(dots, ("upper", "lower")))
+    tutorial.target(post, name="post")
+    # Each label is pushed to the other's height, so their leaders form an X; the upper one runs over the post.
+    tutorial.step("Crossing").show(upper.label("Upper", anchor="right", gap=300, offset=(0, 160)),
+                                   lower.label("Lower", anchor="right", gap=300, offset=(0, -160)))
+    issues = tutorial.lint()
+    assert "LEADERS_CROSS" in codes(issues)
+    over = [i for i in issues if i.code == "LEADER_CROSSES_TARGET"]
+    assert over and set(over[0].targets) == {"upper", "post"}
+    # With avoidance on, the same step is placed clear.
+    tutorial.theme = replace(tutorial.theme, avoid_collisions=True)
+    assert not {"LEADERS_CROSS", "LEADER_CROSSES_TARGET"} & set(codes(tutorial.lint()))
 
 
 def test_overlap_and_off_canvas_are_errors_when_avoidance_is_off():
@@ -114,7 +145,8 @@ def test_lint_changes_nothing_and_leaks_no_warnings():
 
 
 def test_issues_serialize_for_a_model():
-    issues = LESSONS["crowded"][0]().lint()
+    issues = verbatim("crowded").lint()
+    assert issues
     data = json.loads(json.dumps([i.to_dict() for i in issues]))
     assert data[0].keys() == {"code", "severity", "step", "step_title", "message", "fix",
                               "targets", "annotations"}

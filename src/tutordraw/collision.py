@@ -15,7 +15,7 @@ from drawcv import BoundingBox, Drawable
 
 from .adapters.drawcv import stroke_boxes
 from .errors import LayoutWarning
-from .layout import (Measured, Placement, anchor_points, clamp_panel, measure_label,
+from .layout import (Measured, Placement, anchor_points, clamp_panel, ink_point, measure_label,
                      place_panel)
 from .model import Step
 from .themes import Theme
@@ -29,6 +29,16 @@ SLOTS = (0, 1, -1, 2, -2, 3, -3)
 RINGS = (1.0, 1.5, 2.25)
 # Points a move along a path is judged at between its ends (one fewer than this).
 PATH_SAMPLES = 8
+# What a pixel of leader over other artwork, another panel or across another
+# leader costs, in square pixels of covered artwork: a leader there reads as
+# pointing at it, so crossing is weighed like covering a 20 px wide strip.
+LEADER_WEIGHT = 20.0
+# A crossing of two leaders, in pixels of leader over artwork.
+LEADERS_CROSSING = 20.0
+# Every pixel of leader beyond the authored placement's, in square pixels of
+# covered artwork: the eye travels it, so a panel close by beats one far off
+# that covers a little less.
+LEADER_LENGTH = 12.0
 
 
 def overlap_area(box: BoundingBox, other: BoundingBox, margin: float = 0.0) -> float:
@@ -39,8 +49,14 @@ def overlap_area(box: BoundingBox, other: BoundingBox, margin: float = 0.0) -> f
 
 
 def outside_area(box: BoundingBox, width: float, height: float) -> float:
-    """How much of a panel falls off the canvas."""
-    return box.width * box.height - overlap_area(box, BoundingBox(0, 0, width, height))
+    """How much of a panel falls off the canvas.
+
+    Exactly 0 for a panel inside it: the subtraction below can leave a rounding
+    residue (7e-12 px² was seen), which a hard score would count as off canvas.
+    """
+    if box.left >= 0 and box.top >= 0 and box.right <= width and box.bottom <= height:
+        return 0.0
+    return max(0.0, box.width * box.height - overlap_area(box, BoundingBox(0, 0, width, height)))
 
 
 def union(first: BoundingBox, second: BoundingBox) -> BoundingBox:
@@ -69,6 +85,9 @@ class Request:
     # is judged over the whole path it travels. None when the step is a cut; a
     # tuple of them, along the way too, when the target moves along a path.
     sweep_points: dict | tuple | None = None
+    # Where the leader starts for each anchor (on the target's outline, `ink_point`), or None
+    # without a leader. The leader's path over other artwork is a soft cost.
+    tips: dict | None = None
 
 
 def _sides(authored: str) -> tuple[str, ...]:
@@ -136,6 +155,46 @@ def footprint(request: Request, placement: Placement, width: float, height: floa
     return panel
 
 
+def leader_of(request: Request, placement: Placement, panel: BoundingBox):
+    """The leader a placement draws, as label_artwork draws it: (start, end), or None."""
+    if request.tips is None:
+        return None
+    start = request.tips[placement.anchor]
+    cx, cy = panel.center.x, panel.center.y
+    dx, dy = start.x - cx, start.y - cy
+    ratio = max(abs(dx) / (panel.width / 2 or 1), abs(dy) / (panel.height / 2 or 1))
+    if ratio <= 1:
+        return None  # the target point is under the panel: no leader is drawn
+    return start, (cx + dx / ratio, cy + dy / ratio)
+
+
+def segment_in_box(start, end, box: BoundingBox) -> float:
+    """Length of the segment start-end inside `box` (Liang-Barsky clipping)."""
+    x0, y0 = start.x, start.y
+    dx, dy = end[0] - x0, end[1] - y0
+    low, high = 0.0, 1.0
+    for p, q in ((-dx, x0 - box.left), (dx, box.right - x0), (-dy, y0 - box.top), (dy, box.bottom - y0)):
+        if p == 0:
+            if q < 0:
+                return 0.0
+            continue
+        t = q / p
+        if p < 0:
+            low = max(low, t)
+        else:
+            high = min(high, t)
+        if low >= high:
+            return 0.0
+    return (high - low) * (dx * dx + dy * dy) ** 0.5
+
+
+def _cross(a, b, c, d) -> bool:
+    """Do segments a-b and c-d cross (points as (x, y))?"""
+    def side(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+    return (side(a, b, c) * side(a, b, d) < 0) and (side(c, d, a) * side(c, d, b) < 0)
+
+
 def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
             blockers: dict[str, BoundingBox] | None = None, width: float, height: float,
             margin: float = 6.0, preferred: dict[str, tuple[Placement, float]] | None = None,
@@ -162,6 +221,7 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
     preferred = preferred or {}
     settled = artwork if settled is None else settled
     placed: list[BoundingBox] = []
+    leaders: list[tuple] = []  # the placed leaders, as ((x, y), (x, y))
     chosen: dict[str, Placement] = {}
     for request in requests:
         skip = request.target_id if request.covers_target else None
@@ -169,6 +229,22 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
         def covered(placement):
             end = panel_for(request, placement, width, height)
             return sum(overlap_area(end, box) for key, box in settled.items() if key.split("#")[0] != skip)
+
+        def crossing(placement):
+            """The leader's pixels over other artwork and panels, and its crossings with other leaders."""
+            line = leader_of(request, placement, panel_for(request, placement, width, height))
+            if line is None:
+                return 0.0, 0.0, None
+            start, end = line
+            # Not the target's own artwork, nor what it lies on (a core inside its mantle, a
+            # vector on its graph's shading): every way out crosses that.
+            over = sum(segment_in_box(start, end, box) for key, box in artwork.items()
+                       if key.split("#")[0] != request.target_id
+                       and not (box.left <= start.x <= box.right and box.top <= start.y <= box.bottom))
+            over += sum(segment_in_box(start, end, box) for box in placed)
+            ends = ((start.x, start.y), end)
+            over += LEADERS_CROSSING * sum(_cross(*ends, *other) for other in leaders)
+            return over, ((end[0] - start.x) ** 2 + (end[1] - start.y) ** 2) ** 0.5, ends
 
         before, cost = preferred.get(request.key, (None, 0.0))
         if before is not None:
@@ -179,25 +255,35 @@ def resolve(requests: Sequence[Request], *, artwork: dict[str, BoundingBox],
             soft = covered(before)
             if hard <= 0 and soft <= cost + 1.0:  # a square pixel of rounding
                 placed.append(panel)
+                line = crossing(before)[2]
+                if line is not None:
+                    leaders.append(line)
                 chosen[request.key] = before
                 if costs is not None:
                     costs[request.key] = soft
                 continue
-        best: tuple[tuple[float, float, int], Placement, BoundingBox, float] | None = None
+        best: tuple | None = None
+        reference = 0.0  # the authored placement's leader length
         for rank, placement in enumerate(candidates(request, margin)):
             panel = footprint(request, placement, width, height)
             crowded = (sum(overlap_area(panel, other, margin) for other in placed)
                        + sum(overlap_area(panel, other, margin) for other in solid))
             hard = crowded + outside_area(panel, width, height)
-            soft = sum(overlap_area(panel, box)
-                       for key, box in artwork.items() if key.split("#")[0] != skip)
+            over, length, line = crossing(placement)
+            if rank == 0:
+                reference = length
+            # Leader length counts only beyond the authored one's, so a clean authored placement still costs 0.
+            soft = (sum(overlap_area(panel, box) for key, box in artwork.items() if key.split("#")[0] != skip)
+                    + LEADER_WEIGHT * over + LEADER_LENGTH * max(0.0, length - reference))
             score = (hard, soft, rank)
             if best is None or score < best[0]:
-                best = (score, placement, panel, crowded)
+                best = (score, placement, panel, crowded, line)
             if not hard and not soft:
                 break  # The authored placement is usually free; stop at the first.
         assert best is not None  # candidates() always yields.
-        _, placement, panel, crowded = best
+        _, placement, panel, crowded, line = best
+        if line is not None:
+            leaders.append(line)
         if crowded:
             # Off-canvas is reported by label_artwork against the final panel.
             warnings.warn(f"Label {request.text!r} could not be placed clear of "
@@ -266,6 +352,13 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
         from drawcv import Text
         words = {f"text:{key}": obj.get_bounds() for key, obj in objects.items()
                  if isinstance(obj, Text) and key not in bounds and obj.visible and obj.text.strip()}
+        # Where each leader would start, per anchor, on the target's outline where the step ends.
+        tips = {}
+        for annotation in annotations:
+            key = annotation.target.drawable_id
+            if annotation.leader and key not in tips:
+                tips[key] = {side: ink_point(objects[key], point)
+                             for side, point in anchor_points(bounds[key]).items()}
     # An animated step also has a start, and its targets sweep between the two.
     started = None
     if step.easing is not None:
@@ -292,7 +385,8 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
             anchor_points(bounds[target_id]), measured[annotation.id],
             annotation.anchor == "center",
             None if started is None else (anchor_points(started[target_id]) if not along else
-                                          tuple(anchor_points(b[target_id]) for b in (started, *along)))))
+                                          tuple(anchor_points(b[target_id]) for b in (started, *along))),
+            tips.get(target_id) if annotation.leader else None))
     highlights = {}
     for highlight in step.highlights:
         box, pad = swept[highlight.target.drawable_id], highlight.padding
