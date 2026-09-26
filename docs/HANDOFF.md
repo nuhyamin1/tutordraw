@@ -1,6 +1,31 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, a leader that reaches an Arrow (Claude Code).
+Last updated: **2026-09-26**, timed captions (Claude Code).
+
+## Unreleased: timed captions (2026-09-26)
+
+`Step.caption(text, at=, until=)` (written; newline breaks a line) and, for a
+narrated step without them, cues cut from its words (`captions._narration_cues`:
+sentences, over 84 chars split into equal parts preferring a comma).
+`Tutorial.captions()` -> `Cue(start, end, text)` on the lesson clock;
+`Tutorial.export_captions(".vtt"/".srt")`; `captions=` on `render_at_time`,
+`render_frames`, `export_video` burns them in (`captions.caption_artwork`,
+added in `Tutorial._render` after composing). `web_step` sends written
+captions; `player.js` shows them whole. Lint `CAPTION_TOO_FAST`,
+`CAPTION_NEVER_SHOWN`. Schema v13 (`lesson-v13.schema.json`, pyproject
+package data, conftest `STEP_FIELDS_ADDED[13]`). `Caption`, `Cue` exported.
+Docs: CAPTIONS.md (new), API, NARRATION, PERSISTENCE, AI_AUTHORING, README,
+DECISIONS, ROADMAP. Tests `tests/test_captions.py` (11).
+**Ran (Linux, Python 3.12, `.[dev]`): `python -m pytest -q`: 640 passed, 11
+skipped.** Inspected a burned-in frame (one line and a two-line caption),
+a WebVTT export, a 129-frame captioned MP4 (decoded frame count), and the
+web export in headless Chromium: written caption shown with its line break,
+narrated step still word by word, no page errors.
+Not done: a Theme option for caption styling (constants in `captions.py`),
+burned-in captions avoiding artwork, and running on Windows.
+**Next**: owner review; then the leader-crossing-a-chart lint/placement.
+
+
 
 ## Unreleased: a leader to an Arrow ends on the arrow (2026-09-26)
 

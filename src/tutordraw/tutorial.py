@@ -142,22 +142,50 @@ class Tutorial:
         from .timing import step_at_time
         return step_at_time(self, time)
 
-    def render_at_time(self, time: float, *, alpha: bool = False) -> Canvas:
-        """Seek to a moment. Animated steps interpolate; the rest are hard cuts."""
+    def render_at_time(self, time: float, *, alpha: bool = False, captions: bool = False) -> Canvas:
+        """Seek to a moment. Animated steps interpolate; the rest are hard cuts.
+
+        `captions=True` burns in the caption on screen at that moment.
+        """
+        from .captions import lesson_cues
+
+        if not isinstance(captions, bool):
+            raise ValidationError("captions must be a boolean")
+        return self._render_at(time, alpha, lesson_cues(self) if captions else ())
+
+    def _render_at(self, time: float, alpha: bool, cues) -> Canvas:
+        from .captions import cue_at
         from .timing import position_at_time
 
         if not isinstance(alpha, bool):
             raise ValidationError("alpha must be a boolean")
         index, progress = position_at_time(self, time)
         step = self._steps[index]
+        cue = cue_at(cues, float(time))
         if progress >= 1.0 or (step.easing is None and not step._reveals):
-            return self.render_step(index, alpha=alpha)
-        return self._render(index, progress, alpha)
+            if cue is None:
+                return self.render_step(index, alpha=alpha)
+            progress = 1.0
+        return self._render(index, progress, alpha, None if cue is None else cue.text)
 
-    def render_frames(self, *, fps: int = 30, alpha: bool = False):
+    def render_frames(self, *, fps: int = 30, alpha: bool = False, captions: bool = False):
         """Iterate ceil(duration * fps) canvases sampled at k / fps seconds."""
         from .timing import render_frames
-        return render_frames(self, fps=fps, alpha=alpha)
+        return render_frames(self, fps=fps, alpha=alpha, captions=captions)
+
+    def captions(self) -> tuple:
+        """Every caption cue on the lesson's clock: Cue(start, end, text) in seconds.
+
+        A step's written captions (Step.caption), or else its narration cut
+        into sentence-sized cues. See docs/CAPTIONS.md.
+        """
+        from .captions import lesson_cues
+        return lesson_cues(self)
+
+    def export_captions(self, path: str | Path, *, overwrite: bool = False) -> Path:
+        """Write the captions as a subtitle file: WebVTT for .vtt, SubRip for .srt."""
+        from .captions import export_captions
+        return export_captions(self, path, overwrite=overwrite)
 
     def layout(self, index: int, *, time: float | None = None) -> Composition:
         """Where everything in a step lands, without rasterizing it.
@@ -257,8 +285,15 @@ class Tutorial:
             raise ValidationError("alpha must be a boolean")
         return self._render(index, 1.0, alpha)
 
-    def _render(self, index: int, progress: float, alpha: bool) -> Canvas:
-        return OpenCVRenderer().render(self._compose(index, progress).scene, alpha=alpha)
+    def _render(self, index: int, progress: float, alpha: bool, caption: str | None = None) -> Canvas:
+        scene = self._compose(index, progress).scene
+        if caption is not None:
+            from .captions import caption_artwork
+            layer = overlay_layer(scene)
+            with typography_errors():
+                for obj in caption_artwork(caption, scene.width, scene.height, self.theme, self._font):
+                    scene.add(obj, layer=layer)
+        return OpenCVRenderer().render(scene, alpha=alpha)
 
     def _compose(self, index: int, progress: float, *, draw_annotations: bool = True,
                  complete: bool = False) -> Composition:
@@ -481,10 +516,14 @@ class Tutorial:
         return export_steps(self, directory, overwrite=overwrite, alpha=alpha)
 
     def export_video(self, path: str | Path, *, fps: int = 30, fourcc: str = "mp4v",
-                     overwrite: bool = False) -> Path:
-        """Encode the timed lesson to one video file. Opaque only; no alpha channel."""
+                     overwrite: bool = False, captions: bool = False) -> Path:
+        """Encode the timed lesson to one video file. Opaque only; no alpha channel.
+
+        `captions=True` burns the captions into the picture; export_captions
+        writes them as a subtitle file to upload beside the video instead.
+        """
         from .video import export_video
-        return export_video(self, path, fps=fps, fourcc=fourcc, overwrite=overwrite)
+        return export_video(self, path, fps=fps, fourcc=fourcc, overwrite=overwrite, captions=captions)
 
 
 def _name(target: Target) -> str:

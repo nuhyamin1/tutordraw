@@ -313,9 +313,31 @@ def lint_step(tutorial, index: int) -> list[Issue]:
 
     if step.prompt is not None:
         _lint_prompt(tutorial, index, step, composition, objects, labels, add)
+    if step.captions:
+        _lint_captions(step, add)
 
     order = {severity: i for i, severity in enumerate(SEVERITIES)}
     return sorted(issues, key=lambda issue: order[issue.severity])
+
+
+def _lint_captions(step, add) -> None:
+    """Written captions that never show, or go by faster than people read."""
+    from .captions import MAX_READING_RATE, step_cues
+
+    total = step.duration + step.pause
+    for caption in step.captions:
+        if caption.at >= total:
+            add("CAPTION_NEVER_SHOWN", "error",
+                f"The caption {caption.text!r} starts at {caption.at:g} s, after the step ends ({total:g} s).",
+                "Start it earlier, or lengthen the step with set_timing().", annotations=[caption.text])
+    for cue in step_cues(step):
+        rate = len(" ".join(cue.text.split())) / (cue.end - cue.start)
+        if rate > MAX_READING_RATE:
+            add("CAPTION_TOO_FAST", "warning",
+                f"The caption {cue.text!r} is on screen {cue.end - cue.start:.2f} s: "
+                f"{rate:.0f} characters a second, over {MAX_READING_RATE:g}.",
+                "Shorten it, give it more time (a later next caption, until=, or a longer step), "
+                "or split it into two captions.", annotations=[cue.text])
 
 
 CHARTS = ("axes", "number_line")  # kits read on their own, by their grid and numbers

@@ -15,6 +15,7 @@ STEP_FIELDS_ADDED = {
     8: ("marks", "draw", "camera"),
     9: ("narration", "prompt"),
     11: ("motion",),
+    13: ("captions",),
 }
 
 # The same, for highlight fields, which live inside each step.

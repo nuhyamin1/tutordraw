@@ -268,6 +268,17 @@ spoken, from TTS word timings, and fits the step to the narration.
 `step.narration` holds the parsed words; `web_step` carries them for captions.
 See [NARRATION.md](NARRATION.md).
 
+## Timed captions (unreleased)
+
+`step.caption(text, *, at=0.0, until=None)` writes a caption shown from `at`
+seconds into the step until `until`, the next caption, or the end of the
+step's pause; it returns the step, and `step.captions` holds them. Without
+written ones, a narrated step's captions are cut from its words.
+`tutorial.captions()` returns `Cue(start, end, text)`s on the lesson's clock;
+`tutorial.export_captions(path, *, overwrite=False)` writes `.vtt` or `.srt`.
+`render_at_time`, `render_frames` and `export_video` take `captions=False`;
+True burns them in. See [CAPTIONS.md](CAPTIONS.md).
+
 ## Interactive prompts (new in 0.2.0a1)
 
 `step.ask(text, answer, *, correct=None, wrong=None, hint=None, attempts=3)`
@@ -371,7 +382,7 @@ See [TIMING.md](TIMING.md) for boundary semantics, validation, and limits.
 
 ## Video export (development 0.1.0a6)
 
-`tutorial.export_video(path, *, fps=30, fourcc="mp4v", overwrite=False) -> Path`
+`tutorial.export_video(path, *, fps=30, fourcc="mp4v", overwrite=False, captions=False) -> Path`
 encodes `ceil(duration * fps)` frames into one video file. The file extension
 selects the container. Output is always opaque three-channel BGR; there is no
 `alpha` option, because these codecs carry no alpha channel.

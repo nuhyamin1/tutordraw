@@ -55,9 +55,17 @@ revised.save_json("lesson-revised.tutordraw.json")
 
 This fragment assumes a second step with a callout. The original lesson object and file remain unchanged. For adding teaching content, prefer the regular `step`, `show`, `highlight`, `explain`, and `dim_others` methods.
 
-## Current format: v12
+## Current format: v13
 
-New saves write lesson schema v12, packaged as `lesson-v12.schema.json`. v12
+New saves write lesson schema v13, packaged as `lesson-v13.schema.json`. v13
+adds one step field, `captions`: a list of `{"text", "at", "until"}` written
+with `Step.caption` (`until` null for "until the next"). v1 to v12 still load,
+with no written captions. A v13 file cannot be opened by a build that only
+knows v12. See CAPTIONS.md.
+
+### v12
+
+v12, packaged as `lesson-v12.schema.json`. v12
 adds two restyle fields, `scale` (null, or a factor above 0 and at most 10)
 and `pivot` (null, or the point of the target's bounds it scales about), and
 one target field, `obstacle` (whether its artwork keeps labels off). v1 to

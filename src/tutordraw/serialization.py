@@ -23,8 +23,8 @@ if TYPE_CHECKING:
     from .tutorial import Tutorial
 
 FORMAT = "tutordraw.lesson"
-SCHEMA_VERSION = 12
-SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, SCHEMA_VERSION)
+SCHEMA_VERSION = 13
+SUPPORTED_VERSIONS = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, SCHEMA_VERSION)
 # Restyle fields each schema version introduced.
 RESTYLE_FIELDS_ADDED = {10: ("via",), 12: ("scale", "pivot")}
 # The same, for target fields.
@@ -140,7 +140,8 @@ def to_dict(tutorial: Tutorial) -> dict:
                                      "pivot": list(r.pivot) if isinstance(r.pivot, tuple) else r.pivot}
                                     for r in step.restyles],
                        "narration": [[w.text, w.start, w.end] for w in step.narration],
-                       "prompt": _prompt(step.prompt)}
+                       "prompt": _prompt(step.prompt),
+                       "captions": [{"text": c.text, "at": c.at, "until": c.until} for c in step.captions]}
                       for step in tutorial.steps],
         }
         result = _json_copy(document)
@@ -258,9 +259,10 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             mark_fields = {"marks", "draw", "camera"} if version >= 8 else set()
             spoken_fields = {"narration", "prompt"} if version >= 9 else set()
             motion_fields = {"motion"} if version >= 11 else set()
+            caption_fields = {"captions"} if version >= 13 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
                     | timing_fields | restyle_fields | easing_fields | reveal_fields | mark_fields
-                    | spoken_fields | motion_fields, where)
+                    | spoken_fields | motion_fields | caption_fields, where)
             sid = identity(item["id"], f"{where}.id")
             step = tutorial.step(item["title"], duration=item.get("duration", 3.0), pause=item.get("pause", 0.0))
             step._id = sid
@@ -357,6 +359,12 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                     step._narration = parse_words(words)
                 except ValidationError as exc:
                     raise LessonFormatError(f"{where}.narration: {exc}") from exc
+            for j, entry in enumerate(_list(item.get("captions", []), f"{where}.captions")):
+                caption = _object(entry, {"text", "at", "until"}, f"{where}.captions[{j}]")
+                try:
+                    step.caption(caption["text"], at=caption["at"], until=caption["until"])
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.captions[{j}]: {exc}") from exc
             if item.get("prompt") is not None:
                 asked = _object(item["prompt"], PROMPT_FIELDS, f"{where}.prompt")
                 answers = references(asked["answer_ids"], targets, f"{where}.prompt.answer_ids")

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Timed captions.** `step.caption(text, at=, until=)` writes captions for
+  any step; a narrated step without them gets captions from its words, one
+  sentence per cue, long sentences split to fit two lines.
+  `tutorial.captions()` lists the cues, `export_captions("lesson.vtt")` (or
+  `.srt`) writes a subtitle file, and `export_video(..., captions=True)`
+  burns them in. The player shows written captions. Lint
+  `CAPTION_TOO_FAST` and `CAPTION_NEVER_SHOWN`. Schema v13 saves them.
 - **A leader to an arrow ends on the arrow.** DrawCV cannot turn an `Arrow`
   into a path, so a leader to one still stopped at its bounding box, in the
   air beside a slanted vector. The arrow's shaft and head are now traced
