@@ -1229,3 +1229,20 @@ arrow's tip was free.
   marks are per-step objects, so they always fade.
 - A step whose items would fade is no longer rendered as its end state in
   `render_at_time` (the hard-cut shortcut requires nothing timed).
+
+## A graph's grid is placement artwork (2026-09-26)
+
+**Why**: a panel on a graph's grid hides what the graph is read by, but the
+grid lines are not targets, so placement treated the plot as empty space.
+
+- The kit tags each grid line `td-grid` (`kits._base.GRID_TAG`), and
+  `plan_annotations` adds tagged lines' bounds to the soft artwork, like the
+  unregistered words. Not registered as targets: that would put every grid
+  line in `describe()`, the saved targets and lint (a leader into a plot must
+  cross grid lines, so `LEADER_CROSSES_TARGET` would fire on every graph).
+- Cost is proportional: a grid line is about 1 px wide, so a panel pays for
+  the length of line it covers and a leader a little per line it crosses.
+  Where there is room beside the plot a label moves there; inside it, it
+  stays (the golden graph frame is unchanged).
+- Tags are DrawCV state and survive save/load; a lesson saved before this has
+  untagged grid lines and is placed as it was.

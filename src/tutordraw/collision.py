@@ -352,6 +352,11 @@ def plan_annotations(step: Step, objects: dict[str, Drawable], target_ids: Seque
         from drawcv import Text
         words = {f"text:{key}": obj.get_bounds() for key, obj in objects.items()
                  if isinstance(obj, Text) and key not in bounds and obj.visible and obj.text.strip()}
+        # A graph's grid lines, likewise: a panel on the grid hides what the graph is read by.
+        from .kits._base import GRID_TAG
+        words.update({f"grid:{key}": obj.get_bounds() for key, obj in objects.items()
+                      if GRID_TAG in obj.tags and key not in bounds and obj.effective_visible
+                      and obj.effective_opacity > 0.01})
         # Where each leader would start, per anchor, on the target's outline where the step ends.
         tips = {}
         for annotation in annotations:

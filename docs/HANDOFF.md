@@ -1,6 +1,19 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, annotations fading in (Claude Code).
+Last updated: **2026-09-26**, labels off a graph's grid (Claude Code).
+
+## Unreleased: labels keep off a graph's grid (2026-09-26)
+
+`Axes(grid=True)` tags grid lines `td-grid` (`kits._base.GRID_TAG`,
+`kits/graphs.py`); `collision.plan_annotations` adds tagged lines to the soft
+artwork (`grid:<id>` keys, beside `text:` words). Tests in
+`tests/test_leader_placement.py` (now 6; the off-grid one fails without the
+planner change). No golden frame changed. **Ran: `python -m pytest -q`: 654
+passed, 11 skipped.** Rendered a label near the plot's edge (moved beside the
+plot) and one in its middle (stays, flips off the y-axis). Docs: KITS,
+ARCHITECTURE, DECISIONS, CHANGELOG.
+
+
 
 ## Unreleased: annotations fade in (2026-09-26)
 
@@ -34,7 +47,7 @@ verbatim placement and a built crossing. New `tests/test_leader_placement.py`
 graph scene with anchors right and bottom: callout beside the tip, lint clean.
 Not done: grid lines of a graph are not obstacles (not targets); routed
 (bent) leaders.
-**Next**: a graph's grid as placement artwork; player test in CI; version bump and 0.2.0a1 tag when asked.
+**Next**: a headless-browser test for player.js; version bump and 0.2.0a1 tag when asked.
 
 
 

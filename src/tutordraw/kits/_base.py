@@ -14,6 +14,8 @@ from ..validation import finite_number
 INK = (60, 70, 90)
 CURVE = (40, 100, 200)
 GRID = (226, 231, 238)
+# Tags a kit's grid lines, which labels should keep off like other artwork though no one registers them.
+GRID_TAG = "td-grid"
 PAPER = (255, 255, 255)
 KIT_KEY = "tutordraw"
 # Fills for kits that colour their parts: distinct, light enough for dark text.
