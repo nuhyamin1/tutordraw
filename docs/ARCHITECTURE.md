@@ -103,7 +103,9 @@ intent, scored lexicographically on overlap, then a soft cost, then rank. The
 soft cost is the artwork the panel covers plus where its leader goes: its
 length over other artwork and panels, its crossings with placed leaders, and
 its length beyond the authored placement's (`LEADER_WEIGHT`,
-`LEADERS_CROSSING`, `LEADER_LENGTH`).
+`LEADERS_CROSSING`, `LEADER_LENGTH`). Artwork is the registered obstacle
+targets, the drawing's unregistered words (tick numbers, titles), and lines a
+kit tags `td-grid` (a graph's grid).
 The decision is taken once per render from the step's own end state (and, when
 the step animates, the swept path between its two ends), then applied to live
 bounds each frame, so an animated step cannot jitter or swap sides. Nothing is

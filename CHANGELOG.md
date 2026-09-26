@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Labels keep off a graph's grid.** Grid lines from `Axes(grid=True)` are
+  tagged `td-grid` and placement weighs covering them like other artwork, so a
+  label near the edge of a plot moves into the free space beside it instead
+  of lying on the grid. Graphs saved before this have untagged grids and are
+  placed as before.
 - **Annotations can fade in.** `Theme(fade_seconds=0.4)` fades every label,
   callout, mark and highlight in as it appears instead of popping in whole,
   in rendered frames, video and the browser player. A drawn-on stroke still

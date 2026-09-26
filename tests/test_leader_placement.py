@@ -48,5 +48,32 @@ def test_a_callout_on_a_vector_on_a_graph_stays_clear_of_the_axes(anchor):
     [callout] = tutorial.layout(0).annotations
     assert callout.anchor == "right"  # beside the tip, in the free space right of the graph
     start, end = callout.leader
-    assert end.x - start.x < 60 and callout.panel.left > 580  # short, and off the grid
+    assert end.x - start.x < 80  # short
+    assert callout.panel.left > 580  # at most at the edge of the grid, whose right edge is x = 605
     assert tutorial.lint() == []
+
+
+def test_a_label_moves_off_the_grid_when_there_is_room_beside_it():
+    # The grid is not a target, but covering it hides what the graph is read by.
+    scene = Scene(900, 600, background=Color.white())
+    tutorial = Tutorial(scene)
+    axes = Axes(tutorial, box=(75, 65, 530, 500), x_range=(-4, 4), y_range=(-4, 4), grid=True)
+    point = axes.point(3.6, 2.5, name="p")
+    tutorial.step("One").show(point.label("The point P, near the edge", anchor="left"))
+    [label] = tutorial.layout(0).annotations
+    assert label.anchor == "right" and label.panel.left > 605  # beside the plot, not on its grid
+    assert tutorial.lint() == []
+
+
+def test_grid_lines_are_tagged_and_survive_a_save():
+    scene = Scene(600, 400, background=Color.white())
+    tutorial = Tutorial(scene)
+    Axes(tutorial, box=(40, 40, 400, 300), x_range=(0, 4), y_range=(0, 4), grid=True)
+    from tutordraw.adapters.drawcv import index_scene
+
+    def grid(t):
+        return sorted((o.start.x, o.start.y, o.end.x, o.end.y)
+                      for o in index_scene(t.scene).values() if "td-grid" in o.tags)
+
+    assert len(grid(tutorial)) == 18  # a line at every tick (0.5 apart) each way
+    assert grid(Tutorial.from_dict(tutorial.to_dict())) == grid(tutorial)

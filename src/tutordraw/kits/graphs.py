@@ -11,7 +11,7 @@ from drawcv import (Arrow, BoundingBox, Circle, Color, FillStyle, Group, Line, P
 from ..adapters.drawcv import fixed_pivot
 from ..errors import ValidationError
 from ..validation import finite_number, rgb
-from ._base import CURVE, GRID, INK, KIT_KEY, _pair, _point
+from ._base import CURVE, GRID, GRID_TAG, INK, KIT_KEY, _pair, _point
 
 HOP_PEAK = 45.0  # px: the most a number-line hop rises above (or dips below) its line
 ACCENT = (214, 96, 50)  # tangents and secants: warm, so they stand apart from the curve
@@ -239,12 +239,13 @@ class Axes:
         parts = []
         if grid:
             faint = StrokeStyle(color=Color(*GRID), width=1)
-            for x in xs:
-                p = self.to_scene(x, 0)
-                parts.append(Line(start=Point(p.x, b.top), end=Point(p.x, b.bottom), stroke=faint))
-            for y in ys:
-                p = self.to_scene(0, y)
-                parts.append(Line(start=Point(b.left, p.y), end=Point(b.right, p.y), stroke=faint))
+            lines = [Line(start=Point(p.x, b.top), end=Point(p.x, b.bottom), stroke=faint)
+                     for p in (self.to_scene(x, 0) for x in xs)]
+            lines += [Line(start=Point(b.left, p.y), end=Point(b.right, p.y), stroke=faint)
+                      for p in (self.to_scene(0, y) for y in ys)]
+            for line in lines:
+                line.add_tag(GRID_TAG)  # placement keeps panels off it (collision.plan_annotations)
+            parts += lines
         start, end = self.to_scene(self.x_range[0], oy), self.to_scene(self.x_range[1], oy)
         self._x_axis = Arrow(start=start, end=Point(end.x + 14, end.y), stroke=ink,
                              fill=FillStyle(color=Color(*self.color)), head_length=10, head_width=8)
