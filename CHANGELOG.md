@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.3.0a1 — in development (unreleased)
+## 0.3.0a1 — fourth alpha (2026-09-27)
+
+New saves use lesson schema v13, which 0.2.0a1 cannot open. This version
+still loads v1-v12 lessons and requires `pydrawcv==0.11.0`.
 
 - **A presenter's pointer.** `step.point(target, at=)` moves one hand per
   lesson to what the narrator means: it fades in, glides between stops, taps

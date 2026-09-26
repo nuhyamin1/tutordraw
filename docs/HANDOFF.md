@@ -28,12 +28,15 @@ reloads, all outside the checkout), and `python -m pip check` (clean). Ran
 The clean environment has no browser or optional typography support, which
 accounts for additional skips; hosted CI includes a required browser job.
 
-Rebuilt after the documentation edits and ran the strict artifact check again:
-both 0.3.0a1 files passed. Next: push the release preparation commit and
-require all nine hosted jobs on that exact commit; confirm it is still the
-newest intended code. At the actual upload, date the 0.3.0a1 changelog,
-rebuild/recheck, then verify the published wheel and examples. No upload has
-been performed.
+The preparation commit `6efa83b` was pushed; GitHub Actions run 36279731105
+passed all nine jobs on that exact commit. The owner then explicitly requested
+the PyPI upload on 2026-09-27. PyPI still listed 0.2.0a1 as latest and had no
+0.3.0a1 release; local `master` matched `origin/master`. The changelog is now
+dated 2026-09-27 and the README install heading is ready for publication.
+Next: commit these final metadata edits, push, require hosted CI on that exact
+commit, rebuild/recheck/install the exact artifacts, upload using the owner's
+credential mechanism, verify the published wheel and examples, and record the
+release. No upload had occurred at the time of this note.
 
 ## Unreleased: the presenter's pointer (2026-09-26)
 

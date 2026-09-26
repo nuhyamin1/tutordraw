@@ -14,10 +14,12 @@ work, not intent. Milestones are ordered; no release date is promised.
   20 skipped; installed examples verified 26 PNGs, one video, and lesson reloads.
 - [x] Review the cell example PNG visually; review README and compatibility
   text for the 0.3.0a1 candidate.
-- [ ] Push release preparation changes and obtain hosted CI success on that
-  exact commit. The prior master commit `da7fa52` passed all nine jobs.
-- [ ] Date the changelog for the actual release, rebuild the exact artifacts,
-  upload only when requested, then verify the published installation.
+- [x] Push release preparation changes and obtain hosted CI success on that
+  exact commit: all nine jobs passed on `6efa83b` (run 36279731105).
+- [x] Date the 0.3.0a1 changelog for 2026-09-27 after the owner explicitly
+  requested publication.
+- [ ] Rebuild and recheck the exact dated artifacts, require CI on their
+  source commit, upload, and verify the published installation.
 
 ## M0 — Project definition
 

@@ -47,7 +47,7 @@ Implemented:
 
 Routed leader lines that bend around artwork remain planned.
 
-## Install the alpha after publication
+## Install the alpha
 
 ```shell
 python -m pip install tutordraw==0.3.0a1
