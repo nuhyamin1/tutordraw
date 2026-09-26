@@ -79,3 +79,20 @@ Verified by eye in Chromium (the Claude desktop browser pane): the camera,
 draw-on, motion and lever lessons match their Python renders at the same
 moments, and a simulated stream waited for, then played, a step appended five
 seconds late. No other browser has been checked.
+
+## Testing the player
+
+`tests/test_player.py` opens an `export_web` page in headless Chromium and
+checks what the player does at exact moments, via the public
+`player.seek(index, time)`: a delayed label drawing on then fading in,
+captions (narrated word by word, and written), an animated step's tween, and
+a prompt tap judged the same as `Tutorial.check_answer`. It needs Playwright:
+
+```
+pip install playwright
+python -m playwright install chromium
+python -m pytest tests/test_player.py
+```
+
+Without Playwright or a browser the tests skip; `TUTORDRAW_REQUIRE_BROWSER=1`
+makes that a failure instead, as CI sets it on Ubuntu / Python 3.12.

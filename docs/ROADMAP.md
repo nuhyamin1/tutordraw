@@ -165,8 +165,10 @@ Design the whole batch before coding; persist it together.
 - [x] A dependency-free web player (`player.js`) tweening between start/end
   frames (camera: 6 keyframes), with reveals and draw-on.
 - [x] Streaming: `web_step` payloads appended while playing; the player waits.
-- [ ] Hosted CI or a headless-browser test for `player.js` (today: verified by
-  eye in Chromium only).
+- [x] A headless-browser test for `player.js`: `tests/test_player.py` drives
+  it in Chromium (reveals, draw-on, fade, captions, tweens, prompt taps);
+  6 passed locally, and each of three deliberate player breaks fails it. A
+  CI step runs it on Ubuntu / Python 3.12 (first hosted run pending).
 - [ ] Arrowheads riding the tip while drawing on, in the browser.
 
 ### P5 — Content and interaction
