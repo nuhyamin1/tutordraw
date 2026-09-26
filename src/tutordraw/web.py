@@ -98,7 +98,7 @@ def web_step(tutorial, index: int) -> dict:
             "narration": [[w.text, w.start, w.end] for w in step.narration] or None,
             # Written captions only; the player cuts a narrated step's own from its words.
             "captions": [[c.text, c.start, c.end] for c in step_cues(step)] if step.captions else None,
-            "prompt": prompt_payload(tutorial, step.prompt)}
+            "prompt": prompt_payload(tutorial, step.prompt, final)}
 
 
 def _keep_fading(final: Composition, start: Composition) -> None:

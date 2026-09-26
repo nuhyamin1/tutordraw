@@ -191,8 +191,9 @@ Design the whole batch before coding; persist it together.
 - [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
   live captions in the player.
 - [x] Save narration text and timings in the lesson file: schema v9, with prompts.
-- [ ] Forgiving prompt taps: a tap between an equation's glyphs or on thin
-  text currently misses (found after 0.2.0a1).
+- [x] Forgiving prompt taps: text and equations count anywhere in their box,
+  and a tap on nothing takes the nearest target within 12 px, in `hit_test`
+  and the player alike (grid over `E = mc^2`: 71 of 120 taps before, 120 now).
 - [x] Interactive prompts ("tap the nucleus") via DrawCV hit testing
   (`Step.ask`, `Tutorial.check_answer`, the player's prompt bar), saved in
   schema v9.

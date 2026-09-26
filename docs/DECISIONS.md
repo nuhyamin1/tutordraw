@@ -1246,3 +1246,21 @@ grid lines are not targets, so placement treated the plot as empty space.
   stays (the golden graph frame is unchanged).
 - Tags are DrawCV state and survive save/load; a lesson saved before this has
   untagged grid lines and is placed as it was.
+
+## Forgiving prompt taps (2026-09-26)
+
+**Why**: found after 0.2.0a1: an equation is filled glyph outlines, so a tap
+between its letters missed it (71 of 120 grid taps over `E = mc^2`) and could
+land on the shape behind it instead.
+
+- Text is read as a block: a Text or anything in an equation kit counts
+  anywhere in its box (plus `TEXT_PAD` = 4 px) and is put first, since it is
+  drawn over what it sits on. DrawCV already hit-tests plain Text by its box;
+  this makes equations, and the order, agree with it.
+- A tap on nothing takes the nearest shown target within `TAP_SLOP` = 12
+  canvas px of its box, for dots and thin lines. Only on nothing, so a
+  precise tap is never re-read as a neighbour. Box distance, not ink, keeps
+  it cheap and the same in the player.
+- The player cannot measure boxes as Python does, so the payload sends them
+  (`zones`) from the same finished frame; one rule set, two implementations,
+  held equal by a browser test.

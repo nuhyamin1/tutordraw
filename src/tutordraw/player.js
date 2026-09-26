@@ -406,16 +406,33 @@
      * label over a target does not stop the tap reaching it. */
     _hits(x, y) {
       const prompt = this.steps[this.index].prompt;
-      const ids = [];
+      const known = id => (prompt.names[id] || prompt.answers.includes(id)) && !prompt.helpers.includes(id);
+      let ids = [];
       for (const el of document.elementsFromPoint(x, y)) {
         if (!this.svg.contains(el)) continue;
         let node = el.closest("[data-drawcv-id]");
         while (node && this.svg.contains(node)) {
           const id = node.getAttribute("data-drawcv-id");
-          const known = prompt.names[id] || prompt.answers.includes(id);
-          if (known && !prompt.helpers.includes(id) && !ids.includes(id)) ids.push(id);
+          if (known(id) && !ids.includes(id)) ids.push(id);
           node = node.parentElement && node.parentElement.closest("[data-drawcv-id]");
         }
+      }
+      /* Forgiving, as prompts.hits is: text and equations count anywhere in
+       * their box, first; a tap on nothing takes the nearest target in reach. */
+      const zones = prompt.zones || [];
+      if (!zones.length) return ids;
+      const frame = this.frame.getBoundingClientRect();
+      const cx = (x - frame.left) / frame.width * this.width, cy = (y - frame.top) / frame.height * this.height;
+      const away = ([, zx, zy, w, h]) => Math.hypot(Math.max(zx - cx, 0, cx - zx - w), Math.max(zy - cy, 0, cy - zy - h));
+      const boxed = zones.filter(z => z[5] && away(z) <= prompt.textPad && known(z[0])).map(z => z[0]);
+      ids = [...boxed, ...ids.filter(id => !boxed.includes(id))];
+      if (!ids.length) {
+        let best = null;
+        for (const z of zones) {
+          const d = away(z);
+          if (d <= prompt.slop && known(z[0]) && (!best || d < best.d)) best = {d, id: z[0]};
+        }
+        if (best) ids = [best.id];
       }
       return ids;
     }

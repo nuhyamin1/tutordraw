@@ -32,6 +32,16 @@ other annotations never block a tap from reaching what is under them. A
 kit's `<node>_shape` helper target is skipped when its node was hit, so
 feedback says "the start", not "the start shape".
 
+Taps are forgiving, as a finger is (0.3.0a1, unreleased):
+
+- **Text and equations count anywhere in their box**, grown by 4 px
+  (`prompts.TEXT_PAD`), not only on a glyph's ink, and come first, as they
+  are drawn on top: a tap between the letters of `E = mc^2` is the equation,
+  not the card behind it. Before, 71 of 120 grid taps over one counted.
+- **A tap on nothing counts as the nearest target within 12 px**
+  (`prompts.TAP_SLOP`) of its box, so a small dot or a thin line can be hit.
+- Hidden and fully transparent targets are never tapped.
+
 ## Feedback
 
 | | Default | Used when |
@@ -50,9 +60,12 @@ them, because the feedback does.
 
 `web_step(i)["prompt"]` carries `text`, `answers` (drawable IDs), `answer`,
 `attempts`, the four templates `correct`, `wrong`, `miss` and `hint`, `names`
-(drawable ID to spoken name) and `helpers` (IDs never named in feedback). The
-player finds what was tapped with `document.elementsFromPoint` and each
-element's `data-drawcv-id` ancestors, so it agrees with `hit_test`. Listen for
+(drawable ID to spoken name), `helpers` (IDs never named in feedback), and
+`zones` (each shown target's box in the finished frame, `[id, x, y, width,
+height, text-like]`, smallest first) with `textPad` and `slop`. The player
+finds what was tapped with `document.elementsFromPoint` and each element's
+`data-drawcv-id` ancestors, then applies the forgiving rules to `zones`, so
+it agrees with `hit_test` (`tests/test_player.py` checks the same taps in both). Listen for
 answers with:
 
 ```javascript

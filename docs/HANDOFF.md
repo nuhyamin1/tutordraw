@@ -1,6 +1,25 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, version 0.3.0a1 in development (Claude Code).
+Last updated: **2026-09-26**, forgiving prompt taps (Claude Code).
+
+The owner pushed tag `v0.2.0a1` (annotated, on `ec6adb3`); verified on GitHub.
+
+## Unreleased: forgiving prompt taps (2026-09-26)
+
+`prompts.hits`: text-like targets (`text_like`: a Text, or inside an
+equation kit) count anywhere in their box grown by `TEXT_PAD` (4) and come
+first; a tap hitting nothing takes the nearest shown target within
+`TAP_SLOP` (12) of its box (`zones`, smallest first, ties to the smaller).
+`prompts.payload` sends `zones`, `textPad`, `slop` (web_step passes its
+final composition); `player.js` `_hits` applies the same rules. Grid over
+`E = mc^2` at size 48: 71/120 taps counted before, 120/120 now, centre now
+counts. Tests: `tests/test_prompts.py` (+2, fail on the old code) and a
+player parity test in `tests/test_player.py` (fails on the old player).
+**Ran: `python -m pytest -q` (with Playwright): 664 passed, 11 skipped;
+`check_docs.py` passed.** Docs: PROMPTS,
+ROADMAP, CHANGELOG, DECISIONS.
+
+
 
 ## Version 0.3.0a1 in development; tag for 0.2.0a1 (2026-09-26)
 
@@ -98,7 +117,7 @@ Not done: grid lines of a graph are not obstacles (not targets); routed
 (bent) leaders.
 Hosted CI on PR #2: all 18 jobs green; the new step's log shows Chromium
 153 installed and `6 passed`.
-**Next**: owner pushes the v0.2.0a1 tag (above); then the roadmap's forgiving prompt taps.
+**Next**: forgiving taps are done; pick the next roadmap item with the owner.
 
 
 

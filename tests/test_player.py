@@ -159,3 +159,29 @@ def test_a_tap_is_judged_as_python_judges_it(page):
     feedback, css = tap(465, 180)  # the box
     assert "right" in css and feedback == lesson.check_answer(2, 465, 180).feedback
     assert lesson.check_answer(2, 465, 180).correct
+
+
+def test_forgiving_taps_are_judged_as_python_judges_them(browser, tmp_path):
+    # Between an equation's glyphs, just off a small shape, and far from everything.
+    pytest.importorskip("ziamath")
+    from tutordraw.kits import Equation
+
+    scene = Scene(640, 360, background=Color.white())
+    ball = Circle(center=Point(560, 300), radius=20, fill=FillStyle(color=Color(80, 120, 200)))
+    scene.add(ball)
+    lesson = Tutorial(scene)
+    lesson.target(ball, name="ball")
+    equation = Equation(lesson, "E = mc^2", position=(200, 140), size=48, name="energy")
+    lesson.step("Ask", duration=1).ask("Tap the equation", equation.equation, attempts=10)
+    page = browser.new_page(viewport={"width": 900, "height": 700})
+    page.goto(lesson.export_web(tmp_path / "taps.html").as_uri())
+    page.wait_for_function("typeof player !== 'undefined' && player.steps.length === 1")
+    page.evaluate("player.pause(); player.seek(0, 1)")
+    frame = page.locator(".td-frame").bounding_box()
+    scale = frame["width"] / scene.width
+    box = lesson.layout(0).targets["energy"]
+    for x, y in ((588, 300), (400, 40), (box.center.x, box.center.y)):
+        page.mouse.click(frame["x"] + x * scale, frame["y"] + y * scale)
+        assert page.text_content(".td-feedback") == lesson.check_answer(0, x, y).feedback, (x, y)
+    assert "right" in page.get_attribute(".td-feedback", "class")  # the last tap, on the gap, is right
+    page.close()

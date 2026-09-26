@@ -186,3 +186,43 @@ def test_bad_saved_prompts_are_refused(cell, change, message):
     change(document["steps"][0]["prompt"])
     with pytest.raises(LessonFormatError, match=message):
         Tutorial.from_dict(document)
+
+
+def equation_lesson():
+    """An equation on a card, a ball, and a hidden box: where forgiving taps matter."""
+    pytest.importorskip("ziamath")
+    from tutordraw.kits import Equation
+
+    scene = Scene(640, 360, background=Color.white())
+    card = Rectangle(position=Point(150, 100), width=340, height=140, fill=FillStyle(color=Color(235, 240, 248)))
+    ball = Circle(center=Point(560, 300), radius=20, fill=FillStyle(color=Color(80, 120, 200)))
+    hidden = Rectangle(position=Point(40, 300), width=40, height=40, fill=FillStyle(color=Color(0, 0, 0)))
+    for shape in (card, ball, hidden):
+        scene.add(shape)
+    lesson = Tutorial(scene)
+    t_card, t_ball, t_hidden = (lesson.target(s, name=n) for s, n in ((card, "card"), (ball, "ball"),
+                                                                     (hidden, "secret")))
+    equation = Equation(lesson, "E = mc^2", position=(200, 140), size=48, name="energy")
+    step = lesson.step("Ask").restyle(t_hidden, visible=False)
+    step.ask("Tap the equation", equation.equation)
+    return lesson, equation
+
+
+def test_a_tap_anywhere_on_an_equation_counts_not_only_on_its_glyphs():
+    # Before: 71 of 120 grid taps over E = mc^2 counted, and its centre did not.
+    lesson, equation = equation_lesson()
+    box = lesson.layout(0).targets["energy"]
+    taps = [(box.x + (i + 0.5) * box.width / 12, box.y + (j + 0.5) * box.height / 10)
+            for i in range(12) for j in range(10)]
+    assert all(lesson.check_answer(0, x, y).correct for x, y in taps)
+    # Between the glyphs is the equation, not the card behind it.
+    assert lesson.hit_test(0, box.center.x, box.center.y)[:1] != (lesson.get_target("card"),)
+    assert lesson.get_target("card") in lesson.hit_test(0, box.center.x, box.center.y)
+
+
+def test_a_near_miss_counts_as_the_nearest_target_and_a_far_one_does_not():
+    lesson, _ = equation_lesson()
+    ball = lesson.get_target("ball")
+    assert lesson.hit_test(0, 560 + 20 + 8, 300) == (ball,)  # 8 px off the ball's edge
+    assert lesson.hit_test(0, 560 + 20 + 30, 300) == ()  # 30 px off: nothing
+    assert lesson.hit_test(0, 60, 320) == ()  # on the hidden box: never tappable
