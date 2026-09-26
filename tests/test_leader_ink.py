@@ -12,7 +12,7 @@ placed as before.
 import math
 
 import pytest
-from drawcv import Color, FillStyle, Line, Point, Polygon, Rectangle, Scene, StrokeStyle
+from drawcv import Arrow, Color, FillStyle, Line, Point, Polygon, Rectangle, Scene, StrokeStyle
 
 from tutordraw import Tutorial
 
@@ -77,3 +77,14 @@ def test_a_leader_to_a_slanted_line_ends_on_the_line():
     annotation, _ = leader_of(line, "right")
     start, _ = annotation.leader
     assert distance_to_segment(start, Point(200, 500), Point(700, 200)) < 1.5
+
+
+def test_a_leader_to_a_slanted_arrow_ends_on_the_arrow():
+    # DrawCV cannot turn an Arrow into a path; the leader stopped at its bounds' edge in the air.
+    arrow = Arrow(start=Point(200, 500), end=Point(700, 200), stroke=StrokeStyle(color=Color(70, 130, 180), width=4),
+                  fill=FillStyle(color=Color(70, 130, 180)))
+    annotation, box = leader_of(arrow, "right")
+    start, _ = annotation.leader
+    tip, head = arrow.get_world_head_geometry()
+    assert min(distance_to_segment(start, Point(200, 500), tip), on_outline(start, head)) < 1.5
+    assert math.hypot(start.x - box.right, start.y - box.center.y) > 20

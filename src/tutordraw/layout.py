@@ -94,7 +94,7 @@ def ink_point(target: Drawable, point: Point) -> Point:
     try:
         if getattr(target, "fill", None) is not None and target.contains_point(point):
             return point
-        contours = target.to_path(preserve_world_transform=True).flatten_world(tolerance=1.0)
+        contours = _outline(target)
     except Exception:
         return point
     best, nearest = point, float("inf")
@@ -112,6 +112,21 @@ def ink_point(target: Drawable, point: Point) -> Point:
     stroke = getattr(target, "stroke", None)
     half = (getattr(stroke, "width", 1.0) or 1.0) / 2 if stroke is not None else 0.0
     return point if nearest <= (half + INK_GAP) ** 2 else best
+
+
+def _outline(target: Drawable) -> list[list[Point]]:
+    """The target's outline in world space, as polylines.
+
+    DrawCV 0.11.0 cannot turn an Arrow into a path, so it is traced here as its
+    shaft and its closed head; without this a leader to a slanted arrow stopped
+    at a bounds point in the air beside it.
+    """
+    from drawcv import Arrow
+
+    if isinstance(target, Arrow):
+        tip, head = target.get_world_head_geometry()
+        return [[target.to_world(target.start), tip], [*head, head[0]]]
+    return target.to_path(preserve_world_transform=True).flatten_world(tolerance=1.0)
 
 
 def measure_label(label: Label, theme: Theme | None = None, font=None) -> Measured:
