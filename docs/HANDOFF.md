@@ -1,6 +1,23 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, CI fix for lint under a camera (Claude Code).
+Last updated: **2026-09-26**, a browser test for the player (Claude Code).
+
+PR #1 (captions, fade-in, leader placement, grid, arrow leaders, lint under a
+camera) was merged into master by rebase at 56db55c after all 18 CI jobs
+passed on its head.
+
+## Unreleased: a headless-browser test for the player (2026-09-26)
+
+`tests/test_player.py` (6 tests) drives `player.js` in Chromium through
+Playwright at exact times via `player.seek`; skipped without Playwright
+unless `TUTORDRAW_REQUIRE_BROWSER=1`. New CI step (Ubuntu / Python 3.12):
+installs Playwright and Chromium, runs it with that variable. **Ran:
+`TUTORDRAW_REQUIRE_BROWSER=1 python -m pytest tests/test_player.py`: 6
+passed; breaking the player's fade, written captions or easing each failed
+the matching test.** Playwright is not a declared dependency (CI installs
+it). Docs: WEB.md "Testing the player", ROADMAP.
+
+
 
 ## Fixed: TEXT_OFF_CANVAS under a camera (2026-09-26)
 
@@ -61,7 +78,7 @@ verbatim placement and a built crossing. New `tests/test_leader_placement.py`
 graph scene with anchors right and bottom: callout beside the tip, lint clean.
 Not done: grid lines of a graph are not obstacles (not targets); routed
 (bent) leaders.
-**Next**: a headless-browser test for player.js; version bump and 0.2.0a1 tag when asked.
+**Next**: confirm the new CI step on its first hosted run; version bump and 0.2.0a1 tag when asked.
 
 
 
