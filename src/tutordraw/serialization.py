@@ -33,7 +33,8 @@ PROMPT_FIELDS = {"text", "answer_ids", "correct", "wrong", "hint", "attempts"}
 # Theme fields each schema version introduced; older documents omit them and
 # load with the Theme default, exactly as older step fields do.
 THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin"),
-                      8: ("draw_seconds", "halo_width")}
+                      8: ("draw_seconds", "halo_width"),
+                      13: ("fade_seconds",)}
 # The same, for highlight fields.
 HIGHLIGHT_FIELDS_ADDED = {8: ("at", "draw", "shape")}
 HIGHLIGHT_FIELDS = {"target_id", "padding", "color", "width", "at", "draw", "shape"}

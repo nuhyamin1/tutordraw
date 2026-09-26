@@ -32,17 +32,18 @@ PLAYER_VERSION = 1
 FADED = 0.001
 
 
-def step_timing(tutorial, index: int) -> dict[str, tuple[float, float]]:
-    """Owner ID -> (appear at, draw seconds), clamped to the step as rendering does."""
+def step_timing(tutorial, index: int) -> dict[str, tuple[float, float, float]]:
+    """Owner ID -> (appear at, draw seconds, fade seconds), clamped to the step as rendering does."""
     step = tutorial.steps[index]
-    seconds = tutorial.theme.draw_seconds
+    seconds, fade = tutorial.theme.draw_seconds, tutorial.theme.fade_seconds
     timing = {}
     for item in (*step.labels, *step.callouts, *step.marks):
         at = min(step.revealed_at(item), step.duration)
-        timing[item.id] = (at, seconds if item.id in step.draws else 0.0)
+        timing[item.id] = (at, seconds if item.id in step.draws else 0.0, 0.0 if step.carried(item) else fade)
     for highlight in step.highlights:
         timing[f"hl-{highlight.target.id}"] = (min(highlight.at, step.duration),
-                                               seconds if highlight.draw else 0.0)
+                                               seconds if highlight.draw else 0.0,
+                                               0.0 if step.carried(highlight) else fade)
     return timing
 
 

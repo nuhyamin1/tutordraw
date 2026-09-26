@@ -165,6 +165,10 @@
         "halo_width": {
           "type": "number",
           "minimum": 0
+        },
+        "fade_seconds": {
+          "type": "number",
+          "minimum": 0
         }
       },
       "required": [
@@ -186,7 +190,8 @@
         "avoid_collisions",
         "collision_margin",
         "draw_seconds",
-        "halo_width"
+        "halo_width",
+        "fade_seconds"
       ],
       "additionalProperties": false
     },

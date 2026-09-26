@@ -273,9 +273,10 @@
       this.tweens = step.frames && step.frames.length ? buildTweens(this.svg, step.frames.map(parse)) : [];
       this.timed = [...this.svg.querySelectorAll("[data-td-at]")].map(group => {
         const draw = parseFloat(group.getAttribute("data-td-draw") || "0");
+        const fade = parseFloat(group.getAttribute("data-td-fade") || "0");
         const shapes = draw ? [...group.querySelectorAll(DRAWABLE)].filter(s => s.getTotalLength) : [];
         return {
-          group, at: parseFloat(group.getAttribute("data-td-at")), draw,
+          group, at: parseFloat(group.getAttribute("data-td-at")), draw, fade,
           shapes: shapes.map(s => ({el: s, length: s.getTotalLength() || 0}))
         };
       });
@@ -315,6 +316,9 @@
       for (const item of this.timed) {
         const shown = done || t >= item.at;
         item.group.style.visibility = shown ? "" : "hidden";
+        // Theme.fade_seconds: what shows whole fades in over that long from its moment.
+        const faded = done || !item.fade ? 1 : Math.min(Math.max((t - item.at) / item.fade, 0), 1);
+        item.group.style.opacity = faded < 1 ? String(faded) : "";
         const p = done ? 1 : item.draw ? Math.min(Math.max((t - item.at) / item.draw, 0), 1) : 1;
         for (const s of item.shapes) {
           if (p >= 1) {
