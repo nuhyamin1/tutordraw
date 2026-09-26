@@ -17,9 +17,9 @@ Future publication also requires an explicit owner request. The CI workflow neve
 - Repository: `https://github.com/nuhyamin1/tutordraw`, read from the configured origin.
 - PyPI accepted both release files under the owner-authorized credential.
 
-Published versions are immutable. The commands below describe the release process;
-**choose a new version and update filenames before a future upload**. Do not rebuild
-and try to replace the already published 0.1.0a3 artifacts.
+Published versions are immutable. The commands below use the 0.3.0a1 candidate;
+choose a new version and update the filenames for any later release. Never
+rebuild and try to replace an already published artifact.
 
 ## Local verification
 
@@ -59,11 +59,11 @@ Every item must be true before asking the owner to authorise an upload.
 
 Two judgement calls that are not mechanical:
 
-- **The lesson format moved v2 to v5 in one day.** Published schema versions
-  become other people's files. Consider whether the format should settle first.
-- **Alpha scope.** a11 adds video, non-ASCII text, per-step artwork, animation,
-  reveals and optional Thai/Arabic since a3. That is a large jump for one
-  version number; say so in the release notes rather than hiding it.
+- **Lesson compatibility.** 0.3.0a1 writes schema v13, which 0.2.0a1 cannot
+  open; 0.3.0a1 still loads earlier lesson formats. State this in release notes.
+- **Alpha scope.** Placement, motion, captions, pointer behavior, graph tools,
+  and prompt taps changed since 0.2.0a1. Review the changelog and examples
+  before publication.
 
 ## Before release
 

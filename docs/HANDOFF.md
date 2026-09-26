@@ -1,6 +1,39 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, the presenter's pointer (Claude Code).
+Last updated: **2026-09-27**, 0.3.0a1 release preparation.
+
+## 0.3.0a1 release preparation (2026-09-27)
+
+Fetched and fast-forwarded local `master` to `da7fa52`, the current upstream
+commit at the time of review. PyPI's project page still listed 0.2.0a1 as
+latest. GitHub Actions run 36254069389 for `da7fa52` completed all nine matrix
+jobs successfully; the documentation edits below are not in that run.
+
+Changed README (0.3.0a1 description and install command, pointer, current
+limits), COMPATIBILITY (schema v13 and placement), RELEASING (0.3-specific
+review points), ROADMAP (release gate), and this handoff. No package code or
+version number changed. The changelog still says unreleased; date it when the
+release is actually made.
+
+Commands run with Windows Python 3.12 from `.venv`: `python -m pytest -q`
+(675 passed, 9 skipped), `python tools/check_docs.py` (29 documents, one
+README example), `python -m pip check` (clean), `python -m build
+--no-isolation --outdir output/release`, and `python tools/check_release.py
+--dist-dir output/release --require-metadata` (both 0.3.0a1 artifacts passed).
+In a separate `output/verify-venv`, installed the candidate wheel and its
+declared dependencies: `python -I -m pytest -q` (664 passed, 20 skipped),
+`python -I tools/check_installed.py` (26 PNGs, one 120-frame video, lesson
+reloads, all outside the checkout), and `python -m pip check` (clean). Ran
+`examples/cell_tutorial.py` and visually inspected `output/cell/step-002.png`.
+The clean environment has no browser or optional typography support, which
+accounts for additional skips; hosted CI includes a required browser job.
+
+Rebuilt after the documentation edits and ran the strict artifact check again:
+both 0.3.0a1 files passed. Next: push the release preparation commit and
+require all nine hosted jobs on that exact commit; confirm it is still the
+newest intended code. At the actual upload, date the 0.3.0a1 changelog,
+rebuild/recheck, then verify the published wheel and examples. No upload has
+been performed.
 
 ## Unreleased: the presenter's pointer (2026-09-26)
 

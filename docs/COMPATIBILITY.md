@@ -55,12 +55,14 @@ are drawn as authored.
   supply; TutorDraw bundles none. Verified on Windows 11 / CPython 3.12 with
   Tahoma. Other hosts are untested, and the test suite skips when no covering
   font is found.
-- Hebrew, Indic scripts, emoji, rich text and equations are refused with a
-  `ValidationError` naming the character; DrawCV's font engine accepts Latin,
-  Thai and Arabic only. See [TEXT.md](TEXT.md).
+- Unsupported characters in annotation text raise `ValidationError` naming the
+  character; see [TEXT.md](TEXT.md). The `math` extra typesets equations into
+  DrawCV paths rather than annotation text.
 - Bounds anchors use transformed axis-aligned bounds, not exact shape outlines.
 - Callouts wrap and split long words; a character that cannot fit raises an error.
-- Authors control placement. No automatic overlap avoidance or leader routing.
+- Label and callout panels avoid overlap with each other and measured artwork
+  by default; crowded layouts can still produce a `LayoutWarning`. Leaders
+  attach to shape ink, but routed (bent) leaders are not implemented.
 - Off-canvas warnings are actionable; clipped output can still be produced.
 
 ## Rendering and export
@@ -93,6 +95,8 @@ Direct construction of Target, Label, Callout, and Step is unsupported.
 
 Alpha releases may change APIs. Record any changes and migration instructions in
 [the changelog](../CHANGELOG.md). Version 0.1.0a3 intentionally retains the a2 API.
+0.3.0a1 writes lesson schema v13. It loads v1-v12; a 0.2.0a1 reader cannot
+open v13. See [persistence](PERSISTENCE.md) for the fields added in v10-v13.
 0.2.0a1 writes lesson schema v9: v8 (marks, draw-on, camera,
 outline highlights, halo) plus step narration and prompts. It adds
 `lint`/`layout`; v1-v8 still load, and a11 cannot read v8 or v9. Development 0.1.0a9 adds the optional `typography` extra, `Tutorial(font=...)`

@@ -6,9 +6,9 @@ TutorDraw is a Python library for authoring visual tutorials using [DrawCV](http
 
 ## Status
 
-**Published alpha [0.2.0a1](https://pypi.org/project/tutordraw/0.2.0a1/).** TutorDraw provides the tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
+**This README describes alpha 0.3.0a1.** Check [PyPI](https://pypi.org/project/tutordraw/) for available releases; the preceding alpha was [0.2.0a1](https://pypi.org/project/tutordraw/0.2.0a1/). TutorDraw provides the tutorial workflow described below. Licensed under MIT, authored by Nuh Yamin. See the compatibility notes before relying on it in production.
 
-0.2.0a1 is a large step from 0.1.0a11, hence the new minor version: it adds automatic label collision avoidance, arrows, braces, measurements and a camera, a browser player that streams, narration timing with captions, plain-English step descriptions, lint, eight teaching kits (axes, number line, flowchart, timeline, cycle, force diagram, cross-section, equations), tap-the-picture prompts, and lesson format v9. It requires `pydrawcv==0.11.0`, and lessons it saves do not open in 0.1.0a11. It is still an alpha: APIs may change.
+Since 0.2.0a1, this version adds graph constructions, relational layout helpers, scaling and path motion, stable label placement, timed captions, annotation fades, a presenter's pointer, and more forgiving prompt taps. It improves leader placement and text lint. New saves use lesson format v13; older lesson formats still load, but 0.2.0a1 cannot open v13 files. It requires `pydrawcv==0.11.0`. See the [changelog](https://github.com/nuhyamin1/tutordraw/blob/master/CHANGELOG.md) for the complete list. APIs may still change during the alpha.
 
 Implemented:
 
@@ -38,6 +38,7 @@ Implemented:
 - typeset equations from LaTeX into named, highlightable pieces with the optional `math` extra; see [Kits](https://github.com/nuhyamin1/tutordraw/blob/master/docs/KITS.md).
 - end a step with a question answered by tapping the picture ("Tap the nucleus."), with feedback, hints and the same check in Python; see [Prompts](https://github.com/nuhyamin1/tutordraw/blob/master/docs/PROMPTS.md).
 - reveal each label, note, mark and highlight as the narration says it, from text-to-speech word timings, with live captions in the player; see [Narration](https://github.com/nuhyamin1/tutordraw/blob/master/docs/NARRATION.md).
+- guide attention with a presenter's pointer that moves between named targets and follows narration cues; see [Pointer](https://github.com/nuhyamin1/tutordraw/blob/master/docs/POINTER.md).
 - point at what the narrator means with a presenter's hand that glides between targets; see [Pointer](https://github.com/nuhyamin1/tutordraw/blob/master/docs/POINTER.md).
 - caption a lesson, written or from its narration, as WebVTT or SubRip subtitles or burned into the video; see [Captions](https://github.com/nuhyamin1/tutordraw/blob/master/docs/CAPTIONS.md).
 - describe each step in plain English for screen readers, and so a model can check a step shows what its narration says; see [Describe](https://github.com/nuhyamin1/tutordraw/blob/master/docs/DESCRIBE.md).
@@ -46,13 +47,13 @@ Implemented:
 
 Routed leader lines that bend around artwork remain planned.
 
-## Install the alpha
+## Install the alpha after publication
 
 ```shell
-python -m pip install tutordraw==0.2.0a1
+python -m pip install tutordraw==0.3.0a1
 ```
 
-The exact version selects this prerelease explicitly (plain `pip install tutordraw` skips alphas). Add `"tutordraw[math]==0.2.0a1"` for equations or `"tutordraw[typography]==0.2.0a1"` for Thai and Arabic. Requires Python 3.12+.
+The exact version selects this prerelease explicitly (plain `pip install tutordraw` skips alphas). Add `"tutordraw[math]==0.3.0a1"` for equations or `"tutordraw[typography]==0.3.0a1"` for Thai and Arabic. Requires Python 3.12+.
 
 ## Develop from this repository
 
@@ -65,7 +66,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe examples/cell_tutorial.py
 ```
 
-On macOS/Linux, use `.venv/bin/python` instead. Windows/Python 3.12 passes 171 tests (one symlink test skips without symlink privileges). Hosted CI passes on Windows, Linux, and macOS for Python 3.12–3.14. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
+On macOS/Linux, use `.venv/bin/python` instead. CI tests Windows, Linux, and macOS on Python 3.12–3.14. If `python` is unavailable, use the absolute path to an installed Python 3.12+ executable for the first command.
 
 No DrawCV checkout is needed. TutorDraw pins the tested published dependency `pydrawcv==0.11.0`, which imports as `drawcv`. A broader compatibility range is future work. Use an explicit version or `--pre` when selecting an alpha release.
 
@@ -103,13 +104,13 @@ Run [the cell example](https://github.com/nuhyamin1/tutordraw/blob/master/exampl
 
 ## Continue a lesson with another AI
 
-In the development checkout, use `tutorial.save_json("lesson.tutordraw.json")` and later `Tutorial.load_json("lesson.tutordraw.json")`. Named targets, annotation IDs, themes, and all step presentation settings survive the round trip.
+Use `tutorial.save_json("lesson.tutordraw.json")` and later `Tutorial.load_json("lesson.tutordraw.json")`. Named targets, annotation IDs, themes, and all step presentation settings survive the round trip.
 
 Run `python examples/save_and_revise.py` for the complete workflow. See [AI authoring](https://github.com/nuhyamin1/tutordraw/blob/master/docs/AI_AUTHORING.md) and [persistence](https://github.com/nuhyamin1/tutordraw/blob/master/docs/PERSISTENCE.md).
 
 ## Export a timed lesson to video
 
-In the development checkout, give each step a duration and encode the result:
+Give each step a duration and encode the result:
 
 ```
 lesson.steps[0].set_timing(duration=2, pause=1)
@@ -130,7 +131,7 @@ for codec limits and failure behavior.
 - Dimming multiplies artwork opacity, not the background. Complex masks, blend modes, and occlusion are not pixel-level spotlight isolation. Hidden or zero-opacity attention targets are rejected; clipping and masks are not used to infer visibility.
 - Scenes must round-trip through DrawCV serialization; unsupported copying raises `SceneCopyError`. Arbitrary custom drawables/assets are not guaranteed supported.
 - Rendering uses authored scene state without sampling a timeline. Concurrent source edits during rendering are unsupported.
-- Video export is opaque only and uses hard cuts. Which codecs work depends on the host OpenCV build; an unavailable codec raises `VideoExportError`. Encoding is lossy, so decoded frames approximate `render_step` output.
+- Video export is opaque only. Steps cut by default; `Step.animate` opts into per-target motion. Which codecs work depends on the host OpenCV build; an unavailable codec raises `VideoExportError`. Encoding is lossy, so decoded frames approximate rendered frames.
 - Missing registered targets fail rendering, even if their label is not shown in that step. Hidden artwork does not suppress an explicitly shown label.
 
 ## Documentation and continuation

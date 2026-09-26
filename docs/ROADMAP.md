@@ -3,6 +3,22 @@
 M0, M1, and M2 are complete. Checkboxes represent verified
 work, not intent. Milestones are ordered; no release date is promised.
 
+## 0.3.0a1 release preparation
+
+- [x] Confirm PyPI still offers 0.2.0a1 as the latest release and the
+  candidate version is 0.3.0a1 in package metadata (2026-09-27).
+- [x] Run source tests (675 passed, 9 skipped), documentation check (29
+  documents), build, strict artifact check, and dependency check on Windows
+  Python 3.12 (2026-09-27).
+- [x] Install the candidate wheel in a separate environment: 664 tests passed,
+  20 skipped; installed examples verified 26 PNGs, one video, and lesson reloads.
+- [x] Review the cell example PNG visually; review README and compatibility
+  text for the 0.3.0a1 candidate.
+- [ ] Push release preparation changes and obtain hosted CI success on that
+  exact commit. The prior master commit `da7fa52` passed all nine jobs.
+- [ ] Date the changelog for the actual release, rebuild the exact artifacts,
+  upload only when requested, then verify the published installation.
+
 ## M0 — Project definition
 
 - [x] Describe purpose, first-release scope, and deferred features.
