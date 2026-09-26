@@ -8,7 +8,10 @@ Future publication also requires an explicit owner request. The CI workflow neve
 - Distribution/import: `tutordraw` (owner confirmed).
 - License: MIT; copyright holder/author: Nuh Yamin (owner confirmed).
 - Published: `0.1.0a3` on 2026-09-20, `0.1.0a11` on 2026-09-21 and `0.2.0a1` on
-  2026-09-24 (the milestone first called 0.1.0a12); still an alpha.
+  2026-09-24 (the milestone first called 0.1.0a12); still an alpha. Git tags
+  `v0.1.0a11` and `v0.2.0a1` mark the commits those uploads were built from.
+- In development: `0.3.0a1` (owner's choice, 2026-09-26: a new minor because
+  the lesson format moved v9 to v13 and placement changed). Not published.
 - Versions a4 through a10 were development milestones and were never uploaded;
   0.1.0a11 contains all of their work.
 - Repository: `https://github.com/nuhyamin1/tutordraw`, read from the configured origin.
@@ -85,10 +88,10 @@ files, never a wildcard that might select old releases:
 
 ```powershell
 # TestPyPI rehearsal, only when requested:
-python -m twine upload --repository testpypi output/release/tutordraw-0.2.0a1-py3-none-any.whl output/release/tutordraw-0.2.0a1.tar.gz
+python -m twine upload --repository testpypi output/release/tutordraw-0.3.0a1-py3-none-any.whl output/release/tutordraw-0.3.0a1.tar.gz
 
 # Public PyPI release, only when requested:
-python -m twine upload output/release/tutordraw-0.2.0a1-py3-none-any.whl output/release/tutordraw-0.2.0a1.tar.gz
+python -m twine upload output/release/tutordraw-0.3.0a1-py3-none-any.whl output/release/tutordraw-0.3.0a1.tar.gz
 ```
 
 Use the owner's credential mechanism; never put tokens in repository files,

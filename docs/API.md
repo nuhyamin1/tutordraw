@@ -1,4 +1,4 @@
-# Implemented API — 0.2.0a1
+# Implemented API — 0.3.0a1 (in development; 0.2.0a1 is published)
 
 Public symbols import from `tutordraw`. Create targets/annotations/steps through the factory methods below rather than calling their constructors directly.
 

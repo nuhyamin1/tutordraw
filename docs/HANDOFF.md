@@ -1,6 +1,24 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, a browser test for the player (Claude Code).
+Last updated: **2026-09-26**, version 0.3.0a1 in development (Claude Code).
+
+## Version 0.3.0a1 in development; tag for 0.2.0a1 (2026-09-26)
+
+The owner chose **0.3.0a1** for the work since 0.2.0a1 (pyproject,
+`__version__`, CHANGELOG heading, RELEASING upload filenames). Not published;
+publishing still needs an explicit owner request. **Ran: `pytest -q` 661
+passed, 11 skipped; `check_docs.py` passed; `python -m build` then
+`check_release.py`: both 0.3.0a1 artifacts PASSED.**
+
+Tag `v0.2.0a1` belongs on `ec6adb3` ("release: prepare 0.2.0a1"): the wheel
+on PyPI matches that commit's `src/tutordraw` file for file (ignoring the
+Windows CRLF line endings it was built with). **Not pushed:** this cloud
+session may push only its working branch, and a tag push is cut off. The
+owner runs, from a checkout with origin fetched:
+`git tag -a v0.2.0a1 ec6adb3 -m "TutorDraw 0.2.0a1"` then
+`git push origin v0.2.0a1`.
+
+
 
 PR #1 (captions, fade-in, leader placement, grid, arrow leaders, lint under a
 camera) was merged into master by rebase at 56db55c after all 18 CI jobs
@@ -80,7 +98,7 @@ Not done: grid lines of a graph are not obstacles (not targets); routed
 (bent) leaders.
 Hosted CI on PR #2: all 18 jobs green; the new step's log shows Chromium
 153 installed and `6 passed`.
-**Next**: version bump and 0.2.0a1 tag when asked.
+**Next**: owner pushes the v0.2.0a1 tag (above); then the roadmap's forgiving prompt taps.
 
 
 
