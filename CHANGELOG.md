@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0a1 — in development (unreleased)
 
 - **Fixed: lint `TEXT_OFF_CANVAS` under a camera.** A zoomed step reported
   the drawing's own titles as off the canvas when the zoom cropped them, which

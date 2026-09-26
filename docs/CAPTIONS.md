@@ -1,6 +1,6 @@
 # Timed captions
 
-Unreleased (development after 0.2.0a1). Captions carry what is said: on
+New in 0.3.0a1 (unreleased). Captions carry what is said: on
 screen in the browser player, burned into a video, or as a subtitle file to
 upload beside it (YouTube, an LMS, a video editor).
 
