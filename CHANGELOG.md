@@ -2,6 +2,12 @@
 
 ## 0.3.0a1 — in development (unreleased)
 
+- **Forgiving prompt taps.** A tap anywhere in a text's or an equation's box
+  counts as tapping it, not only on a glyph's ink, and wins over a shape
+  behind it; a tap that hits nothing counts as the nearest target within
+  12 px. `Tutorial.hit_test`, `check_answer` and the browser player agree
+  (the prompt payload now carries `zones`). Found after 0.2.0a1: a tap
+  between the letters of `E = mc^2` missed.
 - **Fixed: lint `TEXT_OFF_CANVAS` under a camera.** A zoomed step reported
   the drawing's own titles as off the canvas when the zoom cropped them, which
   failed CI's example check (`lever_lesson.py`) on every platform. Text is now
