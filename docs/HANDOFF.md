@@ -1,6 +1,20 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, labels off a graph's grid (Claude Code).
+Last updated: **2026-09-26**, CI fix for lint under a camera (Claude Code).
+
+## Fixed: TEXT_OFF_CANVAS under a camera (2026-09-26)
+
+Hosted CI was red on every job for PR #1, and on master too (same failure):
+`tools/check_installed.py` runs `examples/lever_lesson.py`, whose zoomed
+step 2 cropped the title and lint called it off the canvas. `lint._lint_words`
+now maps a word's box back through `composition.camera` before judging it.
+Test in `tests/test_text_overlap.py` (fails without the fix). **Ran the CI
+sequence in a clean Python 3.12 venv: build, `check_release.py` (passed),
+installed-wheel `pytest -q` (655 passed, 11 skipped), `check_installed.py`
+(26 PNGs, 1 video), `check_docs.py` (28 documents).** The Windows font step
+was not run here.
+
+
 
 ## Unreleased: labels keep off a graph's grid (2026-09-26)
 

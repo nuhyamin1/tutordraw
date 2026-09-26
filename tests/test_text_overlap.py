@@ -128,3 +128,21 @@ def test_hairlines_count_as_ink():
     Equation(tutorial, r"\sum_{i=1}^{n} f(x_i)", position=(500, 130), size=40, name="riemann")
     tutorial.step("One")
     assert [issue.targets for issue in issues(tutorial, "TEXT_ON_DIAGRAM")] == [("riemann", "graph")]
+
+
+def test_text_the_camera_crops_is_not_off_the_canvas():
+    # A zoom pushes a corner title out of frame on purpose; only text off the drawing itself is reported.
+    from drawcv import Circle, Color, FillStyle, Point, Scene, Text
+
+    from tutordraw import Tutorial
+
+    scene = Scene(600, 400, background=Color.white())
+    scene.add(Text(text="TITLE", position=Point(20, 20), font_scale=0.8, thickness=2))
+    scene.add(Text(text="Too far right", position=Point(560, 380), font_scale=0.8))
+    ball = Circle(center=Point(400, 250), radius=20, fill=FillStyle(color=Color(80, 120, 200)))
+    scene.add(ball)
+    tutorial = Tutorial(scene)
+    target = tutorial.target(ball, name="ball")
+    tutorial.step("Zoomed").zoom_to(target, padding=40, max_scale=3)
+    off = [i for i in tutorial.lint() if i.code == "TEXT_OFF_CANVAS"]
+    assert [i.targets for i in off] == [("'Too far right'",)]
