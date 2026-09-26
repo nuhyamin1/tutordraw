@@ -168,7 +168,7 @@ Design the whole batch before coding; persist it together.
 - [x] A headless-browser test for `player.js`: `tests/test_player.py` drives
   it in Chromium (reveals, draw-on, fade, captions, tweens, prompt taps);
   6 passed locally, and each of three deliberate player breaks fails it. A
-  CI step runs it on Ubuntu / Python 3.12 (first hosted run pending).
+  CI step runs it on Ubuntu / Python 3.12 (hosted: 6 passed on Chromium 153, PR #2).
 - [ ] Arrowheads riding the tip while drawing on, in the browser.
 
 ### P5 — Content and interaction

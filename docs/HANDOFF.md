@@ -78,7 +78,9 @@ verbatim placement and a built crossing. New `tests/test_leader_placement.py`
 graph scene with anchors right and bottom: callout beside the tip, lint clean.
 Not done: grid lines of a graph are not obstacles (not targets); routed
 (bent) leaders.
-**Next**: confirm the new CI step on its first hosted run; version bump and 0.2.0a1 tag when asked.
+Hosted CI on PR #2: all 18 jobs green; the new step's log shows Chromium
+153 installed and `6 passed`.
+**Next**: version bump and 0.2.0a1 tag when asked.
 
 
 
