@@ -189,6 +189,7 @@ class Step:
         self._draw: set[str] = set()
         self._camera: Camera | None = None
         self._narration: tuple = ()
+        self._captions: list = []
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._prompt = None
@@ -495,6 +496,38 @@ class Step:
         self._narration = spoken
         if fit and spoken[-1].end + tail > self._duration:
             self.set_timing(duration=spoken[-1].end + tail, pause=self._pause)
+        return self
+
+    @property
+    def captions(self) -> tuple:
+        """The captions written for this step (Caption objects), in the order added."""
+        return tuple(self._captions)
+
+    def caption(self, text: str, *, at: float = 0.0, until: float | None = None) -> Step:
+        """Show `text` as a caption from `at` seconds into the step.
+
+        It stays until `until`, or else until the next caption or the end of
+        the step's pause. Written captions replace the ones a narrated step
+        would take from its words. A newline breaks the line. They go into
+        export_captions, the browser player and export_video(captions=True).
+        See docs/CAPTIONS.md.
+        """
+        from .captions import Caption
+
+        text = validate_annotation_text(text, allow_newlines=True, font=self._tutorial.font is not None)
+        start = finite_number(at, "at", minimum=0)
+        end = None if until is None else finite_number(until, "until", minimum=0)
+        if end is not None and end <= start:
+            raise ValidationError("until must be later than at")
+        added = Caption(text, start, end)
+        ordered = sorted((*self._captions, added), key=lambda c: c.at)
+        for first, second in zip(ordered, ordered[1:]):
+            if first.at == second.at:
+                raise ValidationError(f"A caption already starts at {start:g} s in this step")
+            # A written end must not run into the next caption: say so rather than cut one short.
+            if first.until is not None and first.until > second.at:
+                raise ValidationError(f"A caption until {first.until:g} s overlaps the one at {second.at:g} s")
+        self._captions.append(added)
         return self
 
     @property

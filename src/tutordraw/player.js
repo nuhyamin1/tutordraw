@@ -168,7 +168,8 @@
         .td-dot i{position:absolute;left:0;top:0;bottom:0;background:#e8a53a}
         .td-dot.pending{background:#2a303b;cursor:default}
         .td-status{color:#9aa6b8;font-size:12px}
-        .td-caption{min-height:1.5em;padding:8px 4px 0;font-size:17px;line-height:1.5;color:#7d889a}
+        .td-caption{min-height:1.5em;padding:8px 4px 0;font-size:17px;line-height:1.5;color:#7d889a;white-space:pre-line}
+        .td-caption.written{color:#e8ecf3}
         .td-caption .said{color:#e8ecf3}
         .td-caption .now{color:#e8a53a}
         .td-prompt{display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding:10px 12px;border-radius:6px;background:#2c3442;font-size:16px}
@@ -196,7 +197,7 @@
       this.live = document.createElement("div");
       this.live.className = "td-sr";
       this.live.setAttribute("aria-live", "polite");
-      // Captions from the step's narration word timings, when it has them.
+      // Captions the author wrote, or else from the narration's word timings.
       this.caption = document.createElement("div");
       this.caption.className = "td-caption";
       this.caption.setAttribute("aria-hidden", "true");
@@ -341,7 +342,11 @@
     _buildCaption(step) {
       this.caption.replaceChildren();
       this.sentences = [];
-      const words = step.narration || [];
+      // Written captions [text, start, end] replace the narration's, shown whole.
+      this.cues = step.captions || null;
+      this.shownCue = -1;
+      this.caption.classList.toggle("written", !!this.cues);
+      const words = this.cues ? [] : step.narration || [];
       let sentence = [];
       words.forEach(([text, start, end]) => {
         const span = document.createElement("span");
@@ -354,6 +359,14 @@
     }
 
     _updateCaption(t) {
+      if (this.cues) {
+        const index = this.cues.findIndex(([, start, end]) => start <= t && t < end);
+        if (index !== this.shownCue) {
+          this.caption.textContent = index < 0 ? "" : this.cues[index][0];
+          this.shownCue = index;
+        }
+        return;
+      }
       if (!this.sentences || !this.sentences.length) return;
       let index = 0;
       this.sentences.forEach((s, i) => { if (s[0].start <= t) index = i; });

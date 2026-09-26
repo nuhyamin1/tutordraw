@@ -51,19 +51,24 @@ def position_at_time(tutorial: Tutorial, time: float) -> tuple[int, float]:
     return index, 1.0 if duration <= 0 else min(1.0, max(0.0, elapsed / duration))
 
 
-def render_frames(tutorial: Tutorial, *, fps: int, alpha: bool) -> Iterator[Canvas]:
+def render_frames(tutorial: Tutorial, *, fps: int, alpha: bool, captions: bool = False) -> Iterator[Canvas]:
+    from .captions import lesson_cues
+
     if isinstance(fps, bool) or not isinstance(fps, int) or fps <= 0:
         raise ValidationError("fps must be a positive integer")
     if not isinstance(alpha, bool):
         raise ValidationError("alpha must be a boolean")
+    if not isinstance(captions, bool):
+        raise ValidationError("captions must be a boolean")
     total = tutorial.duration
     if total == 0:
         raise ValidationError("Timed rendering requires at least one step")
     count = math.ceil(finite_number(total * fps, "duration * fps"))
+    cues = lesson_cues(tutorial) if captions else ()
 
     def frames():
         for index in range(count):
             # Each render produces an independent Canvas. Do not retain all frames.
-            yield tutorial.render_at_time(index / fps, alpha=alpha)
+            yield tutorial._render_at(index / fps, alpha, cues)
 
     return frames()

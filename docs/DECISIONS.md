@@ -1154,3 +1154,28 @@ slides up, and a whole board faded while sliding away.
   over the step's motion. Only for animated steps (a cut has no start frame),
   only in the web payload (layouts, PNG and video export are unchanged; the
   composition is built fresh for the payload, nothing cached is changed).
+
+## Timed captions (2026-09-26)
+
+**Why**: a professional lesson needs captions for accessibility and silent
+viewing, in the video and as a subtitle file, not only in TutorDraw's player.
+
+- Two sources, one rule: a step's written captions (`Step.caption`) replace
+  its narrated ones, which are cut from the narration's words. Mixing both in
+  one step would put two texts on screen at once.
+- Narrated cues are sentences, and a sentence over 84 characters (two
+  broadcast subtitle lines of 42) is split into equal parts rather than
+  filled greedily, which left a single word as its own cue ("numbers.").
+  Breaks prefer a comma near the ideal point. Words already carry times, so
+  each part is timed exactly.
+- A written overlap is refused, not trimmed, as other explicit timing is;
+  a caption past its step's end is kept (the step may be lengthened later)
+  and reported by lint instead.
+- Burn-in is opt-in (`captions=False` default), so every existing frame and
+  golden image is unchanged. It is drawn in the tutorial's overlay layer
+  with TutorDraw's own text (so a configured font covers Thai and Arabic),
+  after the composition, so layout, collision and lint never see it.
+- The player gets only written captions: its narrated display (word by word)
+  already exists and is richer than a plain cue.
+- Schema v13 adds the step field `captions`; narrated captions are derived
+  from the saved narration, so they are not stored twice.

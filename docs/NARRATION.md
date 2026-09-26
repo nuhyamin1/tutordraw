@@ -51,7 +51,9 @@ the step as it was.
 
 A narrated step's `web_step` payload carries its words, and the player shows
 the sentence being spoken as captions under the picture: spoken words bright,
-the current word highlighted, the rest dim.
+the current word highlighted, the rest dim. The same sentences, split to fit
+two lines, are the step's captions in `export_captions` and burned-in video
+unless the step has written captions; see CAPTIONS.md.
 
 ## Saving
 

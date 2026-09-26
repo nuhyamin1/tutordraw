@@ -17,6 +17,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
+from .captions import step_cues
 from .composition import Composition
 from .errors import ValidationError
 from .prompts import payload as prompt_payload
@@ -94,6 +95,8 @@ def web_step(tutorial, index: int) -> dict:
             and step.motion < step.duration else None,
             "description": tutorial.describe(index),
             "narration": [[w.text, w.start, w.end] for w in step.narration] or None,
+            # Written captions only; the player cuts a narrated step's own from its words.
+            "captions": [[c.text, c.start, c.end] for c in step_cues(step)] if step.captions else None,
             "prompt": prompt_payload(tutorial, step.prompt)}
 
 

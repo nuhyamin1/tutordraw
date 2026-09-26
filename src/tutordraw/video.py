@@ -30,12 +30,12 @@ def _fourcc_code(fourcc: str) -> int:
 
 
 def export_video(tutorial: Tutorial, path: str | Path, *, fps: int, fourcc: str,
-                 overwrite: bool) -> Path:
+                 overwrite: bool, captions: bool = False) -> Path:
     if not isinstance(overwrite, bool):
         raise ValidationError("overwrite must be a boolean")
     code = _fourcc_code(fourcc)
     # Rejects invalid fps and empty lessons before touching the filesystem.
-    frames = tutorial.render_frames(fps=fps, alpha=False)
+    frames = tutorial.render_frames(fps=fps, alpha=False, captions=captions)
     destination = Path(path)
     if destination.is_symlink() or (destination.exists()
                                     and (not overwrite or not destination.is_file())):

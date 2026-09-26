@@ -157,7 +157,7 @@ def test_scale_and_pivot_are_checked():
 def test_scale_is_saved_and_loaded(tmp_path):
     tutorial, *_ = scaled(scale=0.75, pivot="bottom_left", move=(10, 0))
     document = tutorial.to_dict()
-    assert document["schema_version"] == SCHEMA_VERSION == 12
+    assert document["schema_version"] == SCHEMA_VERSION >= 12  # scale came in v12
     [restyle] = document["steps"][1]["restyles"]
     assert (restyle["scale"], restyle["pivot"]) == (0.75, "bottom_left")
     import jsonschema
