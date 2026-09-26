@@ -445,6 +445,10 @@ def _lint_words(composition, add) -> None:
                 f"Put it beside, below or above {called(other)} instead of on it, or make "
                 f"{called(other)} smaller to leave room.", [called(word), called(other)])
     for word, box in free:
+        if composition.camera is not None:
+            # A camera crops on purpose: judge the word where it is drawn, before the zoom (s * p + t).
+            scale, tx, ty = composition.camera
+            box = BoundingBox((box.x - tx) / scale, (box.y - ty) / scale, box.width / scale, box.height / scale)
         if outside_area(box, scene.width, scene.height) > AREA_EPSILON:
             add("TEXT_OFF_CANVAS", "warning",
                 f"{called(word)} runs past the canvas edge.",

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Fixed: lint `TEXT_OFF_CANVAS` under a camera.** A zoomed step reported
+  the drawing's own titles as off the canvas when the zoom cropped them, which
+  failed CI's example check (`lever_lesson.py`) on every platform. Text is now
+  judged where it is drawn, before the zoom.
 - **Labels keep off a graph's grid.** Grid lines from `Axes(grid=True)` are
   tagged `td-grid` and placement weighs covering them like other artwork, so a
   label near the edge of a plot moves into the free space beside it instead

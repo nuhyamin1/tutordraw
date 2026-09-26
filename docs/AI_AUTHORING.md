@@ -39,7 +39,7 @@ steps exactly as rendering does and never changes the lesson or its output.
 | `BUSY_STEP` | info | More than 6 annotations visible at once |
 | `TEXT_OVERLAP` | error | Two of the drawing's own texts or equations lie on each other |
 | `TEXT_ON_DIAGRAM` | warning | A text or equation lies on a kit's lines, text or shading (a graph's tick numbers, its curve) |
-| `TEXT_OFF_CANVAS` | warning | A text or equation runs past the canvas edge |
+| `TEXT_OFF_CANVAS` | warning | A text or equation runs past the canvas edge (judged before a step's camera zoom, which crops on purpose) |
 | `CHART_OVER_ARTWORK` | warning | A graph or number line covers a quarter or more of another shape; a panel the chart sits on is fine |
 | `CAPTION_TOO_FAST` | warning | A written caption is on screen too briefly to read at 20 characters a second |
 | `CAPTION_NEVER_SHOWN` | error | A written caption starts after its step's duration plus pause |
