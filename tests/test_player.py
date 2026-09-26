@@ -185,3 +185,31 @@ def test_forgiving_taps_are_judged_as_python_judges_them(browser, tmp_path):
         assert page.text_content(".td-feedback") == lesson.check_answer(0, x, y).feedback, (x, y)
     assert "right" in page.get_attribute(".td-feedback", "class")  # the last tap, on the gap, is right
     page.close()
+
+
+def test_the_pointer_moves_as_python_moves_it(browser, tmp_path):
+    lesson, _ = build()
+    ball, box = lesson.get_target("ball"), lesson.get_target("box")
+    lesson.steps[0].point(ball, at=0.5).point(box, at=2)
+    lesson.steps[1].point(ball, at=0.5)  # carried over from the box, then back
+    page = browser.new_page(viewport={"width": 900, "height": 700})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(lesson.export_web(tmp_path / "pointer.html").as_uri())
+    page.wait_for_function("typeof player !== 'undefined' && player.steps.length === 3")
+    page.evaluate("player.pause()")
+    # 2.15 and 0.65 s are a quarter of the way through a glide, where the easing shows.
+    for index, time in ((0, 0.4), (0, 0.6), (0, 1.3), (0, 2.15), (0, 4), (1, 0), (1, 0.65), (2, 0.5)):
+        page.evaluate(f"player.seek({index}, {time})")
+        shown = page.evaluate("""(() => { const g = document.querySelector('.td-pointer');
+            if (!g || g.style.display === 'none') return null;
+            const m = g.lastElementChild.getAttribute('transform')
+                .match(/translate\\(([-\\d.e]+) ([-\\d.e]+)\\) rotate\\(([-\\d.e]+)\\) scale\\(([-\\d.e]+)\\)/);
+            return [...m.slice(1).map(Number), Number(g.getAttribute('opacity'))]; })()""")
+        pose = lesson.layout(index, time=min(time, lesson.steps[index].duration)).pointer
+        if pose is None or pose.opacity == 0:
+            assert shown is None, (index, time)
+        else:
+            assert shown == pytest.approx([pose.x, pose.y, pose.angle, pose.scale, pose.opacity], abs=0.01), (index, time)
+    assert errors == []
+    page.close()

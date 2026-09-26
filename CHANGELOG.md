@@ -2,6 +2,13 @@
 
 ## 0.3.0a1 — in development (unreleased)
 
+- **A presenter's pointer.** `step.point(target, at=)` moves one hand per
+  lesson to what the narrator means: it fades in, glides between stops, taps
+  on arrival and carries over into the next step; narration cues time it. It
+  reaches in from a free side, off labels and other targets.
+  `Theme(pointer_style="hand" | "cursor" | "dot", pointer_seconds=)`. Rendered
+  frames, video and the browser player agree; `describe()` mentions it; lint
+  `POINTER_WITH_HIGHLIGHT` (info). Saved in schema v13.
 - **Forgiving prompt taps.** A tap anywhere in a text's or an equation's box
   counts as tapping it, not only on a glyph's ink, and wins over a shape
   behind it; a tap that hits nothing counts as the nearest target within

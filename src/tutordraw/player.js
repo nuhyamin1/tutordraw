@@ -93,6 +93,27 @@
     return tweens;
   }
 
+  /* The pointer's curve and keyframe lookup, as pointer.ease and pointer.pose_at. */
+  function smooth(t) {
+    t = Math.min(1, Math.max(0, t));
+    return t * t * (3 - 2 * t);
+  }
+
+  function pointerPose(keys, time) {
+    if (!keys.length || time < keys[0][0]) return null;
+    if (time >= keys[keys.length - 1][0]) return keys[keys.length - 1].slice(1);
+    for (let i = 0; i + 1 < keys.length; i++) {
+      const [t0, ...a] = keys[i], [t1, ...b] = keys[i + 1];
+      if (t0 <= time && time < t1) {
+        const u = t1 > t0 ? (time - t0) / (t1 - t0) : 1, e = smooth(u);
+        const turn = ((b[2] - a[2] + 180) % 360 + 360) % 360 - 180;
+        return [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e, a[2] + turn * e,
+                a[3] + (b[3] - a[3]) * u, a[4] + (b[4] - a[4]) * u];
+      }
+    }
+    return keys[keys.length - 1].slice(1);
+  }
+
   function ease(table, p) {
     if (!table) return 1;
     const x = Math.min(Math.max(p, 0), 1) * (table.length - 1);
@@ -271,6 +292,7 @@
       this.svg = parse(step.svg);
       this.stage.replaceChildren(this.svg);
       this.tweens = step.frames && step.frames.length ? buildTweens(this.svg, step.frames.map(parse)) : [];
+      this.pointer = step.pointer ? this._makePointer(step.pointer) : null;
       this.timed = [...this.svg.querySelectorAll("[data-td-at]")].map(group => {
         const draw = parseFloat(group.getAttribute("data-td-draw") || "0");
         const fade = parseFloat(group.getAttribute("data-td-fade") || "0");
@@ -331,6 +353,17 @@
         }
       }
       this._updateCaption(t);
+      if (this.pointer) {
+        const keys = step.pointer.keys;
+        const pose = pointerPose(keys, done ? keys[keys.length - 1][0] : t);
+        this.pointer.group.style.display = pose && pose[4] > 0 ? "" : "none";
+        if (pose) {
+          const [x, y, angle, scale, opacity] = pose;
+          this.pointer.group.setAttribute("opacity", opacity);
+          this.pointer.shadow.setAttribute("transform", `translate(${x + 2.5} ${y + 2.5}) rotate(${angle}) scale(${scale})`);
+          this.pointer.body.setAttribute("transform", `translate(${x} ${y}) rotate(${angle}) scale(${scale})`);
+        }
+      }
       if (done && step.prompt && !this.answered.has(this.index) && !this.asking) this._ask(step.prompt);
       [...this.dots.children].forEach((dot, i) => {
         const s = this.steps[i];
@@ -343,6 +376,34 @@
 
     /* Captions show the sentence being spoken, word by word: said words
      * bright, the current word highlighted, the rest of the sentence dim. */
+    /* The presenter's pointer: a white glyph with a dark outline and soft
+     * shadow over everything, as pointer.artwork draws it. */
+    _makePointer(pointer) {
+      const NS = "http://www.w3.org/2000/svg";
+      const make = (name, attrs) => {
+        const el = document.createElementNS(NS, name);
+        for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+        return el;
+      };
+      const group = make("g", {"class": "td-pointer", "pointer-events": "none"});
+      let shadow, body;
+      if (pointer.outline) {
+        const d = "M" + pointer.outline.map(([x, y]) => `${x} ${y}`).join(" L") + " Z";
+        shadow = make("path", {d, fill: "#000", "fill-opacity": "0.18"});
+        body = make("path", {d, fill: "#fff", stroke: "rgb(33,41,54)", "stroke-width": "2",
+                             "stroke-linejoin": "round", "vector-effect": "non-scaling-stroke"});
+      } else {
+        // A laser dot has no drop shadow: its halo moves with it, inside one group.
+        shadow = make("g", {});
+        body = make("g", {});
+        body.append(make("circle", {r: pointer.radius * 1.8, fill: "rgb(229,57,53)", "fill-opacity": "0.25"}),
+                    make("circle", {r: pointer.radius, fill: "rgb(229,57,53)", stroke: "#fff", "stroke-width": "2"}));
+      }
+      group.append(shadow, body);
+      this.svg.appendChild(group);
+      return {group, shadow, body};
+    }
+
     _buildCaption(step) {
       this.caption.replaceChildren();
       this.sentences = [];

@@ -165,7 +165,7 @@ class Tutorial:
         # A step with nothing timed in it looks the same throughout: render its end.
         fades = self.theme.fade_seconds > 0 and any(
             not step.carried(item) for item in (*step.labels, *step.callouts, *step.marks, *step.highlights))
-        if progress >= 1.0 or (step.easing is None and not step._reveals and not fades):
+        if progress >= 1.0 or (step.easing is None and not step._reveals and not fades and not step.points):
             if cue is None:
                 return self.render_step(index, alpha=alpha)
             progress = 1.0
@@ -299,7 +299,7 @@ class Tutorial:
         return OpenCVRenderer().render(scene, alpha=alpha)
 
     def _compose(self, index: int, progress: float, *, draw_annotations: bool = True,
-                 complete: bool = False) -> Composition:
+                 complete: bool = False, pointer: bool = True) -> Composition:
         """Build the working scene for one frame and record every layout decision.
 
         `complete` shows every annotation fully drawn whatever the time, which
@@ -427,10 +427,33 @@ class Tutorial:
                             mark.id, mark.kind, mark.text,
                             tuple(_name(t) for t in mark.refs if isinstance(t, Target)),
                             drawing.bounds, drawing.panel, drawing.empty))
+        # The pointer last, over everything; the browser player draws its own from the same keys.
+        pose = None
+        if pointer and step.points:
+            from .pointer import artwork, pose_at
+            keys = self._pointer_track(index)
+            pose = pose_at(keys, keys[-1][0] if elapsed >= step.duration else elapsed)
+            if pose is not None and pose.opacity > 0:
+                for obj in artwork(self.theme.pointer_style, pose):
+                    working.add(obj, layer=layer)
         bounds = {_name(t): objects[t.drawable_id].get_bounds() for t in self._targets.values()}
         ids = {_name(t): t.drawable_id for t in self._targets.values()}
         return Composition(working, index, progress, tuple(annotations), tuple(highlights),
-                           bounds, ids, tuple(marks), view)
+                           bounds, ids, tuple(marks), view, pose)
+
+    def _pointer_track(self, index: int) -> list[tuple]:
+        """The pointer's keyframes in step `index` (pointer.track), remembered like placements."""
+        from .pointer import track
+
+        key = (index, self._layout_key(index), self.theme,
+               tuple((s.id, s.duration, tuple(c.id for c in s.callouts),
+                      tuple((p.target.id, p.at) for p in s.points)) for s in self._steps[:index + 1]))
+        memo = self.__dict__.setdefault("_pointer_memo", {})
+        if key not in memo:
+            if len(memo) > 256:
+                memo.clear()
+            memo[key] = track(self, index)
+        return memo[key]
 
     def _layout_key(self, index: int):
         """Everything label placement in steps 0..index depends on, as a hashable key.

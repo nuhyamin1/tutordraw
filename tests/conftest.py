@@ -15,7 +15,7 @@ STEP_FIELDS_ADDED = {
     8: ("marks", "draw", "camera"),
     9: ("narration", "prompt"),
     11: ("motion",),
-    13: ("captions",),
+    13: ("captions", "points"),
 }
 
 # The same, for highlight fields, which live inside each step.
@@ -27,7 +27,7 @@ HIGHLIGHT_FIELDS_ADDED = {
 THEME_FIELDS_ADDED = {
     6: ("avoid_collisions", "collision_margin"),
     8: ("draw_seconds", "halo_width"),
-    13: ("fade_seconds",),
+    13: ("fade_seconds", "pointer_style", "pointer_seconds"),
 }
 
 # The same, for label and callout fields, which appear in two places.

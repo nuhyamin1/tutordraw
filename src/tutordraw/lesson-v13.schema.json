@@ -169,6 +169,17 @@
         "fade_seconds": {
           "type": "number",
           "minimum": 0
+        },
+        "pointer_style": {
+          "enum": [
+            "hand",
+            "cursor",
+            "dot"
+          ]
+        },
+        "pointer_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       },
       "required": [
@@ -191,7 +202,9 @@
         "collision_margin",
         "draw_seconds",
         "halo_width",
-        "fade_seconds"
+        "fade_seconds",
+        "pointer_style",
+        "pointer_seconds"
       ],
       "additionalProperties": false
     },
@@ -567,6 +580,12 @@
           "items": {
             "$ref": "#/$defs/caption"
           }
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pointerStop"
+          }
         }
       },
       "required": [
@@ -587,7 +606,8 @@
         "narration",
         "prompt",
         "motion",
-        "captions"
+        "captions",
+        "points"
       ],
       "additionalProperties": false
     },
@@ -1178,6 +1198,23 @@
         "text",
         "at",
         "until"
+      ],
+      "additionalProperties": false
+    },
+    "pointerStop": {
+      "type": "object",
+      "properties": {
+        "target_id": {
+          "$ref": "#/$defs/id"
+        },
+        "at": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "target_id",
+        "at"
       ],
       "additionalProperties": false
     }

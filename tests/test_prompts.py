@@ -212,8 +212,8 @@ def test_a_tap_anywhere_on_an_equation_counts_not_only_on_its_glyphs():
     # Before: 71 of 120 grid taps over E = mc^2 counted, and its centre did not.
     lesson, equation = equation_lesson()
     box = lesson.layout(0).targets["energy"]
-    taps = [(box.x + (i + 0.5) * box.width / 12, box.y + (j + 0.5) * box.height / 10)
-            for i in range(12) for j in range(10)]
+    taps = [(box.x + (i + 0.5) * box.width / 6, box.y + (j + 0.5) * box.height / 5)
+            for i in range(6) for j in range(5)]  # 30 taps: each composes the step
     assert all(lesson.check_answer(0, x, y).correct for x, y in taps)
     # Between the glyphs is the equation, not the card behind it.
     assert lesson.hit_test(0, box.center.x, box.center.y)[:1] != (lesson.get_target("card"),)

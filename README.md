@@ -38,6 +38,7 @@ Implemented:
 - typeset equations from LaTeX into named, highlightable pieces with the optional `math` extra; see [Kits](https://github.com/nuhyamin1/tutordraw/blob/master/docs/KITS.md).
 - end a step with a question answered by tapping the picture ("Tap the nucleus."), with feedback, hints and the same check in Python; see [Prompts](https://github.com/nuhyamin1/tutordraw/blob/master/docs/PROMPTS.md).
 - reveal each label, note, mark and highlight as the narration says it, from text-to-speech word timings, with live captions in the player; see [Narration](https://github.com/nuhyamin1/tutordraw/blob/master/docs/NARRATION.md).
+- point at what the narrator means with a presenter's hand that glides between targets; see [Pointer](https://github.com/nuhyamin1/tutordraw/blob/master/docs/POINTER.md).
 - caption a lesson, written or from its narration, as WebVTT or SubRip subtitles or burned into the video; see [Captions](https://github.com/nuhyamin1/tutordraw/blob/master/docs/CAPTIONS.md).
 - describe each step in plain English for screen readers, and so a model can check a step shows what its narration says; see [Describe](https://github.com/nuhyamin1/tutordraw/blob/master/docs/DESCRIBE.md).
 - play a lesson in any browser as sharp SVG, or stream it one step at a time while it is still being written; see [Web](https://github.com/nuhyamin1/tutordraw/blob/master/docs/WEB.md).
@@ -140,6 +141,7 @@ for codec limits and failure behavior.
 - [Reveal](https://github.com/nuhyamin1/tutordraw/blob/master/docs/REVEAL.md): delaying annotations so a beat unfolds as it is narrated.
 - [Video export](https://github.com/nuhyamin1/tutordraw/blob/master/docs/VIDEO.md): encoding contract, codecs, and limits.
 - [Captions](https://github.com/nuhyamin1/tutordraw/blob/master/docs/CAPTIONS.md): timed captions, subtitle files and burned-in captions.
+- [Pointer](https://github.com/nuhyamin1/tutordraw/blob/master/docs/POINTER.md): the presenter's hand that points at what is being explained.
 - [Text](https://github.com/nuhyamin1/tutordraw/blob/master/docs/TEXT.md): which characters annotations accept, and why the rest are refused.
 - [API guide](https://github.com/nuhyamin1/tutordraw/blob/master/docs/API.md): implemented methods and errors.
 - [Compatibility](https://github.com/nuhyamin1/tutordraw/blob/master/docs/COMPATIBILITY.md): evidence, fonts, and alpha API expectations.

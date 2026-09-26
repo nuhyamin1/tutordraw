@@ -72,7 +72,8 @@ def web_step(tutorial, index: int) -> dict:
     with the easing already applied; the player blends between neighbours.
     """
     step = tutorial.steps[index]
-    final = tutorial._compose(index, 1.0)
+    # No pointer in the frames: the player draws its own, from `pointer` below.
+    final = tutorial._compose(index, 1.0, pointer=False)
     frames: list[str] = []
     easing = None
     if step.easing is not None and index > 0:
@@ -84,7 +85,8 @@ def web_step(tutorial, index: int) -> dict:
         # Everything present and drawn, so every element has a state to blend. Frames span the motion,
         # which may be only the step's first seconds (`motion`, which the player reads).
         span = min(1.0, step.motion / step.duration) if step.motion is not None else 1.0
-        earlier = [tutorial._compose(index, span * k / count, complete=True) for k in range(count)]
+        earlier = [tutorial._compose(index, span * k / count, complete=True, pointer=False)
+                   for k in range(count)]
         frames = [frame_svg(tutorial, index, composition) for composition in earlier]
         easing = None if count > 1 else easing_table(step.easing)
         _keep_fading(final, earlier[0])
@@ -98,7 +100,21 @@ def web_step(tutorial, index: int) -> dict:
             "narration": [[w.text, w.start, w.end] for w in step.narration] or None,
             # Written captions only; the player cuts a narrated step's own from its words.
             "captions": [[c.text, c.start, c.end] for c in step_cues(step)] if step.captions else None,
-            "prompt": prompt_payload(tutorial, step.prompt, final)}
+            "prompt": prompt_payload(tutorial, step.prompt, final),
+            "pointer": pointer_payload(tutorial, index)}
+
+
+def pointer_payload(tutorial, index: int) -> dict | None:
+    """The pointer's keys and glyph for the player, which moves it exactly as pointer.pose_at does."""
+    from .pointer import DOT_RADIUS, glyph
+
+    keys = tutorial._pointer_track(index) if tutorial.steps[index].points else []
+    if not keys:
+        return None
+    style = tutorial.theme.pointer_style
+    return {"style": style, "keys": [list(key) for key in keys],
+            "outline": None if style == "dot" else [list(p) for p in glyph(style)],
+            "radius": DOT_RADIUS}
 
 
 def _keep_fading(final: Composition, start: Composition) -> None:

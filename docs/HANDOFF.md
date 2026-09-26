@@ -1,6 +1,27 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, forgiving prompt taps (Claude Code).
+Last updated: **2026-09-26**, the presenter's pointer (Claude Code).
+
+## Unreleased: the presenter's pointer (2026-09-26)
+
+Owner's idea: a hand that shows what the narrator means. `Step.point(target,
+at=)`, `Step.points` (model.py); `pointer.py` (glyphs, `plan` chooses the side,
+`track` builds keyframes, `pose_at`, `artwork`); `Tutorial._pointer_track`
+(memoised), drawn last in `_compose` (`pointer=False` for web frames);
+`Composition.pointer`; `web.pointer_payload`; `player.js` `_makePointer`,
+`pointerPose`, `smooth`. Narration target cues time pointer stops. Theme
+`pointer_style` ("hand" default, owner's choice), `pointer_seconds`; schema
+v13 `points` + both theme fields. `describe()` sentences; lint
+`POINTER_WITH_HIGHLIGHT`. Tests `tests/test_pointer.py` (8) and a browser
+parity test (fails when the player's easing is made linear). Inspected: glyph
+sheet; a cell lesson's frames in Python and in Chromium (identical poses).
+Also shrank the forgiving-tap grid test from 120 to 30 taps (8.6 s to 2 s;
+still fails on the old code). Docs: POINTER (new), API, NARRATION,
+PERSISTENCE, AI_AUTHORING, README, ROADMAP, CHANGELOG, DECISIONS.
+**Ran: `python -m pytest -q` (with Playwright): 673 passed, 11 skipped;
+`check_docs.py`: 29 documents.**
+
+
 
 The owner pushed tag `v0.2.0a1` (annotated, on `ec6adb3`); verified on GitHub.
 
