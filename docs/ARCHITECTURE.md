@@ -99,7 +99,11 @@ diagnostics for off-canvas panels.
 Collision avoidance lives in `collision.py` and runs between layout and artwork
 generation. It is a ranked candidate search, not a force relaxation: a panel
 picks the first free placement from a list ordered by nearness to the author's
-intent, scored lexicographically on overlap, then artwork coverage, then rank.
+intent, scored lexicographically on overlap, then a soft cost, then rank. The
+soft cost is the artwork the panel covers plus where its leader goes: its
+length over other artwork and panels, its crossings with placed leaders, and
+its length beyond the authored placement's (`LEADER_WEIGHT`,
+`LEADERS_CROSSING`, `LEADER_LENGTH`).
 The decision is taken once per render from the step's own end state (and, when
 the step animates, the swept path between its two ends), then applied to live
 bounds each frame, so an animated step cannot jitter or swap sides. Nothing is

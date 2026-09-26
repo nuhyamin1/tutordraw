@@ -1179,3 +1179,33 @@ viewing, in the video and as a subtitle file, not only in TutorDraw's player.
   already exists and is richer than a plain cue.
 - Schema v13 adds the step field `captions`; narrated captions are derived
   from the saved narration, so they are not stored twice.
+
+## Placement weighs the leader (2026-09-26)
+
+**Why**: the owner saw a callout on a vector drawn on a graph placed below
+the graph, its leader crossing the x-axis and grid, while the slot beside the
+arrow's tip was free.
+
+- Two causes. `outside_area` computed `area - overlap`, which left ~7e-12 px²
+  for a panel wholly inside the canvas: a hard cost, so a clean authored
+  placement lost to any candidate that happened to round to exactly 0. It
+  now returns exactly 0 inside the canvas. And the soft cost was the covered
+  artwork area alone, so a leader could cross anything.
+- The soft cost adds, in square pixels of covered artwork: `LEADER_WEIGHT`
+  (20) per pixel of leader over other targets' artwork (ink boxes for
+  strokes, as panels are judged) or over placed panels, `LEADERS_CROSSING`
+  (20 px of such leader) per crossing with a placed leader, and
+  `LEADER_LENGTH` (12) per pixel of leader beyond the authored placement's.
+  Still lexicographic after hard overlap, so nothing may overlap to shorten
+  a leader. Weights were chosen by reviewing the golden lessons side by side.
+- Not charged: the target's own artwork, and artwork containing the leader's
+  start (a core inside its mantle, a nucleus inside its cell): every way out
+  crosses it, and charging it pushed a nested label far out (science golden).
+- Length is relative to the authored leader so a clean authored placement
+  still costs 0 and wins at rank 0; an absolute length cost moved labels
+  that were fine as written.
+- The leader start is `ink_point` of each anchor at the step's end, as the
+  renderer draws it; the end is the panel edge toward it, as `label_artwork`
+  computes it. `preferred` (stable labels) still compares covered area only.
+- Unregistered artwork (a graph's grid lines, which are not targets) is not
+  weighed; tick numbers are, as words.

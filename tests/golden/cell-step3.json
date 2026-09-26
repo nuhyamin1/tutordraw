@@ -54,22 +54,22 @@
    "kind": "label",
    "text": "Nucleus",
    "target": "nucleus",
-   "anchor": "bottom",
+   "anchor": "right",
    "panel": [
-    394.5,
-    337.0,
+    377.0,
+    208.0,
     95.0,
     44.0
    ],
    "boxed": true,
    "leader": [
     [
-     240.0,
-     277.0
+     287.0,
+     230.0
     ],
     [
-     394.5,
-     339.72
+     377.0,
+     230.0
     ]
    ]
   },
@@ -77,10 +77,10 @@
    "kind": "label",
    "text": "Mitochondrion",
    "target": "mitochondrion",
-   "anchor": "top",
+   "anchor": "bottom",
    "panel": [
-    388.5,
-    228.0,
+    0.0,
+    376.0,
     151.0,
     44.0
    ],
@@ -88,11 +88,11 @@
    "leader": [
     [
      150.0,
-     304.0
+     336.0
     ],
     [
-     388.5,
-     262.98
+     101.94,
+     376.0
     ]
    ]
   }
