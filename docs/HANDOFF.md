@@ -1,42 +1,44 @@
 # AI handoff — start here
 
-Last updated: **2026-09-27**, 0.3.0a1 release preparation.
+Last updated: **2026-09-27**, 0.3.0a1 published and verified.
 
-## 0.3.0a1 release preparation (2026-09-27)
+## Published 0.3.0a1 (2026-09-27)
 
-Fetched and fast-forwarded local `master` to `da7fa52`, the current upstream
-commit at the time of review. PyPI's project page still listed 0.2.0a1 as
-latest. GitHub Actions run 36254069389 for `da7fa52` completed all nine matrix
-jobs successfully; the documentation edits below are not in that run.
+The owner explicitly requested publication. PyPI now lists 0.3.0a1 as latest
+with two files, and its README shows the 0.3.0a1 install command. The annotated
+tag `v0.3.0a1` is pushed on release commit `7b10c34`; GitHub Actions run
+36280197318 passed all nine jobs on that exact commit.
 
-Changed README (0.3.0a1 description and install command, pointer, current
-limits), COMPATIBILITY (schema v13 and placement), RELEASING (0.3-specific
-review points), ROADMAP (release gate), and this handoff. No package code or
-version number changed. The changelog still says unreleased; date it when the
-release is actually made.
+PyPI SHA-256 matches the locally checked files:
 
-Commands run with Windows Python 3.12 from `.venv`: `python -m pytest -q`
-(675 passed, 9 skipped), `python tools/check_docs.py` (29 documents, one
-README example), `python -m pip check` (clean), `python -m build
---no-isolation --outdir output/release`, and `python tools/check_release.py
---dist-dir output/release --require-metadata` (both 0.3.0a1 artifacts passed).
-In a separate `output/verify-venv`, installed the candidate wheel and its
-declared dependencies: `python -I -m pytest -q` (664 passed, 20 skipped),
-`python -I tools/check_installed.py` (26 PNGs, one 120-frame video, lesson
-reloads, all outside the checkout), and `python -m pip check` (clean). Ran
-`examples/cell_tutorial.py` and visually inspected `output/cell/step-002.png`.
-The clean environment has no browser or optional typography support, which
-accounts for additional skips; hosted CI includes a required browser job.
+- `tutordraw-0.3.0a1-py3-none-any.whl`:
+  `0eacbc9a8d071fbcf19f5495baeb836a445fba899915b41b9c88aa6532a68c25`
+- `tutordraw-0.3.0a1.tar.gz`:
+  `79d2021de383d3bf81c7496d4e759748b1f81781c8e322f4bf0d6b85f7507e3b`
 
-The preparation commit `6efa83b` was pushed; GitHub Actions run 36279731105
-passed all nine jobs on that exact commit. The owner then explicitly requested
-the PyPI upload on 2026-09-27. PyPI still listed 0.2.0a1 as latest and had no
-0.3.0a1 release; local `master` matched `origin/master`. The changelog is now
-dated 2026-09-27 and the README install heading is ready for publication.
-Next: commit these final metadata edits, push, require hosted CI on that exact
-commit, rebuild/recheck/install the exact artifacts, upload using the owner's
-credential mechanism, verify the published wheel and examples, and record the
-release. No upload had occurred at the time of this note.
+Windows Python 3.12 commands run and outcomes: `python -m pytest -q` from
+source (675 passed, 9 skipped); `python tools/check_docs.py` (29 documents,
+one README example); `python -m build --no-isolation --outdir output/release`
+and `python tools/check_release.py --dist-dir output/release
+--require-metadata` (both files passed); `python -m twine upload
+--non-interactive --username __token__` with the exact two filenames (succeeded
+using the owner's existing keyring credential, never displayed).
+The first Twine attempt stopped before upload because its process could not
+read the wheel; local read access was granted to the two public artifact files,
+their hashes were rechecked unchanged, and the retry succeeded. A fresh venv
+installed `tutordraw[dev]==0.3.0a1` from PyPI: `python -I -m pytest -q`
+(664 passed, 20 skipped), `python -I tools/check_installed.py` (26 PNGs, one
+120-frame video, and lesson reloads outside the checkout), and `python -m pip
+check` (clean). `output/cell/step-002.png` was visually inspected. The fresh
+venv lacked optional typography and Playwright; CI required the browser test.
+
+Release preparation changed README, CHANGELOG, COMPATIBILITY, RELEASING,
+ROADMAP, and this handoff; no package code changed after `7b10c34`. This
+post-release record updates RELEASING, ROADMAP, and HANDOFF. No known release
+issue remains. Next: choose and set a new development version before further
+package changes; published 0.3.0a1 files are immutable. Historical sections
+below called some features "unreleased" before this upload; they shipped in
+0.3.0a1.
 
 ## Unreleased: the presenter's pointer (2026-09-26)
 

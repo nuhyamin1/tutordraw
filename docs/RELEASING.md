@@ -7,20 +7,20 @@ Future publication also requires an explicit owner request. The CI workflow neve
 
 - Distribution/import: `tutordraw` (owner confirmed).
 - License: MIT; copyright holder/author: Nuh Yamin (owner confirmed).
-- Published: `0.1.0a3` on 2026-09-20, `0.1.0a11` on 2026-09-21 and `0.2.0a1` on
-  2026-09-24 (the milestone first called 0.1.0a12); still an alpha. Git tags
-  `v0.1.0a11` and `v0.2.0a1` mark the commits those uploads were built from.
-- Release candidate: `0.3.0a1` (owner's choice, 2026-09-26: a new minor because
-  the lesson format moved v9 to v13 and placement changed). The owner requested
-  publication on 2026-09-27; upload and index verification are pending.
+- Published: `0.1.0a3` on 2026-09-20, `0.1.0a11` on 2026-09-21, `0.2.0a1` on
+  2026-09-24, and `0.3.0a1` on 2026-09-27; still an alpha. Tags
+  `v0.1.0a11`, `v0.2.0a1`, and `v0.3.0a1` mark their upload commits.
+- `0.3.0a1` was the owner's choice because the lesson format moved from v9
+  to v13 and placement changed. Its wheel and sdist hashes match PyPI; see
+  [HANDOFF.md](HANDOFF.md) for the exact release evidence.
 - Versions a4 through a10 were development milestones and were never uploaded;
   0.1.0a11 contains all of their work.
 - Repository: `https://github.com/nuhyamin1/tutordraw`, read from the configured origin.
 - PyPI accepted both release files under the owner-authorized credential.
 
-Published versions are immutable. The commands below use the 0.3.0a1 candidate;
-choose a new version and update the filenames for any later release. Never
-rebuild and try to replace an already published artifact.
+Published versions are immutable. Choose a new version and update package
+metadata and filenames for any later release. Never rebuild and try to
+replace an already published artifact.
 
 ## Local verification
 
@@ -88,11 +88,16 @@ PyPI. TestPyPI has a separate namespace and account. Use the exact two candidate
 files, never a wildcard that might select old releases:
 
 ```powershell
+# Set this to a NEW, checked version; never reuse a published version.
+$releaseVersion = "<new-version>"
+$wheel = "output/release/tutordraw-$releaseVersion-py3-none-any.whl"
+$sdist = "output/release/tutordraw-$releaseVersion.tar.gz"
+
 # TestPyPI rehearsal, only when requested:
-python -m twine upload --repository testpypi output/release/tutordraw-0.3.0a1-py3-none-any.whl output/release/tutordraw-0.3.0a1.tar.gz
+python -m twine upload --repository testpypi $wheel $sdist
 
 # Public PyPI release, only when requested:
-python -m twine upload output/release/tutordraw-0.3.0a1-py3-none-any.whl output/release/tutordraw-0.3.0a1.tar.gz
+python -m twine upload $wheel $sdist
 ```
 
 Use the owner's credential mechanism; never put tokens in repository files,

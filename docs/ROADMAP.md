@@ -18,8 +18,10 @@ work, not intent. Milestones are ordered; no release date is promised.
   exact commit: all nine jobs passed on `6efa83b` (run 36279731105).
 - [x] Date the 0.3.0a1 changelog for 2026-09-27 after the owner explicitly
   requested publication.
-- [ ] Rebuild and recheck the exact dated artifacts, require CI on their
-  source commit, upload, and verify the published installation.
+- [x] Rebuild and recheck the dated artifacts, pass all nine CI jobs on
+  `7b10c34`, upload both files to PyPI, match their published SHA-256 hashes,
+  and verify a fresh PyPI installation (664 tests passed, 20 skipped; 26 PNGs,
+  one video, and lesson reloads).
 
 ## M0 — Project definition
 
