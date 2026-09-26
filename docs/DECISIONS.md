@@ -1264,3 +1264,29 @@ land on the shape behind it instead.
 - The player cannot measure boxes as Python does, so the payload sends them
   (`zones`) from the same finished frame; one rule set, two implementations,
   held equal by a browser test.
+
+## A presenter's pointer (2026-09-26)
+
+**Why**: the owner asked for a hand that shows what the narrator is talking
+about. Leaders name, highlights mark, dimming hides; none shows attention
+moving from one thing to the next.
+
+- One pointer per lesson, not one per target: many hands are clutter, and a
+  single one that glides reads as the narrator's attention. Opt-in; a step
+  without stops shows none, so it never idles on screen. `"hand"` by
+  default (owner's choice), with `"cursor"` and `"dot"` for other tones.
+- Movement is keyframes (`pointer.track`): appear, glide (smoothstep), tap
+  (scale press), computed once per step from its finished picture and
+  memoised. Python interpolates them to draw frames; the player is sent the
+  same keys and interpolates identically, so PNG, video and browser agree
+  (a browser test samples both, off the glide's midpoint, where the easing
+  shows). Carry-over starts a step from the previous step's last key.
+- The side it reaches in from is scored like a panel: on canvas (hard), then
+  overlap with panels, marks and other targets (soft), then preference
+  (down-right first). What contains the target's centre is its base, not an
+  obstacle; containing the tip was wrong (a shape overlapping the tip was
+  ignored). The tip uses `ink_point`, so it touches a shape's real outline.
+- Schema v13 (unreleased) carries `points` and the two theme fields. Drawn
+  as a DrawCV Path from fixed glyph coordinates, not an emoji or font, so it
+  looks the same everywhere.
+- Known limit: in an animated step the pointer aims at where targets end up.

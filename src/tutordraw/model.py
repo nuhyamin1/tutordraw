@@ -190,6 +190,7 @@ class Step:
         self._camera: Camera | None = None
         self._narration: tuple = ()
         self._captions: list = []
+        self._points: list = []
         self._focus: tuple[Target, ...] = ()
         self._dim_opacity: float | None = None
         self._prompt = None
@@ -516,10 +517,10 @@ class Step:
         for item, phrase in cues.items():
             at = max(0.0, spoken[find_phrase(spoken, phrase)].start - lead)
             if isinstance(item, Target):
-                if item.id not in self._highlights:
+                if item.id not in self._highlights and not any(s.target is item for s in self._points):
                     raise ValidationError(
-                        f"Target {item.name or item.id!r} has no highlight in this step; "
-                        "call highlight() before narrate()")
+                        f"Target {item.name or item.id!r} has no highlight or pointer stop in this step; "
+                        "call highlight() or point() before narrate()")
             elif not isinstance(item, (Label, Mark)) or item.id not in shown:
                 raise ValidationError("Each cue must be a label or callout shown in this step, "
                                       "a mark of this step, or a highlighted target")
@@ -527,12 +528,40 @@ class Step:
         for item, at in times:
             if isinstance(item, Target):
                 from dataclasses import replace
-                self._highlights[item.id] = replace(self._highlights[item.id], at=at)
+                if item.id in self._highlights:
+                    self._highlights[item.id] = replace(self._highlights[item.id], at=at)
+                # The target's first pointer stop moves to the phrase too.
+                stops = [stop for stop in self.points if stop.target is item]
+                if stops and not any(s.at == at for s in self._points if s is not stops[0]):
+                    self._points[self._points.index(stops[0])] = replace(stops[0], at=at)
             else:
                 self._reveals[item.id] = at
         self._narration = spoken
         if fit and spoken[-1].end + tail > self._duration:
             self.set_timing(duration=spoken[-1].end + tail, pause=self._pause)
+        return self
+
+    @property
+    def points(self) -> tuple:
+        """Where the pointer goes in this step (pointer.Stop objects), in time order."""
+        return tuple(sorted(self._points, key=lambda stop: stop.at))
+
+    def point(self, target: Target, *, at: float | None = None) -> Step:
+        """Move the lesson's pointer to `target` `at` seconds into the step.
+
+        One pointer serves the whole lesson: it fades in at its first stop,
+        glides from stop to stop (Theme.pointer_seconds), taps as it arrives,
+        and carries over into the next step. Its body reaches in from whichever
+        side has room. A step that points at nothing shows no pointer. A
+        narration cue on the target times it. See docs/POINTER.md.
+        """
+        from .pointer import Stop
+
+        self._check_target(target)
+        seconds = 0.0 if at is None else finite_number(at, "at", minimum=0)
+        if any(stop.at == seconds for stop in self._points):
+            raise ValidationError(f"The pointer already moves at {seconds:g} s in this step")
+        self._points.append(Stop(target, seconds))
         return self
 
     @property

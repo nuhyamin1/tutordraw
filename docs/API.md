@@ -279,6 +279,14 @@ written ones, a narrated step's captions are cut from its words.
 `render_at_time`, `render_frames` and `export_video` take `captions=False`;
 True burns them in. See [CAPTIONS.md](CAPTIONS.md).
 
+## The presenter's pointer (unreleased)
+
+`step.point(target, *, at=None)` moves the lesson's one pointer (a hand, by
+default) to `target` at that time; it fades in, glides between stops, taps on
+arrival and carries over between steps. `Theme(pointer_style="hand" |
+"cursor" | "dot", pointer_seconds=0.6)`. Narration cues on a target time it.
+See [POINTER.md](POINTER.md).
+
 ## Interactive prompts (new in 0.2.0a1)
 
 `step.ask(text, answer, *, correct=None, wrong=None, hint=None, attempts=3)`

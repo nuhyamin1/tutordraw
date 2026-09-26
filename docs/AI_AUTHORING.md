@@ -41,6 +41,7 @@ steps exactly as rendering does and never changes the lesson or its output.
 | `TEXT_ON_DIAGRAM` | warning | A text or equation lies on a kit's lines, text or shading (a graph's tick numbers, its curve) |
 | `TEXT_OFF_CANVAS` | warning | A text or equation runs past the canvas edge (judged before a step's camera zoom, which crops on purpose) |
 | `CHART_OVER_ARTWORK` | warning | A graph or number line covers a quarter or more of another shape; a panel the chart sits on is fine |
+| `POINTER_WITH_HIGHLIGHT` | info | The pointer points at a target the same step highlights: one is enough |
 | `CAPTION_TOO_FAST` | warning | A written caption is on screen too briefly to read at 20 characters a second |
 | `CAPTION_NEVER_SHOWN` | error | A written caption starts after its step's duration plus pause |
 | `SCALED_TEXT_SMALL` | warning | A target scaled down (`restyle(scale=)`) makes its own text (tick numbers) under 12 px |

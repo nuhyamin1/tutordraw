@@ -34,7 +34,7 @@ PROMPT_FIELDS = {"text", "answer_ids", "correct", "wrong", "hint", "attempts"}
 # load with the Theme default, exactly as older step fields do.
 THEME_FIELDS_ADDED = {6: ("avoid_collisions", "collision_margin"),
                       8: ("draw_seconds", "halo_width"),
-                      13: ("fade_seconds",)}
+                      13: ("fade_seconds", "pointer_style", "pointer_seconds")}
 # The same, for highlight fields.
 HIGHLIGHT_FIELDS_ADDED = {8: ("at", "draw", "shape")}
 HIGHLIGHT_FIELDS = {"target_id", "padding", "color", "width", "at", "draw", "shape"}
@@ -142,7 +142,8 @@ def to_dict(tutorial: Tutorial) -> dict:
                                     for r in step.restyles],
                        "narration": [[w.text, w.start, w.end] for w in step.narration],
                        "prompt": _prompt(step.prompt),
-                       "captions": [{"text": c.text, "at": c.at, "until": c.until} for c in step.captions]}
+                       "captions": [{"text": c.text, "at": c.at, "until": c.until} for c in step.captions],
+                       "points": [{"target_id": p.target.id, "at": p.at} for p in step.points]}
                       for step in tutorial.steps],
         }
         result = _json_copy(document)
@@ -260,7 +261,7 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
             mark_fields = {"marks", "draw", "camera"} if version >= 8 else set()
             spoken_fields = {"narration", "prompt"} if version >= 9 else set()
             motion_fields = {"motion"} if version >= 11 else set()
-            caption_fields = {"captions"} if version >= 13 else set()
+            caption_fields = {"captions", "points"} if version >= 13 else set()
             _object(item, {"id", "title", "labels", "callouts", "highlights", "dim"}
                     | timing_fields | restyle_fields | easing_fields | reveal_fields | mark_fields
                     | spoken_fields | motion_fields | caption_fields, where)
@@ -366,6 +367,13 @@ def from_dict(document: dict, *, tutorial_type=None, font=None) -> Tutorial:
                     step.caption(caption["text"], at=caption["at"], until=caption["until"])
                 except ValidationError as exc:
                     raise LessonFormatError(f"{where}.captions[{j}]: {exc}") from exc
+            for j, entry in enumerate(_list(item.get("points", []), f"{where}.points")):
+                stop = _object(entry, {"target_id", "at"}, f"{where}.points[{j}]")
+                try:
+                    step.point(reference(stop["target_id"], targets, f"{where}.points[{j}].target_id"),
+                               at=stop["at"])
+                except ValidationError as exc:
+                    raise LessonFormatError(f"{where}.points[{j}]: {exc}") from exc
             if item.get("prompt") is not None:
                 asked = _object(item["prompt"], PROMPT_FIELDS, f"{where}.prompt")
                 answers = references(asked["answer_ids"], targets, f"{where}.prompt.answer_ids")

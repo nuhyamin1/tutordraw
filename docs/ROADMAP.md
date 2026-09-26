@@ -191,6 +191,9 @@ Design the whole batch before coding; persist it together.
 - [x] Narration-driven timing from TTS word timestamps (`Step.narrate`), with
   live captions in the player.
 - [x] Save narration text and timings in the lesson file: schema v9, with prompts.
+- [x] A presenter's pointer (`Step.point`): one hand per lesson that fades
+  in, glides and taps, carries over between steps, avoids labels, and
+  matches between Python and the player (unreleased).
 - [x] Forgiving prompt taps: text and equations count anywhere in their box,
   and a tap on nothing takes the nearest target within 12 px, in `hit_test`
   and the player alike (grid over `E = mc^2`: 71 of 120 taps before, 120 now).

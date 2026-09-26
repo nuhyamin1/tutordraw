@@ -315,6 +315,14 @@ def lint_step(tutorial, index: int) -> list[Issue]:
         _lint_prompt(tutorial, index, step, composition, objects, labels, add)
     if step.captions:
         _lint_captions(step, add)
+    highlighted = {h.target.id for h in step.highlights}
+    for stop in step.points:
+        if stop.target.id in highlighted:
+            name = stop.target.name or stop.target.id
+            add("POINTER_WITH_HIGHLIGHT", "info",
+                f"The pointer points at {name!r}, which this step also highlights.",
+                "One is enough to say where to look: drop the highlight, or point at something else.",
+                [name])
 
     order = {severity: i for i, severity in enumerate(SEVERITIES)}
     return sorted(issues, key=lambda issue: order[issue.severity])

@@ -174,6 +174,9 @@ def describe_step(tutorial, index: int) -> str:
         events.append((min(highlight.at, step.duration), order,
                        f"{_subject(highlight.target)} {_verb(highlight.target, 'is', 'are')} {style}."))
         order += 1
+    for stop in step.points:
+        events.append((min(stop.at, step.duration), order, f"The pointer points at {_name(stop.target)}."))
+        order += 1
     numbers = [m for m in step.marks if m.kind == "number"]
     for item in (*step.labels, *step.callouts, *step.marks):
         at = min(step.revealed_at(item), step.duration)

@@ -57,6 +57,7 @@ class Composition:
     drawables: dict[str, str]  # target name (or ID) -> drawable ID in `scene`
     marks: tuple[MarkLayout, ...] = ()
     camera: tuple[float, float, float] | None = None  # (scale, tx, ty), None = whole canvas
+    pointer: object = None  # pointer.Pose, or None when no pointer is drawn
 
     def to_dict(self) -> dict:
         """Plain, rounded geometry: stable enough to snapshot and compare."""
@@ -87,4 +88,8 @@ class Composition:
                                for m in self.marks]
         if self.camera is not None:
             result["camera"] = [round(v, 4) for v in self.camera]
+        if self.pointer is not None:
+            p = self.pointer
+            result["pointer"] = [round(p.x, 2), round(p.y, 2), round(p.angle, 2), round(p.scale, 3),
+                                 round(p.opacity, 3)]
         return result

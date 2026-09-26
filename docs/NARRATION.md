@@ -39,7 +39,8 @@ A cue maps one of these to a phrase:
 
 - a label or callout **shown in this step**;
 - a mark of this step (`connect`, `brace`, `measure`, `angle`, `number`);
-- a **target that has a highlight** in this step, which times the highlight.
+- a **target that has a highlight or a pointer stop** in this step, which
+  times the highlight and the target's first pointer stop (see POINTER.md).
 
 Phrases match the first place they are spoken, ignoring case, accents and
 punctuation, and skipping spoken tokens that are only punctuation. A phrase
