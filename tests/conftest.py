@@ -27,6 +27,7 @@ HIGHLIGHT_FIELDS_ADDED = {
 THEME_FIELDS_ADDED = {
     6: ("avoid_collisions", "collision_margin"),
     8: ("draw_seconds", "halo_width"),
+    13: ("fade_seconds",),
 }
 
 # The same, for label and callout fields, which appear in two places.

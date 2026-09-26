@@ -44,16 +44,22 @@ sequence. `step.revealed_at(annotation)` reports an annotation's delay, and
 - `at` must be a finite number ≥ 0. Booleans and strings are rejected.
 - Delays are saved in **lesson schema v5**; older schemas load with none.
 
-## Appearing, not fading
+## Appearing, or fading in
 
-An annotation appears whole at its moment. There is no fade, because a caption
-landing as the narrator says it is what this is for, and a fade would mean
-inventing a duration nobody asked for. Pair a step's `animate()` with artwork
-`restyle` if you want motion; the annotations still pop in.
+By default an annotation appears whole at its moment. `Theme(fade_seconds=0.4)`
+fades every label, callout, mark and highlight in over that long instead,
+from the moment it would have appeared (after its stroke draws on, with
+`draw=True`; the stroke itself draws rather than fades). The lesson's timing
+is unchanged: the fade starts on the narrated word, and everything is whole
+at the step's end, so `render_step` is unchanged. A label shown in the
+previous step and in this one from its start, and a highlight on the same
+target, are already on screen and do not fade again. PNG, video and the
+browser player (`data-td-fade`) fade alike. Unreleased; saved with the theme
+in lesson schema v13.
 
 ## Not implemented
 
-Fading or sliding annotations in. Revealing part of one callout, such as
+Sliding annotations in, or a fade per annotation rather than per lesson. Revealing part of one callout, such as
 line by line. Timing highlights or dimming, which remain step-level emphasis
 applied for the whole step. Automatic pacing from the text's length, which
 belongs in whatever supplies the narration.

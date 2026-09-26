@@ -92,7 +92,8 @@ Prioritized after the first release to support continuation across AI sessions.
   which covers progressive reveal of artwork.
 - [x] Reveal annotations progressively within a step with `show(at=)` and
   `explain(at=)`, timed in seconds from the step's start (a11).
-- [ ] Fade annotations in; today they appear whole at their moment.
+- [x] Fade annotations in: `Theme(fade_seconds=)`, in PNG, video and the player;
+  carried labels do not fade again (unreleased).
 - [x] Add timed captions: `Step.caption`, captions cut from narration,
   WebVTT/SubRip export, burned-in video, player display, lint (unreleased).
 - [ ] Sample DrawCV object timelines instead of only selecting static steps.

@@ -268,6 +268,43 @@ class Step:
             return 1.0
         return min(1.0, (elapsed - start) / self._tutorial.theme.draw_seconds)
 
+    def appears_at(self, item) -> float:
+        """Seconds into the step at which `item` shows whole: after its stroke draws on, if it does."""
+        if isinstance(item, Highlight):
+            start, drawing = item.at, item.draw
+        else:
+            start, drawing = self._reveals.get(item.id, 0.0), item.id in self._draw
+        return start + (self._tutorial.theme.draw_seconds if drawing else 0.0)
+
+    def carried(self, item) -> bool:
+        """Is `item` on screen from the previous step's end, so it has nothing to fade in from?
+
+        A label shown there and here from this step's start, or a highlight
+        of the same target from its start. Callouts and marks belong to one
+        step, so they always arrive.
+        """
+        steps = self._tutorial.steps
+        index = steps.index(self)
+        if index == 0:
+            return False
+        prior = steps[index - 1]
+        if isinstance(item, Highlight):
+            return (not item.at and not item.draw
+                    and any(h.target is item.target for h in prior.highlights))
+        return (isinstance(item, Label) and not isinstance(item, Callout) and item in prior.labels
+                and not self._reveals.get(item.id) and item.id not in self._draw)
+
+    def fade_progress(self, item, elapsed: float) -> float:
+        """How far `item` has faded in at `elapsed` seconds: 1 when opaque.
+
+        Over Theme.fade_seconds from when it shows whole (appears_at). A
+        carried item, a theme without fading and the end of the step are 1.
+        """
+        fade = self._tutorial.theme.fade_seconds
+        if fade <= 0 or elapsed >= self._duration or self.carried(item):
+            return 1.0
+        return min(1.0, max(0.0, (elapsed - self.appears_at(item)) / fade))
+
     @property
     def reveals(self) -> dict[str, float]:
         """Annotation id to its delay in seconds; only delayed ones appear."""

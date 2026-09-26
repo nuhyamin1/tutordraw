@@ -1209,3 +1209,23 @@ arrow's tip was free.
   computes it. `preferred` (stable labels) still compares covered area only.
 - Unregistered artwork (a graph's grid lines, which are not targets) is not
   weighed; tick numbers are, as words.
+
+## Fading annotations in (2026-09-26)
+
+**Why**: popping in whole looks abrupt in a produced lesson (roadmap item).
+
+- One theme knob, `Theme.fade_seconds` (default 0), not a `fade=` flag on
+  every show/explain/highlight/mark: a fade is a lesson's style, like
+  `draw_seconds`, and one knob adds no per-step saved state. Saved as a v13
+  theme field (v13 is unreleased; it already carries captions).
+- The fade starts when the item would have appeared (`Step.appears_at`: its
+  `at`, plus `draw_seconds` when it draws on), so narration cues keep their
+  timing. Drawn strokes draw rather than fade; the split is svg._stamp's,
+  shared by `tutorial._fade`. The end of a step is always whole, so
+  `render_step`, golden frames and layouts are unchanged.
+- `Step.carried`: a label shown in the previous step and in this one from its
+  start, or a highlight of the same target from its start, is already on
+  screen, and fading it again would flicker it at every step. Callouts and
+  marks are per-step objects, so they always fade.
+- A step whose items would fade is no longer rendered as its end state in
+  `render_at_time` (the hard-cut shortcut requires nothing timed).

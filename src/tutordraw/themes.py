@@ -29,6 +29,9 @@ class Theme:
     draw_seconds: float = 0.6
     # Outline behind box=False text, in panel_color; 0 disables it (schema v8).
     halo_width: float = 3
+    # Seconds a label, callout, mark or highlight takes to fade in as it
+    # appears; 0 (the default) shows it whole at once (schema v13).
+    fade_seconds: float = 0.0
 
     def __post_init__(self) -> None:
         for name in ("text_color", "panel_color", "border_color", "leader_color", "highlight_color"):
@@ -45,6 +48,7 @@ class Theme:
         if finite_number(self.draw_seconds, "draw_seconds", minimum=0) == 0:
             raise ValidationError("draw_seconds must be positive")
         finite_number(self.halo_width, "halo_width", minimum=0)
+        finite_number(self.fade_seconds, "fade_seconds", minimum=0)
         if not 0 <= finite_number(self.dim_opacity, "dim_opacity") <= 1:
             raise ValidationError("dim_opacity must be between 0 and 1")
         if not isinstance(self.avoid_collisions, bool):

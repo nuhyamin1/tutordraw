@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Annotations can fade in.** `Theme(fade_seconds=0.4)` fades every label,
+  callout, mark and highlight in as it appears instead of popping in whole,
+  in rendered frames, video and the browser player. A drawn-on stroke still
+  draws; its text and panel fade after it. A label already on screen from the
+  previous step does not fade again. Off by default (0): nothing changes.
 - **Leaders stay clear of charts and each other.** Placement now weighs a
   panel's leader as well as the panel: its length over other artwork (a
   graph's axes, tick numbers, other shapes) and other panels, its crossings

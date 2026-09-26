@@ -36,7 +36,9 @@ or `side`.
 draws its strokes on over `Theme.draw_seconds` (default 0.6) starting at its
 `at=` time. Text and panels appear when the stroke completes. Leaders grow
 from the target toward the panel; highlight boxes trace clockwise from the
-top-left; arrows grow with their head riding the tip.
+top-left; arrows grow with their head riding the tip. With
+`Theme.fade_seconds` above 0, the text and panel then fade in over that long
+(see REVEAL.md).
 
 At the end of a step everything is complete, so `render_step` and PNG export
 never show a half-drawn stroke. `layout(i, time=t)` reports an item only once

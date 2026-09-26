@@ -1,6 +1,22 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, leaders weighed in placement (Claude Code).
+Last updated: **2026-09-26**, annotations fading in (Claude Code).
+
+## Unreleased: annotations fade in (2026-09-26)
+
+`Theme.fade_seconds` (default 0; v13 theme field, conftest
+`THEME_FIELDS_ADDED[13]`). `Step.appears_at`, `Step.carried`,
+`Step.fade_progress` (model.py); `tutorial._fade` scales artwork opacity in
+`_compose`; `web.step_timing` sends a third value, `svg._stamp` writes
+`data-td-fade`, `player.js` ramps the group's opacity. Docs: REVEAL,
+VOCABULARY, PERSISTENCE, DECISIONS, ROADMAP, CHANGELOG. Tests
+`tests/test_fade_in.py` (6). **Ran: `python -m pytest -q`: 652 passed, 11
+skipped.** Inspected rendered frames of a delayed highlight and drawn callout
+(none, highlight fading, leader drawn, panel fading, whole) and sampled the
+player's opacities in headless Chromium (rising, no page errors).
+Open PR: https://github.com/nuhyamin1/tutordraw/pull/1 (this branch).
+
+
 
 ## Unreleased: placement weighs the leader (2026-09-26)
 
@@ -18,7 +34,7 @@ verbatim placement and a built crossing. New `tests/test_leader_placement.py`
 graph scene with anchors right and bottom: callout beside the tip, lint clean.
 Not done: grid lines of a graph are not obstacles (not targets); routed
 (bent) leaders.
-**Next**: owner review; version bump and 0.2.0a1 tag when asked.
+**Next**: a graph's grid as placement artwork; player test in CI; version bump and 0.2.0a1 tag when asked.
 
 
 

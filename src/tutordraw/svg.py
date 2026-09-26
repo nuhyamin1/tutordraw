@@ -51,7 +51,8 @@ def composition_svg(composition: Composition, *, halo: tuple[tuple[int, int, int
 
     `halo` is (panel colour, width) for text that was drawn with a halo;
     `timing` maps an owner ID (label, callout, mark, or "hl-<target id>") to
-    (appear_at, draw_seconds) and is written as data-td-at / data-td-draw.
+    (appear_at, draw_seconds[, fade_seconds]) and is written as data-td-at /
+    data-td-draw / data-td-fade.
     """
     scene = composition.scene
     specs: dict[str, dict] = {}
@@ -132,10 +133,13 @@ def _stamp(group: ET.Element, source: str, timing: dict[str, tuple[float, float]
         owner, _, role = body.rpartition("-")
     if owner not in timing:
         return
-    at, draw = timing[owner]
+    at, draw, *rest = timing[owner]
+    fade = rest[0] if rest else 0.0
     strokes = role == "leader" or role == "stroke" or re.fullmatch(r"s\d+", role)
     if strokes and draw:
         group.set("data-td-at", f"{at:g}")
         group.set("data-td-draw", f"{draw:g}")
     else:
         group.set("data-td-at", f"{at + draw:g}")
+        if fade:
+            group.set("data-td-fade", f"{fade:g}")

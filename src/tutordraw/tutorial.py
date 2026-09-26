@@ -162,7 +162,10 @@ class Tutorial:
         index, progress = position_at_time(self, time)
         step = self._steps[index]
         cue = cue_at(cues, float(time))
-        if progress >= 1.0 or (step.easing is None and not step._reveals):
+        # A step with nothing timed in it looks the same throughout: render its end.
+        fades = self.theme.fade_seconds > 0 and any(
+            not step.carried(item) for item in (*step.labels, *step.callouts, *step.marks, *step.highlights))
+        if progress >= 1.0 or (step.easing is None and not step._reveals and not fades):
             if cue is None:
                 return self.render_step(index, alpha=alpha)
             progress = 1.0
@@ -365,6 +368,7 @@ class Tutorial:
                 if drawn <= 0:
                     continue
                 shape = highlight_artwork(highlight, objects[highlight.target.drawable_id], drawn)
+                _fade([shape], step.fade_progress(highlight, elapsed), highlight.draw)
                 working.add(shape, layer=layer)
                 highlights.append(HighlightLayout(_name(highlight.target), shape.get_bounds(),
                                                   highlight.width))
@@ -393,6 +397,7 @@ class Tutorial:
                 layout, artwork = label_artwork(label, objects[label.target.drawable_id],
                                                 width, height, self.theme,
                                                 self._font, placement, measured, drawn)
+                _fade(artwork, step.fade_progress(label, elapsed), label.id in step.draws)
                 if draw_annotations:
                     for obj in artwork:
                         working.add(obj, layer=layer)
@@ -413,6 +418,7 @@ class Tutorial:
                     if drawn <= 0:
                         continue
                     drawing = mark_drawing(mark, live, view, self.theme, self._font, canvas, drawn)
+                    _fade(drawing.artwork, step.fade_progress(mark, elapsed), mark.id in step.draws)
                     if draw_annotations:
                         for obj in drawing.artwork:
                             working.add(obj, layer=layer)
@@ -524,6 +530,24 @@ class Tutorial:
         """
         from .video import export_video
         return export_video(self, path, fps=fps, fourcc=fourcc, overwrite=overwrite, captions=captions)
+
+
+def _fade(artwork, amount: float, drawing: bool) -> None:
+    """Scale what shows whole by `amount` of its opacity; strokes that draw on stay as drawn.
+
+    The same split as svg._stamp: a drawn item's leader, stroke parts (s0...)
+    and highlight draw on, and only the rest (panel, text, heads) fades in.
+    """
+    import re
+
+    if amount >= 1:
+        return
+    for obj in artwork:
+        ident = obj.id or ""
+        role = ident.rpartition("-")[2]
+        if drawing and (role == "leader" or re.fullmatch(r"s\d+", role) or ident.startswith("td-hl-")):
+            continue
+        obj.opacity = obj.opacity * amount
 
 
 def _name(target: Target) -> str:

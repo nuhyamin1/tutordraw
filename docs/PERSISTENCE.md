@@ -59,8 +59,9 @@ This fragment assumes a second step with a callout. The original lesson object a
 
 New saves write lesson schema v13, packaged as `lesson-v13.schema.json`. v13
 adds one step field, `captions`: a list of `{"text", "at", "until"}` written
-with `Step.caption` (`until` null for "until the next"). v1 to v12 still load,
-with no written captions. A v13 file cannot be opened by a build that only
+with `Step.caption` (`until` null for "until the next"), and one theme field,
+`fade_seconds` (0 for no fade-in). v1 to v12 still load, with no written
+captions and no fade. A v13 file cannot be opened by a build that only
 knows v12. See CAPTIONS.md.
 
 ### v12
