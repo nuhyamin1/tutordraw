@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **A leader to an arrow ends on the arrow.** DrawCV cannot turn an `Arrow`
+  into a path, so a leader to one still stopped at its bounding box, in the
+  air beside a slanted vector. The arrow's shaft and head are now traced
+  directly.
 - **Leaders end on the shape.** A label's or callout's leader was drawn to a
   point of its target's bounding box (its top, its right, ...), which lies on
   a rectangle or a circle but can be in empty space beside a triangle, a

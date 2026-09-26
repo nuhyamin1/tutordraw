@@ -1,6 +1,19 @@
 # AI handoff — start here
 
-Last updated: **2026-09-26**, a fade-out that fades in the player (Claude Code).
+Last updated: **2026-09-26**, a leader that reaches an Arrow (Claude Code).
+
+## Unreleased: a leader to an Arrow ends on the arrow (2026-09-26)
+
+Owner's report from Illustrate: a callout on a slanted vector stopped in the
+air beside it. DrawCV 0.11.0 cannot turn an `Arrow` into a path, so
+`layout.ink_point` fell back to the bounds point. `layout._outline` now traces
+an Arrow as its world-space shaft plus its closed head
+(`get_world_head_geometry`). `FreehandStroke` has the same DrawCV limitation
+and still falls back to bounds. Test added to `tests/test_leader_ink.py`
+(fails without the fix). **Ran (Linux, Python 3.12, `.[dev]`):
+`python -m pytest -q`: 628 passed, 11 skipped**, golden frames unchanged.
+Rendered a callout on a slanted Arrow and inspected it: the leader meets the
+shaft. No schema change.
 
 ## Unreleased: a target fading out fades in the browser player (2026-09-26)
 
